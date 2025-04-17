@@ -1,0 +1,6 @@
+PASSIVE ACQUISITION - once microsscope is working again :(
+https://au.mathworks.com/help/imaq/videoinput.html
+https://au.mathworks.com/help/parallel-computing/quick-start-parallel-computing-in-matlab.html
+
+
+        
