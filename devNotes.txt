@@ -3,4 +3,8 @@ https://au.mathworks.com/help/imaq/videoinput.html
 https://au.mathworks.com/help/parallel-computing/quick-start-parallel-computing-in-matlab.html
 
 
+TO DO WHEN YOU HAVE A BRAIN:
+- figure out the file structure in receiveFrame. You need the notes lmao
+
+
         
