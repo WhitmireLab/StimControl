@@ -7,4 +7,7 @@ TO DO WHEN YOU HAVE A BRAIN:
 - figure out the file structure in receiveFrame. You need the notes lmao
 
 
-        
+
+
+FEATURES YOU HAVEN'T IMPLEMENTED YET
+Record Mode
