@@ -1,13 +1,15 @@
-PASSIVE ACQUISITION - once microsscope is working again :(
+PASSIVE ACQUISITION
 https://au.mathworks.com/help/imaq/videoinput.html
 https://au.mathworks.com/help/parallel-computing/quick-start-parallel-computing-in-matlab.html
 
 
-TO DO WHEN YOU HAVE A BRAIN:
-- figure out the file structure in receiveFrame. You need the notes lmao
+TO DO - URGENT
+- Figure out the buffering issues for multi-image-per-trigger acquisition, maybe thread it
+- Put an indicator that the program is actively imaging (if frame has been received within shutterspeed + tolerance)
 
 
-
-
-FEATURES YOU HAVEN'T IMPLEMENTED YET
-Record Mode
+TO DO - LATER
+- program in the active acquisition (stim control necessary? or rely on existing programs only -> 
+		might be a bit wasted effort to set up stim here if you're also going to set up
+		a full stim program as your next thing? ask C.
+- Clean up GUI, fix up README, do some proper dry runs.
