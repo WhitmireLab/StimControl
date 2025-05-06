@@ -1,0 +1,121 @@
+opentoline('C:\Users\StimulusControlPC\Documents\MATLAB\QSTcontrol\@QSTcontrol\p2GUI.m',13,0)
+clear
+close all
+QSTcontrol
+Welcome to QSTcontrol
+Creating DAQ session ...
+ 
+Number of channels: 20
+   index Type Device   Channel      MeasurementType         Range                  Name           
+   ----- ---- ------ ------------ ------------------- ------------------ -------------------------
+   1     ai   Dev1   ai1          Voltage (SingleEnd) -5.0 to +5.0 Volts Surface A1
+   2     ai   Dev1   ai2          Voltage (SingleEnd) -5.0 to +5.0 Volts Surface A2
+   3     ai   Dev1   ai3          Voltage (SingleEnd) -5.0 to +5.0 Volts Surface A3
+   4     ai   Dev1   ai4          Voltage (SingleEnd) -5.0 to +5.0 Volts Surface A4
+   5     ai   Dev1   ai5          Voltage (SingleEnd) -5.0 to +5.0 Volts Surface A5
+   6     ai   Dev1   ai9          Voltage (SingleEnd) -5.0 to +5.0 Volts Surface B1
+   7     ai   Dev1   ai10         Voltage (SingleEnd) -5.0 to +5.0 Volts Surface B2
+   8     ai   Dev1   ai11         Voltage (SingleEnd) -5.0 to +5.0 Volts Surface B3
+   9     ai   Dev1   ai12         Voltage (SingleEnd) -5.0 to +5.0 Volts Surface B4
+   10    ai   Dev1   ai13         Voltage (SingleEnd) -5.0 to +5.0 Volts Surface B5
+   11    ai   Dev1   ai7          Voltage (SingleEnd) -10 to +10 Volts   DC Temperature Controller
+   12    dio  Dev1   port0/line1  InputOnly           n/a                TTL Thermode A: Onset
+   13    dio  Dev1   port0/line2  InputOnly           n/a                TTL Thermode B: Onset
+   14    dio  Dev1   port0/line20 InputOnly           n/a                TTL ScanImage: Res Galvo
+   15    dio  Dev1   port0/line21 InputOnly           n/a                TTL ScanImage: Y Galvo
+   16    dio  Dev1   port0/line17 OutputOnly          n/a                TTL ScanImage: Start
+   17    dio  Dev1   port0/line18 OutputOnly          n/a                TTL ScanImage: Stop
+   18    dio  Dev1   port0/line19 OutputOnly          n/a                TTL ScanImage: Next File
+   19    ao   Dev1   ao0          Voltage (SingleEnd) -10 to +10 Volts   Vibration A
+   20    ao   Dev1   ao1          Voltage (SingleEnd) -10 to +10 Volts   Vibration B
+ 
+Connecting to QST devices ...
+[Warning: The specified amount of data was not returned within the Timeout period.
+'serial' unable to read any data. For more information on possible reasons, see <a href="matlab: helpview(fullfile(docroot,'instrument','instrument.map'), 'serial_nodata')">Serial Read Warnings</a>.] 
+[Warning: The specified amount of data was not returned within the Timeout period.
+'serial' unable to read any data. For more information on possible reasons, see <a href="matlab: helpview(fullfile(docroot,'instrument','instrument.map'), 'serial_nodata')">Serial Read Warnings</a>.] 
+Error while evaluating StartFcn for timer 'timer-1' 
+
+Expected input to be a scalar.
+p
+
+p =
+
+     []
+
+p = sscanf(ps{1},'N%d T%d I%d Y%d S%s')
+
+p =
+
+     []
+
+p = sscanf(ps{1},'N%d T%d I%d Y%d S%s')
+
+p =
+
+     []
+
+p = sscanf(ps{1},'N%d T%d I%d Y%d S%s')
+
+p =
+
+     []
+
+if system_dependent('IsDebugMode')==1, dbquit; end
+s = QSTserial('COM3')
+[Warning: The specified amount of data was not returned within the Timeout period.
+'serial' unable to read any data. For more information on possible reasons, see <a href="matlab: helpview(fullfile(docroot,'instrument','instrument.map'), 'serial_nodata')">Serial Read Warnings</a>.] 
+
+s = 
+
+  <a href="matlab:helpPopup QSTserial" style="font-weight:bold">QSTserial</a> with properties:
+
+                s: [1×1 serial]
+        existPort: 1
+    existThermode: 1
+
+s = QSTserial('COM4')
+
+s = 
+
+  <a href="matlab:helpPopup QSTserial" style="font-weight:bold">QSTserial</a> with properties:
+
+                s: [1×1 serial]
+        existPort: 1
+    existThermode: 1
+
+s = QSTserial('COM3')
+[Warning: The specified amount of data was not returned within the Timeout period.
+'serial' unable to read any data. For more information on possible reasons, see <a href="matlab: helpview(fullfile(docroot,'instrument','instrument.map'), 'serial_nodata')">Serial Read Warnings</a>.] 
+
+s = 
+
+  <a href="matlab:helpPopup QSTserial" style="font-weight:bold">QSTserial</a> with properties:
+
+                s: [1×1 serial]
+        existPort: 1
+    existThermode: 1
+
+s.s
+
+   Serial Port Object : Serial-COM3
+
+   Communication Settings 
+      Port:               COM3
+      BaudRate:           115200
+      Terminator:         'CR'
+
+   Communication State 
+      Status:             open
+      RecordStatus:       off
+
+   Read/Write State  
+      TransferStatus:     idle
+      BytesAvailable:     0
+      ValuesReceived:     0
+      ValuesSent:         6
+ 
+
+s.help
+s.help
+s.help

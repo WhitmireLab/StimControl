@@ -1,0 +1,465 @@
+
+ ----------General Information  ----------
+
+Current Time & Date: 
+05-Sep-2018 16:26:45
+
+Operating System: 
+Microsoft Windows [Version 10.0.17134.228] 
+
+Hardware Configuration:
+x86 Family 6 Model 158 Stepping 9, GenuineIntel
+The measured CPU speed is 3801 MHz
+RAM is 16255 MB
+Swap space is 18687 MB
+
+PROCESSOR_ARCHITECTURE = AMD64
+PROCESSOR_ARCHITEW6432 = undefined
+
+MATLAB version: 
+9.4.0.813654 (R2018a)
+
+Data Acquisition Toolbox version: 
+       Name: 'Data Acquisition Toolbox'
+    Version: '3.13'
+    Release: '(R2018a)'
+       Date: '06-Feb-2018'
+
+
+MATLAB License Number:
+40473583
+
+ ----------MATLAB root directory:  ----------
+C:\Program Files\MATLAB\R2018a
+
+ ----------Data Acquisition Toolbox directory:  ----------
+C:\Program Files\MATLAB\R2018a\toolbox\daq
+
+ ----------DAQ Session Based Vendors Available:  ----------
+
+Data acquisition vendor 'National Instruments':
+
+            ID: 'ni'
+      FullName: 'National Instruments'
+AdaptorVersion: '3.13 (R2018a)'
+ DriverVersion: '18.0.0 NI-DAQmx'
+ IsOperational: true
+
+
+
+ ----------DAQ Session Based Devices Available:  ----------
+
+ni: National Instruments PCIe-6323 (Device ID: 'Dev1')
+   Analog input subsystem supports:
+      4 ranges supported
+      Rates from 0.1 to 250000.0 scans/sec
+      32 channels ('ai0' - 'ai31')
+      'Voltage' measurement type
+   
+   Analog output subsystem supports:
+      -10 to +10 Volts range
+      Rates from 0.1 to 917431.2 scans/sec
+      4 channels ('ao0','ao1','ao2','ao3')
+      'Voltage' measurement type
+   
+   Digital subsystem supports:
+      Rates from 0.1 to 1000000.0 scans/sec
+      48 channels ('port0/line0' - 'port2/line7')
+      'InputOnly','OutputOnly','Bidirectional' measurement types
+   
+   Counter input subsystem supports:
+      Rates from 0.1 to 100000000.0 scans/sec
+      4 channels ('ctr0','ctr1','ctr2','ctr3')
+      'EdgeCount','PulseWidth','Frequency','Position' measurement types
+   
+   Counter output subsystem supports:
+      Rates from 0.1 to 100000000.0 scans/sec
+      4 channels ('ctr0','ctr1','ctr2','ctr3')
+      'PulseGeneration' measurement type
+   
+
+
+
+ ----------Session Based Device Details:  ----------
+
+ ----------Device Details for vendor: ni ----------
+
+
+ ----------Device 1 ----------
+
+ni: National Instruments PCIe-6323 (Device ID: 'Dev1')
+   Analog input subsystem supports:
+      4 ranges supported
+      Rates from 0.1 to 250000.0 scans/sec
+      32 channels ('ai0' - 'ai31')
+      'Voltage' measurement type
+   
+   Analog output subsystem supports:
+      -10 to +10 Volts range
+      Rates from 0.1 to 917431.2 scans/sec
+      4 channels ('ao0','ao1','ao2','ao3')
+      'Voltage' measurement type
+   
+   Digital subsystem supports:
+      Rates from 0.1 to 1000000.0 scans/sec
+      48 channels ('port0/line0' - 'port2/line7')
+      'InputOnly','OutputOnly','Bidirectional' measurement types
+   
+   Counter input subsystem supports:
+      Rates from 0.1 to 100000000.0 scans/sec
+      4 channels ('ctr0','ctr1','ctr2','ctr3')
+      'EdgeCount','PulseWidth','Frequency','Position' measurement types
+   
+   Counter output subsystem supports:
+      Rates from 0.1 to 100000000.0 scans/sec
+      4 channels ('ctr0','ctr1','ctr2','ctr3')
+      'PulseGeneration' measurement type
+   
+
+
+       CouplingsAvailable: DC
+               SampleType: Scanning
+ TerminalConfigsAvailable: SingleEnded,SingleEndedNonReferenced,Differential
+          RangesAvailable: -0.20 to +0.20 Volts,-1.0 to +1.0 Volts,-5.0 to +5.0 Volts,-10 to +10 Volts
+               Resolution: 16
+                RateLimit: [0.1 250000.0]
+MeasurementTypesAvailable: [1x1 cell]
+   DefaultMeasurementType: 'Voltage'
+           NativeDataType: 'double'
+            SubsystemType: AnalogInput
+NumberOfChannelsAvailable: 32
+             ChannelNames: [32x1 cell]
+
+ TerminalConfigsAvailable: SingleEnded
+          RangesAvailable: -10 to +10 Volts
+               Resolution: 16
+                RateLimit: [0.1 917431.2]
+MeasurementTypesAvailable: [1x1 cell]
+   DefaultMeasurementType: 'Voltage'
+           NativeDataType: 'double'
+            SubsystemType: AnalogOutput
+NumberOfChannelsAvailable: 4
+             ChannelNames: [4x1 cell]
+
+                RateLimit: [0.1 1000000.0]
+MeasurementTypesAvailable: [1x3 cell]
+   DefaultMeasurementType: 'InputOnly'
+           NativeDataType: 'double'
+            SubsystemType: DigitalIO
+NumberOfChannelsAvailable: 48
+             ChannelNames: [48x1 cell]
+
+               Resolution: 32
+                RateLimit: [0.1 100000000.0]
+MeasurementTypesAvailable: [1x4 cell]
+   DefaultMeasurementType: 'EdgeCount'
+           NativeDataType: 'double'
+            SubsystemType: CounterInput
+NumberOfChannelsAvailable: 4
+             ChannelNames: [4x1 cell]
+
+               Resolution: 32
+                RateLimit: [0.1 100000000.0]
+MeasurementTypesAvailable: [1x1 cell]
+   DefaultMeasurementType: 'PulseGeneration'
+           NativeDataType: 'double'
+            SubsystemType: CounterOutput
+NumberOfChannelsAvailable: 4
+             ChannelNames: [4x1 cell]
+
+
+ ----------MATLAB path:  ----------
+
+		MATLABPATH
+
+	C:\Users\StimulusControlPC\Documents\MATLAB\QSTcontrol\components
+	C:\Users\StimulusControlPC\Documents\MATLAB\QSTcontrol\components\uicomponent
+	C:\Users\StimulusControlPC\Documents\MATLAB\QSTcontrol
+	C:\Users\StimulusControlPC\Documents\MATLAB
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\datafun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\datatypes
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\elfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\elmat
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\funfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\general
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\iofun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\lang
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\matfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\mvm
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\ops
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\polyfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\randfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\sparfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\specfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\strfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\timefun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\validators
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\demos
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\graph2d
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\graph3d
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\graphics
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\graphics\obsolete
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\plottools
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\scribe
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\scribe\obsolete
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\specgraph
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\uitools
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\uitools\obsolete
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\hardware\stubs
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\images
+	C:\Program Files\MATLAB\R2018a\toolbox\local
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\maps
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\graphics\maps
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\optimfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\bigdata
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\codeanalysis\analysis
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\codetools
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\codetools\embeddedoutputs
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\datamanager
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\datastoreio
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\depfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\graphfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\guide
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\helptools
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\icons
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\mapreduceio
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\parallel
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\testframework\measurement\core
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\testframework\measurement\ext
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\testframework\mock\core
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\testframework\performance\core
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\testframework\ui\matlab
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\testframework\uiautomation
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\testframework\uitest
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\testframework\unittest\core
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\testframework\obsolete
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\testframework\unittest\ext
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\verctrl
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\winfun
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\winfun\NET
+	C:\Program Files\MATLAB\R2018a\toolbox\simulink\sldependency
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\addons
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\addons\cef
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\addons\supportpackages
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\addons_product
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\supportpackagemanagement
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\addon_enable_disable_management\matlab
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\appdesigner\appdesigner
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\appdesigner\appdesigner\interface
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\appdesigner\appdesigner\runtime
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\apps
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\audiovideo
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\cefclient
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\codedescriptor_core
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\coder
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\connectivity
+	C:\Program Files\MATLAB\R2018a\toolbox\rtw\targets\connectivity
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\emlcodermex
+	C:\Program Files\MATLAB\R2018a\toolbox\rtw\rtw
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\foundation
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\foundation\build
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\foundation\build\tools\registry
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\foundation\tfl
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\foundation\tfl\AUTOSAR\AUTOSAR4p0\IFX
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\foundation\tfl\AUTOSAR\AUTOSAR4p0\IFL
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\foundation\tfl\gui
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\foundation\templates
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\simtargets
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\profile
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\rtiostream
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\trace
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\comparisons
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\configtools
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\academy
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\common
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\configuration
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\connector
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\editor
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\figures
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\file
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\framework
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\http
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\interpreter
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\json
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\logger
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\messageservice
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\mgg
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\microservices
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\nativebridge
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\restmatlab
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\session
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\shadowfiles
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\visualization
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\connector2\worker
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\reports
+	C:\Program Files\MATLAB\R2018a\toolbox\curvefit\curvefit
+	C:\Program Files\MATLAB\R2018a\toolbox\curvefit\splines
+	C:\Program Files\MATLAB\R2018a\toolbox\curvefit\sftoolgui
+	C:\Program Files\MATLAB\R2018a\toolbox\curvefit\curvefitdemos
+	C:\Program Files\MATLAB\R2018a\toolbox\daq\daq
+	C:\Program Files\MATLAB\R2018a\toolbox\daq\app\daqaiapplet
+	C:\Program Files\MATLAB\R2018a\toolbox\daq\daqdemos
+	C:\Program Files\MATLAB\R2018a\toolbox\daq\app\provider
+	C:\Program Files\MATLAB\R2018a\toolbox\daq\daqsdk\bin\win64
+	C:\Program Files\MATLAB\R2018a\toolbox\daq\daqsdk
+	C:\Program Files\MATLAB\R2018a\toolbox\daq\daqsdk\tests
+	C:\Program Files\MATLAB\R2018a\toolbox\daq\daqblks
+	C:\Program Files\MATLAB\R2018a\toolbox\daq\daqblks\daqsfcn
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\datatools\datatoolsservices\matlab
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\datatools\inspector\matlab
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\datatools\peermodel_mcos\matlab
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\datatools\plotstab\matlab
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\datatools\variableeditor\matlab
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\datatools\workspacebrowser\matlab
+	C:\Program Files\MATLAB\R2018a\toolbox\eml\eml
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\external\engines\engine_api
+	C:\Program Files\MATLAB\R2018a\examples\comm
+	C:\Program Files\MATLAB\R2018a\examples\curvefit
+	C:\Program Files\MATLAB\R2018a\examples\daq
+	C:\Program Files\MATLAB\R2018a\examples\dsp
+	C:\Program Files\MATLAB\R2018a\examples\graphics
+	C:\Program Files\MATLAB\R2018a\examples\graphics2
+	C:\Program Files\MATLAB\R2018a\examples\ident_featured
+	C:\Program Files\MATLAB\R2018a\examples\matlab
+	C:\Program Files\MATLAB\R2018a\examples\matlab_featured
+	C:\Program Files\MATLAB\R2018a\examples\predmaint_shared
+	C:\Program Files\MATLAB\R2018a\examples\signal
+	C:\Program Files\MATLAB\R2018a\examples\sldo
+	C:\Program Files\MATLAB\R2018a\examples\stats
+	C:\Program Files\MATLAB\R2018a\examples\stats_featured
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\filebrowser
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\findfiles
+	C:\Program Files\MATLAB\R2018a\toolbox\fixedpoint\fixedpoint
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\uitools\uicomponents\components
+	C:\Program Files\MATLAB\R2018a\toolbox\hdlcoder\hdllib\ml_lib
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hadoopserializer
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\appdes\services
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwconnection
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwmanagerapp
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwmanagerapp\devices
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwmanagerapp\providers
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwmanagerapp\plugins
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwmanagerapp\framework
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwmanagerapp\framework\modules
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwmanagerapp\hwsetup
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwsetup
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwsetup\hwwidgets
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwsetup\hwtemplates
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\hwsetup\launch
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwmanager\logger
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\imagesci
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\instrument
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\m3i
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\mldatx
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\networklib
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\pathtool
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\cxxfe_mi\cxxfe_mi
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\external\interfaces\python
+	C:\Program Files\MATLAB\R2018a\toolbox\rptgen\xmlcomp
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\serial
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\advisor
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\asynciolib
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\cgir_fe
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\cgxe\cgxe
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\cmlink\api
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\coder\coder
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\configset
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\controllib\estimation
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\controllib\general
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\controllib\graphics
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\controllib\graphics\utils
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\controllib\graphics\plotoptions
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\curvefitlib
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\dastudio
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\deviceplugindetection
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\filterdesignlib
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\filterdesignlib\filterbuilder
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hotpluglib
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\hwconnectinstaller\common
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\imageio
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\io
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\maputils
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\measure
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\mlreportgen\dom
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\mlreportgen\dom\dom
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\mlreportgen\dom\dom\help
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\mlreportgen\ppt
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\mlreportgen\ppt\ppt
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\mlreportgen\ppt\ppt\help
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\mlreportgen\rpt
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\mlreportgen\rpt\rpt
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\mlreportgen\utils
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\multimedia
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\networklib
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\optimlib
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\rptgen
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\sdi
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\siglib
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\signalwavelet\signalwavelet
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\slcc_cov\slcc_cov
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\sl_coverage_configset
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\sl_async_streaming
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\spreadsheet
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\statslib
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\statslib\sensitivity
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\supportpkgservices\legacysupportpkginfo
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\supportpkgservices\installservices
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\supportpkgservices\supportpackageroot
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\supportpkgservices\installedapi
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\supportsoftware\launcher
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\supportsoftware\services
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\supportsoftware\upgrade
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\system\coder
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\testmeaslib\general
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\testmeaslib\graphics
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\testmeaslib\simulink
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\transportlib
+	C:\Program Files\MATLAB\R2018a\toolbox\signal\signal
+	C:\Program Files\MATLAB\R2018a\toolbox\signal\sigtools
+	C:\Program Files\MATLAB\R2018a\toolbox\signal\sptoolgui
+	C:\Program Files\MATLAB\R2018a\toolbox\signal\sigdemos
+	C:\Program Files\MATLAB\R2018a\toolbox\signal\signalanalyzer
+	C:\Program Files\MATLAB\R2018a\toolbox\signal\signalanalyzereng
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\simulink
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\simulation_data_repository
+	C:\Program Files\MATLAB\R2018a\toolbox\coder\foundation\passmanager
+	C:\Program Files\MATLAB\R2018a\toolbox\simulink\simulink_data_dictionary\sldd
+	C:\Program Files\MATLAB\R2018a\toolbox\simulink\simulink\slproject
+	C:\Program Files\MATLAB\R2018a\toolbox\simulink\simulink\slproject\menu
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\diagnostic
+	C:\Program Files\MATLAB\R2018a\toolbox\stats\bayesoptim
+	C:\Program Files\MATLAB\R2018a\toolbox\stats\bigdata
+	C:\Program Files\MATLAB\R2018a\toolbox\stats\classreg
+	C:\Program Files\MATLAB\R2018a\toolbox\stats\clustering
+	C:\Program Files\MATLAB\R2018a\toolbox\stats\featlearn
+	C:\Program Files\MATLAB\R2018a\toolbox\stats\stats
+	C:\Program Files\MATLAB\R2018a\toolbox\stats\statsdemos
+	C:\Program Files\MATLAB\R2018a\toolbox\stats\distributed
+	C:\Program Files\MATLAB\R2018a\toolbox\stats\gpu
+	C:\Program Files\MATLAB\R2018a\toolbox\stats\mlearnapp
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\storage\matlabdrive
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\storage\mldrivedesktop
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\system
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\system\editor
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\timeseries
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\toolboxmanagement\matlab_api
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\toolbox_packaging
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\toolstrip
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\uicomponents\uicomponents\plugin\appdesigner
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\uicomponents\uicomponents
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\uicomponents\uicomponents\graphics
+	C:\Program Files\MATLAB\R2018a\toolbox\shared\spcuilib\unifiedscopes
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\webcam
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\external\interfaces\webservices\http
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\external\interfaces\json
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\external\interfaces\webservices\restful
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\external\interfaces\webservices
+	C:\Program Files\MATLAB\R2018a\toolbox\matlab\external\interfaces\webservices\wsdl
+
+ ---------- ----------End test ---------- ----------
+
+This information has been saved in the text file:
+daqtest.txt
+
+If any errors occurred, please visit the MathWorks Technical Support Web Site
+at https://www.mathworks.com/contact_TS.html 

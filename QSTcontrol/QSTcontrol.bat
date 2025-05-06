@@ -1,0 +1,1 @@
+matlab -nodesktop -nosplash -minimize -r QSTcontrol
