@@ -6,7 +6,10 @@ https://au.mathworks.com/help/parallel-computing/quick-start-parallel-computing-
 TO DO - URGENT
 - Figure out the buffering issues for multi-image-per-trigger acquisition, maybe thread it
 - Put an indicator that the program is actively imaging (if frame has been received within shutterspeed + tolerance)
+- Have the camera status indicators and imaging indicators run on a separate thread / timer.
 
+SET TRIGGER REPEAT SOMEWHERE
+NB NEED TO WAIT??? - https://au.mathworks.com/matlabcentral/answers/722643-how-to-receive-hardware-triggers-multiple-times-using-image-acquisition-toolbox
 
 TO DO - LATER
 - program in the active acquisition (stim control necessary? or rely on existing programs only -> 
