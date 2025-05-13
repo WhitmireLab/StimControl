@@ -6,13 +6,11 @@ https://au.mathworks.com/help/parallel-computing/quick-start-parallel-computing-
 TO DO - URGENT
 - warnings when starting preview
 - preview start doesn't work - static image only?
-- Figure out the buffering issues for multi-image-per-trigger acquisition, maybe thread it
+- indicator for when saturation (brightness) is reaching full intensity so we know to adjust gain / light
+- jank when changing bin size / folders / etc
 - creating new animal may also create erroneous experiment folders if you're ALSO changing experiment
 - make sure camera properly closes when you close the software
-- go through previous stuff
-
-SET TRIGGER REPEAT SOMEWHERE
-NB NEED TO WAIT??? - https://au.mathworks.com/matlabcentral/answers/722643-how-to-receive-hardware-triggers-multiple-times-using-image-acquisition-toolbox
+- Figure out the buffering issues for multi-image-per-trigger acquisition, maybe thread it
 
 TO DO - LATER
 - program in the active acquisition (stim control necessary? or rely on existing programs only -> 
