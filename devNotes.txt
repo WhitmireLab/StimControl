@@ -4,11 +4,8 @@ https://au.mathworks.com/help/parallel-computing/quick-start-parallel-computing-
 
 
 TO DO - URGENT
-- snapshot saves to wrong place?
 - warnings when starting preview
 - preview start doesn't work - static image only?
-- acquired x/y frames
-- timers are NOT being deleted and also timer logic isn't quiiite right
 - Figure out the buffering issues for multi-image-per-trigger acquisition, maybe thread it
 - creating new animal may also create erroneous experiment folders if you're ALSO changing experiment
 - make sure camera properly closes when you close the software
@@ -21,4 +18,3 @@ TO DO - LATER
 - program in the active acquisition (stim control necessary? or rely on existing programs only -> 
 		might be a bit wasted effort to set up stim here if you're also going to set up
 		a full stim program as your next thing? ask C.
-- Clean up GUI, fix up README, do some proper dry runs.
