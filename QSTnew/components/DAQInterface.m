@@ -1,0 +1,284 @@
+classdef (HandleCompatible) DAQInterface < HardwareComponent
+    properties
+        Name
+        Params
+        SessionHandle
+    end
+
+    methods
+        function obj = DAQInterface(varargin)
+            % https://au.mathworks.com/help/matlab/ref/inputparser.html
+            p = inputParser;
+            addOptional(p, 'name', 'ni', @isstring);
+            addOptional(p, 'paramfile','', @isstring);
+            parse(p, varargin{:});
+            obj.Name = p.Results.name;
+            obj.Params = p.Results.paramfile;
+             %  obj.Params = parse_params
+            obj.FindDaq();
+        end
+
+        % Initialise device
+        function Initialise(obj, varargin)
+            disp('Creating DAQ session ...')
+            obj.SessionHandle = daq(obj.Name);
+            obj.SessionHandle.Rate = 1000;
+
+            if isempty(obj.params) && isempty(varargin)
+                obj.CreateDAQDefault();
+                return;
+            elseif ~isempty(varargin)
+                % parse params & assign to obj.Params
+            end
+            
+            % obj.createDAQchannels
+            % disp(' ')
+            % disp(obj.SessionHandle.Channels)
+            % disp(' ')
+        end
+
+        % Close device
+        function Close(obj)
+
+        end
+        
+        % Start device
+        function StartSession(obj)
+
+        end
+
+        %Stop device
+        function StopSession(obj)
+
+        end
+
+        % Change device parameters
+        function SetParams(obj, varargin)
+            
+        end
+
+        % get current device parameters for saving
+        function result = GetSaveableParams(obj)
+
+        end
+        
+        % Gets output since last queried
+        function result = GetOutput(obj)
+
+        end
+        
+        % Gets all output since session started
+        function result = GetSessionOutput(obj)
+
+        end
+        
+        % load in a saved set of parameters
+        function GetParamsFromFile(obj, filename)
+            filename  = ""
+            fid = fopen(filename);
+            raw = fread(fid,inf);
+            str = char(raw');
+            fclose(fid);
+            params = jsondecode(str);
+        end
+
+        % Print device information
+        function PrintInfo(obj)
+
+        end
+
+        %%% PRIVATE FUNCTIONS %%%
+
+        function FindDaq(obj)
+            % https://au.mathworks.com/help/daq/daq.interfaces.dataacquisition.html
+            try
+                daqs = daqlist().DeviceInfo;
+            catch
+                daqs = [];
+            end
+            if isempty(daqs)
+                errorStruct.message = "No data acquistion devices found or data acquisition toolbox missing.";
+                errorStruct.identifier = "DAQ:Initialise:NoDAQDevicesFound";
+                error(errorStruct);
+            end
+            checker = false;
+            for x = 1 : length(daqs)
+                if strcmpi(daqs(x).ID, obj.Name)
+                    checker = true;
+                    correctIndex = x;
+                end
+            end
+            if ~checker
+                warning(['Could not find specified DAQ: ' obj.Name ' - Using existing board ' daqs(x).ID ' instead.'])
+                obj.Name = daqs(x).ID;
+                correctIndex = x;
+            end
+        end
+
+        function CreateChannels(obj, filename)
+            tab = readtable(filename);
+            s = size(tab);
+            for ii = 1:s(1)
+                line = tab(ii, :);
+                % line.("daqName") or line.(1);
+                daqName = line.("daqName");
+                portNum = line.("index"); %TODO PARSE THIS
+                channelName = line.("channelName");
+                ioType = line.("ioType");
+                signalType = line.("signalType");
+                terminalConfig = line.("TerminalConfig");
+                range = line.("Range");
+                switch ioType
+                    case "input"
+
+                    case "output"
+
+                    case "bidirectional"
+
+                end
+            end
+        end
+
+        function CreateDAQDefault(obj)
+            % Analog Input: Thermode Surfaces
+            for ii = 1:obj.nThermodes
+                id  = char(64+ii);
+                % manually edited to take away the 2nd QST probe options
+                % ch  = obj.DAQ.addAnalogInputChannel('Dev1',(1:5)+(8*(ii-1)),'Voltage');
+                ch  = obj.DAQ.addAnalogInputChannel('Dev1',(1:2),'Voltage');
+                tmp = arrayfun(@(x) {['Surface ' id num2str(x)]},1:5);
+                [ch.Name] = tmp{:};
+                set(ch,...
+                    'TerminalConfig',   'SingleEnded', ...
+                    'Range',            [-5 5]);    
+            end
+            
+            % Analog Input: Aurora Force OUT
+            ch = obj.DAQ.addAnalogInputChannel('Dev1',3,'Voltage');
+            set(ch,...
+                'Name',             'Aurora Force OUT', ...
+                'TerminalConfig',   'SingleEnded')
+            
+            % Analog Input: Aurora Length OUT
+            ch = obj.DAQ.addAnalogInputChannel('Dev1',4,'Voltage');
+            set(ch,...
+                'Name',             'Aurora Length OUT', ...
+                'TerminalConfig',   'SingleEnded')
+            
+            % Analog Input: DC Temperature Controller
+            ch = obj.DAQ.addAnalogInputChannel('Dev1',0,'Voltage');
+            set(ch,...
+                'Name',             'DC Temperature Controller', ...
+                'TerminalConfig',   'SingleEnded')
+            
+            % TTL Input: Stimulus Onset
+            for ii = 1:obj.nThermodes
+                id = char(64+ii);
+                ch = obj.DAQ.addDigitalChannel('Dev1',['port0/line' num2str(ii)],'InputOnly');
+                ch.Name = ['TTL Thermode ' id ': Onset'];
+            end
+            
+            % TTL Input: Galvo
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line20:21','InputOnly');
+            ch(1).Name = 'TTL ScanImage: Res Galvo';
+            ch(2).Name = 'TTL ScanImage: Y Galvo';
+            
+            % TTL Output: ScanImage
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line3','OutputOnly'); %gunk in board. had to change channels
+            % ch = obj.DAQ.addDigitalChannel('Dev1','port0/line17:21','OutputOnly');
+            ch(1).Name = 'TTL ScanImage: Acq Start';
+            
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line5:6','OutputOnly');
+            ch(1).Name = 'TTL ScanImage: Acq Stop';
+            ch(2).Name = 'TTL ScanImage: Next File';
+            
+            % TTL Output: Widefield Imaging (Basler) %%CJW EDIT 2023.04.04
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line4','OutputOnly');
+            ch(1).Name = 'TTL Basler: Frame Trigger';
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line23','OutputOnly');
+            ch(1).Name = 'TTL Basler: UNUSED';
+            
+            % % TTL Output: Widefield Imaging (Basler) %%CJW ADD 2018.11.06
+            % ch = obj.DAQ.addDigitalChannel('Dev1','port0/line22:23','OutputOnly');
+            % ch(1).Name = 'TTL Basler: Frame Trigger';
+            % ch(2).Name = 'TTL Basler: UNUSED';
+            
+            % TTL Output: LED Control %%CJW ADD 2018.11.07 %% CJW and PB changed on 2025.05.01
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line0','OutputOnly');
+            % ch = obj.DAQ.addDigitalChannel('Dev1','port0/line24','OutputOnly');
+            ch.Name = 'BLUE LED';
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line25','OutputOnly');
+            ch.Name = 'GREEN LED';
+            
+            % TTL Output: Auditory Stimulus %%CJW ADD 2019.06.05
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line26','OutputOnly');
+            ch(1).Name = 'Speaker';
+            
+            % TTL Output: Optical Stimulus (LED) %%CJW ADD 2019.06.05
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line27','OutputOnly');
+            ch(1).Name = 'Optical Stimulus';
+            
+            % TTL Output: Hamamatsu Camera Drive %%CJW ADD 2019.06.05
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line28','OutputOnly');
+            ch(1).Name = 'HamamatsuTrigger';
+            
+            % TTL Output: LED
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line29','OutputOnly');
+            ch(1).Name = 'LED';
+            
+            % TTL Output: IR LED
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line30','OutputOnly');
+            ch(1).Name = 'IRLED_BaslerImaging';
+            
+            
+            % Digital Output: Vibration Motors
+            for ii = 1:obj.nThermodes
+                id = char(64+ii);
+                ch = obj.DAQ.addDigitalChannel('Dev1',['port0/line' num2str(ii+1)],'OutputOnly');
+                ch.Name = ['Vibration ' id];
+            end
+            
+            % Digital Output: Thermode Trigger
+            ch = obj.DAQ.addDigitalChannel('Dev1','port0/line7','OutputOnly');
+            ch(1).Name = 'Thermode Trigger';
+            
+            % Analog Output: Piezo Driver %added 2022.03.18. edited port 2022.04.12
+                        ch = obj.DAQ.addAnalogOutputChannel('Dev1',0,'Voltage');
+                        set(ch,...
+                            'Name',             'Aurora Force Command Voltage', ...
+                            'TerminalConfig',   'SingleEnded', ...
+                            'Range',            [0 10]);
+        end
+        % TODO function that only enables certain outputs without requiring
+        % a full setup of params?
+    end
+end
+
+
+
+
+                %     %Initialise DAQ with correct settings. TODO make sure this is accurate
+                %     app.dNIdevice = daq(daqs(correctIndex).Vendor.ID); %object for communication with DAQ - digital lines
+                %     app.aNIdevice = daq(daqs(correctIndex).Vendor.ID); %object for communication with DAQ - analog lines
+                %     % app.aNIdevice.IsContinuous = true; %set to continous acquisition
+                %     app.aNIdevice.Rate = 1000; %set sampling rate to 1kHz
+                %     switch app.CaptureMode.Value
+                %         case "Active"
+                %             % app.dNIdevice.addinput(daqName, 'port0/line0', "Digital");
+                %             app.dNIdevice.addoutput(daqName, "port0/line4", "Digital");
+                %             app.dNIdevice.addoutput(daqName, "port1/line4", "Digital");
+                %             app.dNIdevice.ScansAvailableFcn = @app.DigitalScansAvailable;
+                %             app.dNIdevice.ScansAvailableFcnCount = 100; %TODO MIGHT BE TOO SMALL (fast)
+                %             addclock(app.dNIdevice,"ScanClock","External","Dev1/PFI0");
+                %             try
+                %                 app.dNIdevice.start();
+                %             end
+                %             % app.dNIdevice.write(0); %make sure outputs are set to 0 to start.
+                %             % app.aNIdevice.ScansAvailableFcn = @app.AnalogScansAvailable;
+                %         case "Passive"
+                %     end
+                % catch
+                %     disp('Error with setting up NI Device.')
+                %     disp('Use software triggers instead.')
+                %     app.dNIdevice = [];
+                % end
