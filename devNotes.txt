@@ -4,15 +4,21 @@ https://au.mathworks.com/help/parallel-computing/quick-start-parallel-computing-
 
 
 TO DO - URGENT
+- binning doesn't work
 - warnings when starting preview
 - preview start doesn't work - static image only?
 - indicator for when saturation (brightness) is reaching full intensity so we know to adjust gain / light
 - jank when changing bin size / folders / etc
 - creating new animal may also create erroneous experiment folders if you're ALSO changing experiment
-- make sure camera properly closes when you close the software
 - Figure out the buffering issues for multi-image-per-trigger acquisition, maybe thread it
-
 TO DO - LATER
 - program in the active acquisition (stim control necessary? or rely on existing programs only -> 
 		might be a bit wasted effort to set up stim here if you're also going to set up
 		a full stim program as your next thing? ask C.
+- program in teensy
+
+PHILL IMPROVEMENTS
+- Programmatically set ROI and save from prev session
+- MASKING (either programmatic or just let someone draw it)
+- be able to also see deltaF/F (set pre-stim time and set average for pre-stim as zero)
+	for fluorescence trace: (F - F0) / F0
