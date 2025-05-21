@@ -1,4 +1,4 @@
-% HISTORIC COMMENTS THATMAY STILL BE APPLICABLE
+% HISTORIC COMMENTS THAT MAY STILL BE APPLICABLE
 % THIS IS A SAMPLE PROTOCOL FILE FOR QSTCONTROL
 % =============================================
 %
@@ -114,6 +114,17 @@
 % - randomizeX      randomize sequenze (0 = off, 1 = randomize, 2 = pseudo; default: off)
 % - dPauseXXX       duration of the pause between stimuli (in seconds; default: 5 seconds)
 %
+% ENABLED DEVICES
+% ---------------
+%
+% The second line in a protocol file can be used to enable devices.
+% By default, all devices are set to OFF. List the devices to include in this session
+% using their identifier:
+%
+% - DAQ		National Instruments (or other) data acquisition card
+% - QST		QST Thermal Control
+% - DMD		HDMI control for DMD devices
+%
 % STIMULUS DEFINITIONS: THERMODE & VIBRATION MOTOR
 % ------------------------------
 %
@@ -142,8 +153,9 @@
 % - tPostX  recording duration after stimulus onset (s)
 % - nRepX   number of stimulus repetitions
 
-
 nProtRep10 randomize1 dPause30
+
+DAQ
 
 N320 S11000 C0320 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur2000 % 2 second vibration
 N320 S11000 C0220 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second cool
