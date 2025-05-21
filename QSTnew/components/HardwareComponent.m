@@ -3,7 +3,6 @@ classdef (Abstract, HandleCompatible) HardwareComponent
 
     properties (Access = private)
         Name
-        Params
         SessionHandle
     end
 
@@ -17,14 +16,17 @@ classdef (Abstract, HandleCompatible) HardwareComponent
         % Start device
         StartSession(obj)
 
-        %Stop device
+        % Stop device
         StopSession(obj)
+        
+        % Complete reset. Clear device
+        ClearAll(obj)
 
         % Change device parameters
         SetParams(obj, varargin)
 
         % get current device parameters for saving
-        result = GetSaveableParams(obj)
+        SaveParams(obj, folderpath, identifier)
         
         % Gets output since last queried
         result = GetOutput(obj)
@@ -33,9 +35,12 @@ classdef (Abstract, HandleCompatible) HardwareComponent
         result = GetSessionOutput(obj)
         
         % load in a saved set of parameters
-        GetParamsFromFile(obj, filename)
+        LoadParams(obj, filename)
 
         % Print device information
         PrintInfo(obj)
+
+        % Preload outputs from file
+        LoadProtocol(obj, filename);
     end
 end

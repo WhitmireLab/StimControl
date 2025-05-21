@@ -4,7 +4,6 @@ classdef (HandleCompatible) DAQ < HardwareComponent
 
     properties
         Name
-        Params
         SessionHandle
     end
 
@@ -43,7 +42,7 @@ classdef (HandleCompatible) DAQ < HardwareComponent
         end
 
         % get current device parameters for saving
-        function result = GetSaveableParams(obj)
+        function SaveParams(obj, folderpath, identifier)
 
         end
         
@@ -58,12 +57,16 @@ classdef (HandleCompatible) DAQ < HardwareComponent
         end
         
         % load in a saved set of parameters
-        function GetParamsFromFile(obj, filename)
+        function LoadParams(obj, filename)
 
         end
 
         % Print device information
         function PrintInfo(obj)
+
+        end
+
+        function ClearAll(obj)
 
         end
     end
