@@ -4,6 +4,7 @@ https://au.mathworks.com/help/parallel-computing/quick-start-parallel-computing-
 
 
 TO DO - URGENT
+- CLOSING DOESN'T WORK
 - binning doesn't work
 - warnings when starting preview
 - preview start doesn't work - static image only?
