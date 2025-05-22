@@ -4,10 +4,8 @@ https://au.mathworks.com/help/parallel-computing/quick-start-parallel-computing-
 
 
 TO DO - URGENT
-- CLOSING DOESN'T WORK
-- binning doesn't work
+- saving a session!
 - warnings when starting preview
-- preview start doesn't work - static image only?
 - indicator for when saturation (brightness) is reaching full intensity so we know to adjust gain / light
 - jank when changing bin size / folders / etc
 - creating new animal may also create erroneous experiment folders if you're ALSO changing experiment
