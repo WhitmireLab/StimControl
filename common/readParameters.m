@@ -103,13 +103,13 @@ if regexpi(lines{1}, '(DAQ)|(QST)|(DMD)')
         if ~isempty(token)
             switch lower(token)
                 case 'daq'
-                    h.daq = true;
+                    h.DAQ = true;
                     continue
                 case 'qst'
-                    h.qst = true;
+                    h.QST = true;
                     continue
                 case 'dmd'
-                    h.dmd = true;
+                    h.DMD = true;
                     continue
             end
         end

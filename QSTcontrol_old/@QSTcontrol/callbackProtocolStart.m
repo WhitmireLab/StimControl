@@ -1,4 +1,4 @@
-                                                             function callbackProtocolStart(obj,~,~)
+function callbackProtocolStart(obj,~,~)
 
 % disable GUI elemens
 hGUI = findobj('Parent',obj.h.fig,'Enable','on');

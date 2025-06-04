@@ -1,4 +1,4 @@
-Note,deviceID,index,channelName,ioType,signalType,TerminalConfig,Range
+Note,deviceID,portNum,channelName,ioType,signalType,TerminalConfig,Range
 Thermode,Dev1,(1:2),,input,Voltage,SingleEnded,[-5 5]
 Aurora Force OUT,Dev1,3,Aurora Force OUT,input,Voltage,SingleEnded,
 Aurora Length OUT,Dev1,4,Aurora Length OUT,input,Voltage,SingleEnded,
