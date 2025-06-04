@@ -3,37 +3,45 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
         Name
         SessionHandle
         Required
+        Config = struct();
     end
 
     methods
         function obj = DAQInterface(varargin)
             % https://au.mathworks.com/help/matlab/ref/inputparser.html
             p = inputParser;
-            validateFcn = @(x) ischar(x) || isstring(x);
-            addParameter(p, 'Required', false, @isboolean);
-            addParameter(p, 'ChannelConfig', '', validateFcn);
-            addParameter(p, 'DaqConfig','', validateFcn);
-            addParameter(p, 'ConfigFolder', '', validateFcn);
+            strValidate = @(x) ischar(x) || isstring(x);
+            boolValidate = @(x) contains(class(x), 'logical');
+            daqValidate = @(x) (contains(class(x), 'daq.interfaces.DataAcquisition')) || isempty(x);
+            addParameter(p, 'Required', false, boolValidate);
+            addParameter(p, 'ChannelConfig', '', strValidate);
+            addParameter(p, 'DaqConfig','', strValidate);
+            addParameter(p, 'ConfigFolder', '', strValidate);
+            addParameter(p, 'DaqHandle', [], daqValidate);
             parse(p, varargin{:});
             params = p.Results;
 
             obj.Required = params.Required;
+            obj.SessionHandle = params.DaqHandle;
             obj = obj.Initialise('ChannelConfig', params.ChannelConfig, ...
                 'DaqConfig', params.DaqConfig, 'ConfigFolder', params.ConfigFolder);
         end
 
         % Initialise device
-        function obj = Initialise(obj, varargin)
-            disp('Creating DAQ session ...')
-            
-            validateFcn = @(x) ischar(x) || isstring(x);
+        function obj = Initialise(obj, varargin)            
+            strValidate = @(x) ischar(x) || isstring(x);
             p = inputParser;
-            addParameter(p, 'ChannelConfig', '', validateFcn);
-            addParameter(p, 'DaqConfig','', validateFcn);
-            addParameter(p, 'ConfigFolder', '', validateFcn);
+            addParameter(p, 'ChannelConfig', '', strValidate);
+            addParameter(p, 'DaqConfig','', strValidate);
+            addParameter(p, 'ConfigFolder', '', strValidate);
             parse(p, varargin{:});
             params = p.Results;
-            
+
+            if ~isempty(params.ConfigFolder) && (~isempty(params.ChannelConfig) || ~isempty(params.DaqConfig))
+                warning("Daq should be configured via either ConfigFolder OR ChannelConfig and DaqConfig. " + ...
+                    "Defaulting to ConfigFolder.")
+            end
+
             if ~isempty(params.ConfigFolder)
                 obj = obj.LoadParams(params.ConfigFolder);
             else
@@ -148,7 +156,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
                     if obj.Required
                         throw(exception);
                     else
-                        warning("Unable to load DAQ params.");
+                        warning(['Unable to load DAQ params: ' folderpath]);
                     end
                 end
                 try
@@ -157,7 +165,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
                     if obj.Required
                         throw(exception);
                     else
-                        warning("Unable to load DAQ channel params.");
+                        warning(['Unable to load DAQ channel params: ' folderpath]);
                     end
                 end
             end
@@ -284,6 +292,10 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
         end
 
         function obj = CreateChannels(obj, filename)
+            if isempty(obj.SessionHandle)
+                %create a default DAQ session to attach channels to
+                obj = obj.ConfigureDAQ('');
+            end
             tab = readtable(filename);
             s = size(tab);
             if ~isMATLABReleaseOlderThan("R2024b")
@@ -338,7 +350,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
 
         function obj = ConfigureDAQ(obj, filename)
             if isempty(filename)
-                disp("No DAQ config file provided. Using default DAQ settings");
+                % warning("No DAQ config file provided. Using default DAQ settings");
                 name = obj.FindDaq("Dev1", '', '');
                 obj.SessionHandle = daq(name);
                 return
@@ -349,19 +361,22 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
                 warning("Currently only one DAQ session at a time is supported. " + ...
                     "only the first DAQ in the config file will be used.") %TODO FIX THIS
             else
-                line = tab(ii, :);
+                line = tab(1, :);
                 % line.("deviceID") or line.(1);
-                vendorID = line.("VendorID"){1};
-                model = line.("Model"){1};
-                deviceID = line.("DeviceID"){1};
-                rate = str2double(line.("Rate"){1});
-                daqName = obj.FindDaq(deviceID, vendorID, model);
-                d = daq(daqName);
-                d.Rate = rate;
+
+                if isempty(obj.SessionHandle)
+                    vendorID = line.("VendorID"){1};
+                    model = line.("Model"){1};
+                    deviceID = line.("DeviceID"){1};
+                    daqName = obj.FindDaq(deviceID, vendorID, model);
+                    obj.SessionHandle = daq(daqName);
+                end
+
+                % rate = str2double(line.("Rate"){1});
+                obj.SessionHandle.Rate = line.("Rate");
                 % for ii = 1:s(1)
                 % 
                 % end
-                obj.SessionHandle = d;
             end
         end
 
@@ -478,14 +493,14 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
         % TODO function that only enables certain outputs without requiring
         % a full setup of params?
 
-        function r = GetRangeFromString(obj, range)
-            r0 = split(range);
+        function r = GetRangeFromString(obj, rString)
+            r0 = split(rString);
             r0 = split(r0{1}, '[');
             r0 = r0{2};
             r0 = str2double(r0);
-            r1 = split(range);
-            r1 = split(r1{1}, ']');
-            r1 = r1{2};
+            r1 = split(rString);
+            r1 = split(r1{2}, ']');
+            r1 = r1{1};
             r1 = str2double(r1);
             r = [r0 r1];
         end
