@@ -18,3 +18,7 @@ main.m
         ParamWriter
         ProtocolWriter
         SessionWriter
+
+****
+Make a GUI that spits out a params file.
+****

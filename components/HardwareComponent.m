@@ -8,7 +8,7 @@ classdef (Abstract, HandleCompatible) HardwareComponent
 
     methods (Abstract)
         % Initialise device
-        Initialise(obj) 
+        Initialise(obj)
 
         % Close device
         Close(obj)

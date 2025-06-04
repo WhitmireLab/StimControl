@@ -3,7 +3,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
         Name
         SessionHandle
         Required
-        Config = struct();
+        SessionInfo = struct();
     end
 
     methods
@@ -11,9 +11,8 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             % https://au.mathworks.com/help/matlab/ref/inputparser.html
             p = inputParser;
             strValidate = @(x) ischar(x) || isstring(x);
-            boolValidate = @(x) contains(class(x), 'logical');
             daqValidate = @(x) (contains(class(x), 'daq.interfaces.DataAcquisition')) || isempty(x);
-            addParameter(p, 'Required', false, boolValidate);
+            addParameter(p, 'Required', false, @islogical);
             addParameter(p, 'ChannelConfig', '', strValidate);
             addParameter(p, 'DaqConfig','', strValidate);
             addParameter(p, 'ConfigFolder', '', strValidate);
@@ -183,26 +182,55 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             obj.Close();
             daqreset;
         end
-
-        function LoadProtocol(obj, varargin)
-            p = inputParser;
+        
+        function obj = LoadProtocol(obj, varargin)
+            parser = inputParser;
             stringValidate = @(x) ischar(x) || isstring(x);
             intValidate = @(x) ~isinf(x) && floor(x) == x;
-            addRequired(p, 'idxStim', intValidate);
-            addParameter(p, 'filepath', '', stringValidate);
-            addParameter(p, 'p', '', @isstruct);
-            addParameter(p, 'g','', @isstruct);
-            addParameter(p, 'h', '', @isstruct);
-            addParameter(p, 'nThermodes', 1, intValidate);
-            parse(p, varargin{:});
-            idxStim = p.Results.idxStim;
-            nThermodes = p.Results.nThermodes;
-            if ~isempty(p.Results.filepath)
-                [p, g, h] = readParameters(p.Results.filepath);
+            addParameter(parser, 'idxStim', 1, intValidate);
+            addParameter(parser, 'filepath', '', stringValidate);
+            addParameter(parser, 'p', '', @isstruct);
+            addParameter(parser, 'g','', @isstruct);
+            addParameter(parser, 'h', '', @isstruct);
+            addParameter(parser, 'nThermodes', 1, intValidate);
+            parse(parser, varargin{:});
+
+            obj.SessionInfo.idxStim = parser.Results.idxStim;
+            obj.SessionInfo.nThermodes = parser.Results.nThermodes; %TODO DEFAULT THERMODES BASED ON CHANNELS WITH THERMAL LABEL???
+            if ~isempty(parser.Results.filepath)
+                [p, g, h] = readParameters(parser.Results.filepath);
+            else
+                p = parser.Results.p;
+                g = parser.Results.g;
+                h = parser.Results.h;
+            end
+            obj.SessionInfo.p = p;
+            obj.SessionInfo.g = g;
+            obj.SessionInfo.h = h;
+
+            obj.LoadTrial();
+        end
+
+        function LoadTrial(obj, varargin)
+            parser = inputParser;
+            stringValidate = @(x) ischar(x) || isstring(x);
+            intValidate = @(x) ~isinf(x) && floor(x) == x;
+            addRequired(parser, 'idxStim', intValidate);
+            addParameter(parser, 'filepath', '', stringValidate);
+            addParameter(parser, 'p', '', @isstruct);
+            addParameter(parser, 'g','', @isstruct);
+            addParameter(parser, 'h', '', @isstruct);
+            addParameter(parser, 'nThermodes', 1, intValidate);
+            addParameter(parser, 'oneOff', false, @islogical);
+            parse(parser, varargin{:});
+            idxStim = parser.Results.idxStim;
+            nThermodes = parser.Results.nThermodes;
+            if ~isempty(parser.Results.filepath)
+                [p, g, h] = readParameters(parser.Results.filepath);
             else
                 p = p.Results.p;
-                % g = p.Results.g;
-                % h = p.Results.h;
+                g = p.Results.g;
+                h = p.Results.h;
             end
 
             % release session (in case the previous run was incomplete)
@@ -214,7 +242,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             channels = obj.SessionHandle.Channels;
             
             IDtherm = arrayfun(@(x) {['Thermode' char(64+x)]},1:nThermodes);
-            if isempty(p)
+            if isempty(p) || parser.Results.oneOff
                 % single stimulation: use default values for tPre (time before onset of
                 % stimulus) and tPost (time after onset of stimulus). Obtain duration
                 % of vibration from respective GUI fields.
