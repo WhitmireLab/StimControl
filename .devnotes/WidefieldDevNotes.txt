@@ -5,7 +5,6 @@ https://au.mathworks.com/help/parallel-computing/quick-start-parallel-computing-
 
 TO DO - URGENT
 - saving a session!
-- warnings when starting preview
 - indicator for when saturation (brightness) is reaching full intensity so we know to adjust gain / light
 - jank when changing bin size / folders / etc
 - creating new animal may also create erroneous experiment folders if you're ALSO changing experiment
@@ -21,3 +20,8 @@ PHILL IMPROVEMENTS
 - MASKING (either programmatic or just let someone draw it)
 - be able to also see deltaF/F (set pre-stim time and set average for pre-stim as zero)
 	for fluorescence trace: (F - F0) / F0
+
+
+TO DO - QST
+- Refactor file saving to json, get the model stuff working in GUI editor AND savedata in DAQInterface
+- MOVE ON TO ACTUALLY PRELOADING THE DATA.

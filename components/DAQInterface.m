@@ -16,14 +16,16 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             addParameter(p, 'ChannelConfig', '', strValidate);
             addParameter(p, 'DaqConfig','', strValidate);
             addParameter(p, 'ConfigFolder', '', strValidate);
-            addParameter(p, 'DaqHandle', [], daqValidate);
+            addParameter(p, 'Handle', [], daqValidate);
+            addParameter(p, 'Struct', []);
             parse(p, varargin{:});
             params = p.Results;
 
             obj.Required = params.Required;
-            obj.SessionHandle = params.DaqHandle;
+            obj.SessionHandle = params.Handle;
             obj = obj.Initialise('ChannelConfig', params.ChannelConfig, ...
-                'DaqConfig', params.DaqConfig, 'ConfigFolder', params.ConfigFolder);
+                'DaqConfig', params.DaqConfig, 'ConfigFolder', params.ConfigFolder, ...
+                'Struct', params.Struct);
         end
 
         % Initialise device
@@ -33,6 +35,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             addParameter(p, 'ChannelConfig', '', strValidate);
             addParameter(p, 'DaqConfig','', strValidate);
             addParameter(p, 'ConfigFolder', '', strValidate);
+            addParameter(p, 'Struct', []);
             parse(p, varargin{:});
             params = p.Results;
 
@@ -40,8 +43,13 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
                 warning("Daq should be configured via either ConfigFolder OR ChannelConfig and DaqConfig. " + ...
                     "Defaulting to ConfigFolder.")
             end
-
-            if ~isempty(params.ConfigFolder)
+            
+            if ~isempty(params.Struct)
+                obj = obj.ConfigureDAQ(params.)
+                if ~isempty(params.ChannelConfig)
+                    obj = obj.LoadParams(params.ChannelConfig);
+                end
+            elseif ~isempty(params.ConfigFolder)
                 obj = obj.LoadParams(params.ConfigFolder);
             else
                 obj = obj.ConfigureDAQ(params.DaqConfig);
@@ -80,6 +88,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
 
         % get current device parameters for saving
         function SaveParams(obj, folderpath, identifier)
+            %TODO SHOULD RETURN JSON ACTUALLY
             % save channels
             channels = obj.SessionHandle.Channels;
             channelData = {'deviceID' 'portNum' 'channelName' 'ioType' ...
@@ -377,35 +386,41 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
         end
 
         function obj = ConfigureDAQ(obj, filename)
-            if isempty(filename)
-                % warning("No DAQ config file provided. Using default DAQ settings");
+            p = inputparser();
+            addParameter(p, 'filename', '');
+            addParameter(p, 'struct', []);
+            p.parse();
+            if isempty(p.Results.filename) && isempty(p.Results.struct)
+                % warning("No DAQ config provided. Using default DAQ settings");
                 name = obj.FindDaq("Dev1", '', '');
                 obj.SessionHandle = daq(name);
                 return
             end
-            tab = readtable(filename);
-            s = size(tab);
-            if s(1) > 1
-                warning("Currently only one DAQ session at a time is supported. " + ...
-                    "only the first DAQ in the config file will be used.") %TODO FIX THIS
-            else
-                line = tab(1, :);
-                % line.("deviceID") or line.(1);
-
-                if isempty(obj.SessionHandle)
+            if ~isempty(p.Results.filename)
+                tab = readtable(filename);
+                s = size(tab);
+                if s(1) > 1
+                    warning("Currently only one DAQ session at a time is supported. " + ...
+                        "only the first DAQ in the config file will be used.") %TODO FIX THIS
+                else
+                    line = tab(1, :);
+                    % line.("deviceID") or line.(1);
                     vendorID = line.("VendorID"){1};
                     model = line.("Model"){1};
                     deviceID = line.("DeviceID"){1};
-                    daqName = obj.FindDaq(deviceID, vendorID, model);
-                    obj.SessionHandle = daq(daqName);
                 end
-
-                % rate = str2double(line.("Rate"){1});
-                obj.SessionHandle.Rate = line.("Rate");
-                % for ii = 1:s(1)
-                % 
-                % end
+            elseif ~isempty(p.Results.struct)
+                vendorID = p.Results.struct.Vendor;
+                deviceID = p.Results.struct.ID;
+                model = p.Results.struct.Model;
             end
+
+            if isempty(obj.SessionHandle)
+                daqName = obj.FindDaq(deviceID, vendorID, model);
+                obj.SessionHandle = daq(daqName);
+            end
+
+            obj.SessionHandle.Rate = line.("Rate");
         end
 
         function obj = InitialiseChannelsDefault(obj, nThermodes)

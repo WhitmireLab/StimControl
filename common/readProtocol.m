@@ -1,4 +1,4 @@
-function [p,g,h] = readParameters(filename,varargin)
+function [p,g,h] = readProtocol(filename,varargin)
 
 %% parse inputs
 ip = inputParser;
