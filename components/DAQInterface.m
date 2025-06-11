@@ -45,7 +45,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             end
             
             if ~isempty(params.Struct)
-                obj = obj.ConfigureDAQ(params.)
+                obj = obj.ConfigureDAQ('struct', params.Struct);
                 if ~isempty(params.ChannelConfig)
                     obj = obj.LoadParams(params.ChannelConfig);
                 end
@@ -60,10 +60,11 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
                     % obj.InitialiseChannelsDefault(1);
                 end
             end
-            
-            disp(' ')
-            disp(obj.SessionHandle.Channels)
-            disp(' ')
+            if ~isempty(obj.SessionHandle.Channels)
+                disp(' ')
+                disp(obj.SessionHandle.Channels)
+                disp(' ')
+            end
         end
 
         % Close device
@@ -87,7 +88,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
         end
 
         % get current device parameters for saving
-        function SaveParams(obj, folderpath, identifier)
+        function [daqStruct, channelData] = GetParams(obj)
             %TODO SHOULD RETURN JSON ACTUALLY
             % save channels
             channels = obj.SessionHandle.Channels;
@@ -115,7 +116,6 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             end
             
             % save daq
-            daqData = {'VendorID' 'Model' 'DeviceID' 'Rate'};
             daqs = daqlist().DeviceInfo;
             correctIndex = -1;
             for i = 1:length(daqs)
@@ -128,16 +128,22 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
                     "DAQ device settings not saved."); %note this should NEVER happen
             end
             d = daqs(correctIndex);
-            daqData{2,:} = {d.Vendor.ID d.Model d.ID obj.SessionHandle.Rate};
+            daqStruct = struct();
+            daqStruct.Vendor = d.Vendor.ID;
+            daqStruct.Model = d.Model;
+            daqStruct.ID = d.ID;
+            daqStruct.Rate = obj.SessionHandle.Rate;
+            % daqData{2,:} = {d.Vendor.ID d.Model d.ID obj.SessionHandle.Rate};
+            
 
-            if ~isempty(identifier)
-                writecell(channelData, [folderpath filesep identifier '_DaqChanParams.csv']);
-                writecell(daqData, [folderpath filesep identifier '_DaqParams.csv']);
-            else
-                % write to config folder
-                writecell(channelData, [folderpath filesep 'DaqChanParams.csv']);
-                writecell(daqData, [folderpath filesep 'DaqParams.csv']);
-            end
+            % if ~isempty(identifier)
+            %     writecell(channelData, [folderpath filesep identifier '_DaqChanParams.csv']);
+            %     writecell(daqData, [folderpath filesep identifier '_DaqParams.csv']);
+            % else
+            %     % write to config folder
+            %     writecell(channelData, [folderpath filesep 'DaqChanParams.csv']);
+            %     writecell(daqData, [folderpath filesep 'DaqParams.csv']);
+            % end
         end
         
         % Gets output since last queried
@@ -157,7 +163,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             elseif contains(folderpath, "DaqParams")
                 obj = obj.ConfigureDAQ(folderpath);
             else
-                % assume a folder with both params in it.
+                % assume a fold er with both params in it.
                 try
                     obj = obj.ConfigureDAQ([folderpath filesep "DaqParams.csv"]);
                 catch exception
@@ -200,31 +206,28 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             addParameter(parser, 'filepath', '', stringValidate);
             addParameter(parser, 'p', '', @isstruct);
             addParameter(parser, 'g','', @isstruct);
-            addParameter(parser, 'h', '', @isstruct);
             addParameter(parser, 'nThermodes', 1, intValidate);
             parse(parser, varargin{:});
 
             obj.SessionInfo.idxStim = parser.Results.idxStim;
             obj.SessionInfo.nThermodes = parser.Results.nThermodes; %TODO DEFAULT THERMODES BASED ON CHANNELS WITH THERMAL LABEL???
             if ~isempty(parser.Results.filepath)
-                [p, g, h] = readParameters(parser.Results.filepath);
+                [p, g] = readParameters(parser.Results.filepath);
             else
                 p = parser.Results.p;
                 g = parser.Results.g;
-                h = parser.Results.h;
             end
             obj.SessionInfo.p = p;
             obj.SessionInfo.g = g;
-            obj.SessionInfo.h = h;
 
-            obj.LoadTrial();
+            obj.LoadTrial('idxStim', parser.Results.idxStim);
         end
 
         function LoadTrial(obj, varargin)
             parser = inputParser;
             stringValidate = @(x) ischar(x) || isstring(x);
             intValidate = @(x) ~isinf(x) && floor(x) == x;
-            addRequired(parser, 'idxStim', intValidate);
+            addParameter(parser, 'idxStim', 1, intValidate);
             addParameter(parser, 'filepath', '', stringValidate);
             addParameter(parser, 'p', '', @isstruct);
             addParameter(parser, 'g','', @isstruct);
@@ -235,11 +238,13 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             idxStim = parser.Results.idxStim;
             nThermodes = parser.Results.nThermodes;
             if ~isempty(parser.Results.filepath)
-                [p, g, h] = readParameters(parser.Results.filepath);
+                [p, g] = readParameters(parser.Results.filepath);
+            elseif ~isempty(parser.Results.p)
+                p = parser.Results.p;
+                g = parser.Results.g;
             else
-                p = p.Results.p;
-                g = p.Results.g;
-                h = p.Results.h;
+                p = obj.SessionInfo.p;
+                g = obj.SessionInfo.g;
             end
 
             % release session (in case the previous run was incomplete)
@@ -386,7 +391,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
         end
 
         function obj = ConfigureDAQ(obj, filename)
-            p = inputparser();
+            p = inputParser();
             addParameter(p, 'filename', '');
             addParameter(p, 'struct', []);
             p.parse();

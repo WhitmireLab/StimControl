@@ -25,3 +25,4 @@ PHILL IMPROVEMENTS
 TO DO - QST
 - Refactor file saving to json, get the model stuff working in GUI editor AND savedata in DAQInterface
 - MOVE ON TO ACTUALLY PRELOADING THE DATA.
+- dropdown for json - idiotproof

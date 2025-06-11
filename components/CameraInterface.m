@@ -1,19 +1,21 @@
-classdef (HandleCompatible) DAQ < HardwareComponent
+classdef (HandleCompatible) CameraInterface < HardwareComponent
     %UNTITLED2 Summary of this class goes here
     %   Detailed explanation goes here
 
     properties
         Name
         SessionHandle
+        Required
+        SessionInfo = struct();
     end
 
     methods
-        function obj = DAQ(varargin)
+        function obj = CameraInterface(varargin)
             % https://au.mathworks.com/help/matlab/ref/inputparser.html
             p = inputParser;
             addOptional(p, 'name', @isstring);
             addOptional(p, 'params', @isdictionary);
-
+            
         end
 
         % Initialise device

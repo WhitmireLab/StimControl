@@ -26,7 +26,7 @@ classdef (Abstract, HandleCompatible) HardwareComponent
         SetParams(obj, varargin)
 
         % get current device parameters for saving
-        SaveParams(obj, folderpath, identifier)
+        [objStruct, channelData] = GetParams(obj)
         
         % Gets output since last queried
         result = GetOutput(obj)
