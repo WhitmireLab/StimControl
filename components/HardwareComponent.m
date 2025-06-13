@@ -4,43 +4,41 @@ classdef (Abstract, HandleCompatible) HardwareComponent
     properties (Access = private)
         Name
         SessionHandle
+        SavePath
+        Required
     end
 
     methods (Abstract)
         % Initialise device
-        Initialise(obj)
-
-        % Close device
-        Close(obj)
+        Configure(obj, varargin)
         
         % Start device
-        StartSession(obj)
+        Start(obj)
 
         % Stop device
-        StopSession(obj)
+        Stop(obj)
         
         % Complete reset. Clear device
-        ClearAll(obj)
+        Clear(obj)
 
         % Change device parameters
         SetParams(obj, varargin)
 
         % get current device parameters for saving
-        [objStruct, channelData] = GetParams(obj)
+        objStruct = GetParams(obj)
         
-        % Gets output since last queried
-        result = GetOutput(obj)
+        % gets current device status
+        % Options: ok / ready / running / error / empty / loading
+        status = GetStatus(obj)
         
-        % Gets all output since session started
-        result = GetSessionOutput(obj)
-        
-        % load in a saved set of parameters
-        LoadParams(obj, filename)
+        % Dynamic visualisation ofthe object output. Can target a specific
+        % plot using the "Plot" param.
+        VisualiseOutput(obj, varargin)
 
         % Print device information
         PrintInfo(obj)
 
-        % Preload outputs from file
-        LoadProtocol(obj, filename);
+        % Preload an experimental protocol
+        LoadProtocol(obj, varargin);
     end
 end

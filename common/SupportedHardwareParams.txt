@@ -1,0 +1,135 @@
+{ "CAMERA": {    
+	"Adaptor": {
+		"default": "gentl",
+		"allowable": [],
+		"dependencies": [],
+		"note": "Any MATLAB-supported camera adaptor."
+	}, 
+	"Binning": {
+		"default": "1",
+		"allowable": ["1", "2", "4"],
+		"dependencies": ["Adaptor==gentl||Adaptor==pcocameraadaptor"],
+		"note": ""
+	},
+	"BinningType": {
+		"default": "Sum",
+		"allowable": [],
+		"dependencies": ["Binning"],
+		"note": ""
+	}, 
+	"DEVICE": {
+		"default": "CAMERA",
+		"allowable": ["CAMERA"],
+		"dependencies": [],
+		"note": ""
+	},
+	"DeviceName": {
+		"default": "",
+		"allowable": [],
+		"dependencies": [],
+		"note": "Only needed to distinguish between cameras"
+	}, 
+	"ExposureTime": {
+		"default": "10000",
+		"allowable": [],
+		"dependencies": [],
+		"note": ""
+	},
+	"FramesPerTrigger": {
+		"default": "1",
+		"allowable": ["1"],
+		"dependencies": [],
+		"note": "Ideally any number will be permitted but not yet."
+	},
+	"Gain": {
+		"default": "20",
+		"allowable": [],
+		"dependencies": [],
+		"note": "dB. Max of 36."
+	},
+	"OutputLine": {
+		"default": "Line3",
+		"allowable": [],
+		"dependencies": ["TriggerMode==immediate"],
+		"note": "Depends on specific camera hardware."
+	},
+	"TriggerActivation": {
+		"default": "RisingEdge",
+		"allowable": [],
+		"dependencies": ["TriggerMode==hardware"],
+		"note": "Depends on specific camera hardware."
+	},
+	"TriggerLine": {
+		"default": "Line4",
+		"allowable": [],
+		"dependencies": ["TriggerMode==hardware"],
+		"note": "Depends on specific camera hardware."
+	},
+	"TriggerMode": {
+		"default": "hardware",
+		"allowable": ["hardware", "manual", "immediate"],
+		"dependencies": [],
+		"note": "hardware: GPIO-triggered, manual: software-triggered, immediate: camera-driven acquisition."
+	},
+	"TriggerFrameDelay": {
+		"default": 0,
+		"allowable": [],
+		"dependencies": [],
+		"note": ""
+	},
+	"FrameGrabInterval": {
+		"default": 10,
+		"allowable": [],
+		"dependencies": [],
+		"note": ""
+	},
+	"TriggerRepeat": {
+		"default": 100000000,
+		"allowable": [],
+		"dependencies": [],
+		"note": "The number of frames to capture before the camera automatically stops itself. Infinite run doesn't appear supported."
+	},
+	"ROIPosition": {
+		"default": [],
+		"allowable": [],
+		"dependencies": [],
+		"note": "ROI, set programmatically. If empty, defaults to full camera FOV."
+	},
+	"TriggerSelector": {
+		"default": "FrameStart",
+		"allowable": [],
+		"dependencies": ["TriggerMode==hardware||TriggerMode==manual"],
+		"note": ""
+	}}, 
+"DAQ": {    
+	"DEVICE": {
+		"default": "DAQ",
+		"allowable": ["DAQ"],
+		"dependencies": [],
+		"note": ""
+	}, 
+	"ID": {
+		"default": "Dev1",
+		"allowable": [],
+		"dependencies": [],
+		"note": ""
+	}, 
+	"Rate": {
+		"default": "1000",
+		"allowable": [],
+		"dependencies": [],
+		"note": ""
+	}, 
+	"Vendor": {
+		"default": "ni",
+		"allowable": [],
+		"dependencies": [],
+		"note": ""
+	}, 
+	"Model": {
+		"default": "",
+		"allowable": [],
+		"dependencies": [],
+		"note": ""
+	}}
+}
