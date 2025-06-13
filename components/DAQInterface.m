@@ -69,7 +69,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
 
         % Close device
         function Close(obj)
-
+            %TODO
         end
         
         % Start device
@@ -84,12 +84,13 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
 
         % Change device parameters
         function SetParams(obj, varargin)
-            
+            for i = 1:length(varargin):2
+                set(obj.SessionHandle, varargin(i), varargin(i+1));
+            end
         end
 
         % get current device parameters for saving
         function [daqStruct, channelData] = GetParams(obj)
-            %TODO SHOULD RETURN JSON ACTUALLY
             % save channels
             channels = obj.SessionHandle.Channels;
             channelData = {'deviceID' 'portNum' 'channelName' 'ioType' ...
@@ -133,17 +134,6 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             daqStruct.Model = d.Model;
             daqStruct.ID = d.ID;
             daqStruct.Rate = obj.SessionHandle.Rate;
-            % daqData{2,:} = {d.Vendor.ID d.Model d.ID obj.SessionHandle.Rate};
-            
-
-            % if ~isempty(identifier)
-            %     writecell(channelData, [folderpath filesep identifier '_DaqChanParams.csv']);
-            %     writecell(daqData, [folderpath filesep identifier '_DaqParams.csv']);
-            % else
-            %     % write to config folder
-            %     writecell(channelData, [folderpath filesep 'DaqChanParams.csv']);
-            %     writecell(daqData, [folderpath filesep 'DaqParams.csv']);
-            % end
         end
         
         % Gets output since last queried
@@ -163,7 +153,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             elseif contains(folderpath, "DaqParams")
                 obj = obj.ConfigureDAQ(folderpath);
             else
-                % assume a fold er with both params in it.
+                % assume a folder with both params in it.
                 try
                     obj = obj.ConfigureDAQ([folderpath filesep "DaqParams.csv"]);
                 catch exception

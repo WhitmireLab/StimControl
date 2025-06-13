@@ -30,6 +30,7 @@ classdef ParamManager
                 hStruct = jsonData{i};
                 switch lower(hStruct.DEVICE)
                     case 'camera'
+                        hObj = CameraInterface('Struct', hStruct);
                         %TODO AYE
                         continue
                     case 'daq'

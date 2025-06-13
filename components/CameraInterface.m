@@ -13,14 +13,49 @@ classdef (HandleCompatible) CameraInterface < HardwareComponent
         function obj = CameraInterface(varargin)
             % https://au.mathworks.com/help/matlab/ref/inputparser.html
             p = inputParser;
-            addOptional(p, 'name', @isstring);
-            addOptional(p, 'params', @isdictionary);
-            
+            strValidate = @(x) ischar(x) || isstring(x);
+            handleValidate = @(x) (contains(class(x), 'daq.interfaces.DataAcquisition')) || isempty(x);
+            addParameter(p, 'Required', false, @islogical);
+            addParameter(p, 'Config', '', strValidate);
+            addParameter(p, 'ConfigFolder', '', strValidate);
+            addParameter(p, 'Handle', [], handleValidate);
+            addParameter(p, 'Struct', []);
+            parse(p, varargin{:});
+            params = p.Results;
+
+            obj.Required = params.Required;
+            obj.SessionHandle = params.Handle;
+            obj = obj.Initialise('Config', params.Config, ...
+                'ConfigFolder', params.ConfigFolder, 'Struct', params.Struct);
         end
 
         % Initialise device
         function Initialise(obj, varargin)
+            strValidate = @(x) ischar(x) || isstring(x);
+            p = inputParser;
+            addParameter(p, 'Config', '', strValidate);
+            addParameter(p, 'ConfigFolder', '', strValidate);
+            addParameter(p, 'Struct', []);
+            parse(p, varargin{:});
+            params = p.Results;
+
+            if (~isempty(params.Config) || ~isempty(params.ConfigFolder)) && ~isempty(params.Struct)
+                warning("Camera should be configured via either a config filepath or a struct. " + ...
+                    "Defaulting to struct config.");
+            end
             
+            if ~isempty(params.Struct)
+                obj = obj.ConfigureDAQ('struct', params.Struct);
+            elseif ~isempty(params.ConfigFolder)
+                obj = obj.LoadParams(params.ConfigFolder);
+            else
+                obj = obj.ConfigureDAQ(params.DaqConfig);
+            end
+            if ~isempty(obj.SessionHandle.Channels)
+                disp(' ')
+                disp(obj.SessionHandle.Channels)
+                disp(' ')
+            end
         end
 
         % Close device
