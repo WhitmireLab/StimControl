@@ -5,92 +5,98 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
         Required
         SessionInfo = struct();
         ChannelMap = struct();
+        ChannelIdentifiers = struct();
+        SavePath
     end
 
     methods
         function obj = DAQInterface(varargin)
-            % https://au.mathworks.com/help/matlab/ref/inputparser.html
             p = inputParser;
             strValidate = @(x) ischar(x) || isstring(x);
             daqValidate = @(x) (contains(class(x), 'daq.interfaces.DataAcquisition')) || isempty(x);
-            addParameter(p, 'Required', false, @islogical);
+            addParameter(p, 'Required', true, @islogical);
             addParameter(p, 'ChannelConfig', '', strValidate);
-            addParameter(p, 'DaqConfig','', strValidate);
-            addParameter(p, 'ConfigFolder', '', strValidate);
             addParameter(p, 'Handle', [], daqValidate);
             addParameter(p, 'Struct', []);
+            addParameter(p, 'SavePath', strValidate);
             parse(p, varargin{:});
             params = p.Results;
-
+            
+            obj.SavePath = params.SavePath;
             obj.Required = params.Required;
             obj.SessionHandle = params.Handle;
-            obj = obj.Initialise('ChannelConfig', params.ChannelConfig, ...
-                'DaqConfig', params.DaqConfig, 'ConfigFolder', params.ConfigFolder, ...
+            obj = obj.Configure('ChannelConfig', params.ChannelConfig, ...
                 'Struct', params.Struct);
         end
 
         % Initialise device
-        function obj = Initialise(obj, varargin)            
+        function obj = Configure(obj, varargin)
+            %TODO STOP/START
             strValidate = @(x) ischar(x) || isstring(x);
             p = inputParser;
             addParameter(p, 'ChannelConfig', '', strValidate);
-            addParameter(p, 'DaqConfig','', strValidate);
-            addParameter(p, 'ConfigFolder', '', strValidate);
             addParameter(p, 'Struct', []);
             parse(p, varargin{:});
             params = p.Results;
 
-            if ~isempty(params.ConfigFolder) && (~isempty(params.ChannelConfig) || ~isempty(params.DaqConfig))
-                warning("Daq should be configured via either ConfigFolder OR ChannelConfig and DaqConfig. " + ...
-                    "Defaulting to ConfigFolder.")
+            %---device---
+            if isempty(obj.SessionHandle) || ~isempty(params.Struct)
+                % if the DAQ is uninitialised or the params have changed
+                if isempty(params.Struct)
+                    warning("No DAQ config provided. Using default DAQ settings");
+                    daqStruct = GetDefaultStruct("daq");
+                    name = obj.FindDaqName(daqStruct.ID, '', '');
+                else
+                    vendorID = params.Struct.Vendor;
+                    deviceID = params.Struct.ID;
+                    model = params.Struct.Model;
+                    rate = params.Struct.Rate;
+                    name = obj.FindDaqName(deviceID, vendorID, model);
+                end
+                obj.SessionHandle = daq(name);
+                obj.SessionHandle.Rate = rate;
             end
             
-            if ~isempty(params.Struct)
-                obj = obj.ConfigureDAQ('struct', params.Struct);
-                if ~isempty(params.ChannelConfig)
-                    obj = obj.LoadParams(params.ChannelConfig);
-                end
-            elseif ~isempty(params.ConfigFolder)
-                obj = obj.LoadParams(params.ConfigFolder);
+            %---channels---
+            if isempty(params.ChannelConfig)
+                warning("No DAQ Channel information provided. " + ...
+                    "Provide channel configuration via obj.Configure('ChannelConfig', filepath)");
             else
-                obj = obj.ConfigureDAQ(params.DaqConfig);
-                if ~isempty(params.ChannelConfig)
-                    obj = obj.LoadParams(params.ChannelConfig);
-                else
-                    disp("No channel information provided. Provide channel configuration via loadParams or call obj.InitialiseChannelsDefault(nThermodes)")
-                    % obj.InitialiseChannelsDefault(1);
-                end
+                obj = obj.CreateChannels(params.ChannelConfig);
             end
+            
+            %---display---
             if ~isempty(obj.SessionHandle.Channels)
-                disp(' ')
-                disp(obj.SessionHandle.Channels)
-                disp(' ')
+                obj.PrintInfo();
             end
         end
 
-        % Close device
-        function Close(obj)
-
+        function status = GetStatus(obj)
+            %options: ready / acquiring / writing / error / stopped / empty
+            %/ loading
+            %TODO
         end
         
         % Start device
-        function StartSession(obj)
+        function Start(obj)
+            %TODO startbackground?
             start(obj.SessionHandle);
         end
 
         %Stop device
-        function StopSession(obj)
+        function Stop(obj)
             stop(obj.SessionHandle);
         end
 
         % Change device parameters
         function SetParams(obj, varargin)
-            
+            for i = 1:length(varargin):2
+                set(obj.SessionHandle, varargin(i), varargin(i+1));
+            end
         end
 
         % get current device parameters for saving
         function [daqStruct, channelData] = GetParams(obj)
-            %TODO SHOULD RETURN JSON ACTUALLY
             % save channels
             channels = obj.SessionHandle.Channels;
             channelData = {'deviceID' 'portNum' 'channelName' 'ioType' ...
@@ -188,17 +194,31 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
 
         % Print device information
         function PrintInfo(obj)
+            disp(' ');
             disp(obj.SessionHandle.Channels);
+            disp(' ');
         end
 
-        function ClearAll(obj)
+        % Kill the whole thing
+        function Clear(obj)
             if obj.SessionHandle.Running
-                obj.StopSession();
+                obj.Stop();
             end
-            obj.Close();
             daqreset;
         end
         
+        % Dynamic visualisation of object output
+        function VisualiseOutput(obj, varargin)
+            p = inputParser;
+            p.addParameter("Plot", []);
+            p.parse(varargin{:});
+            target = p.Results.Plot;
+            if isempty(obj.SessionHandle)
+                return;
+            end
+        end
+        
+        % Load a full experimental protocol
         function obj = LoadProtocol(obj, varargin)
             parser = inputParser;
             stringValidate = @(x) ischar(x) || isstring(x);
@@ -223,7 +243,8 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
 
             obj.LoadTrial('idxStim', parser.Results.idxStim);
         end
-
+        
+        % Preload a trial
         function LoadTrial(obj, varargin)
             parser = inputParser;
             stringValidate = @(x) ischar(x) || isstring(x);
@@ -298,7 +319,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
 
         %%% PRIVATE FUNCTIONS %%%
 
-        function name = FindDaq(obj, deviceID, vendorID, model)
+        function name = FindDaqName(obj, deviceID, vendorID, model)
             % https://au.mathworks.com/help/daq/daq.interfaces.dataacquisition.html
             try
                 daqs = daqlist().DeviceInfo;
@@ -358,6 +379,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
                     signalType = line.("signalType"){1};
                     terminalConfig = line.("TerminalConfig"){1};
                     range = line.("Range"){1};
+                    channelID = line.(""){1};
                     if ~isMATLABReleaseOlderThan("R2024b")
                         channelList = add(channelList, ioType, deviceID, portNum, signalType, TerminalConfig=terminalConfig, Range=range);
                     else
@@ -378,6 +400,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
                             ch.Range = range;
                         end
                     end
+                    set(obj.ChannelIdentifiers, channelID, ch);
                 catch exception
                     % dbstack
                     % keyboard
@@ -390,157 +413,6 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
                 obj.SessionHandle.Channels = channelList;
             end
         end
-
-        function obj = ConfigureDAQ(obj, filename)
-            p = inputParser();
-            addParameter(p, 'filename', '');
-            addParameter(p, 'struct', []);
-            p.parse();
-            if isempty(p.Results.filename) && isempty(p.Results.struct)
-                % warning("No DAQ config provided. Using default DAQ settings");
-                name = obj.FindDaq("Dev1", '', '');
-                obj.SessionHandle = daq(name);
-                return
-            end
-            if ~isempty(p.Results.filename)
-                tab = readtable(filename);
-                s = size(tab);
-                if s(1) > 1
-                    warning("Currently only one DAQ session at a time is supported. " + ...
-                        "only the first DAQ in the config file will be used.") %TODO FIX THIS
-                else
-                    line = tab(1, :);
-                    % line.("deviceID") or line.(1);
-                    vendorID = line.("VendorID"){1};
-                    model = line.("Model"){1};
-                    deviceID = line.("DeviceID"){1};
-                end
-            elseif ~isempty(p.Results.struct)
-                vendorID = p.Results.struct.Vendor;
-                deviceID = p.Results.struct.ID;
-                model = p.Results.struct.Model;
-            end
-
-            if isempty(obj.SessionHandle)
-                daqName = obj.FindDaq(deviceID, vendorID, model);
-                obj.SessionHandle = daq(daqName);
-            end
-
-            obj.SessionHandle.Rate = line.("Rate");
-        end
-
-        function obj = InitialiseChannelsDefault(obj, nThermodes)
-            % Analog Input: Thermode Surfaces
-            for ii = 1:nThermodes
-                id  = char(64+ii);
-                % manually edited to take away the 2nd QST probe options
-                % ch  = obj.DAQ.addAnalogInputChannel('Dev1',(1:5)+(8*(ii-1)),'Voltage');
-                ch  = obj.SessionHandle.addAnalogInputChannel('Dev1',(1:2),'Voltage');
-                tmp = arrayfun(@(x) {['Surface ' id num2str(x)]},1:5);
-                [ch.Name] = tmp{:};
-                set(ch,...
-                    'TerminalConfig',   'SingleEnded', ...
-                    'Range',            [-5 5]);    
-            end
-            
-            % Analog Input: Aurora Force OUT
-            ch = obj.SessionHandle.addAnalogInputChannel('Dev1',3,'Voltage');
-            set(ch,...
-                'Name',             'Aurora Force OUT', ...
-                'TerminalConfig',   'SingleEnded')
-            
-            % Analog Input: Aurora Length OUT
-            ch = obj.SessionHandle.addAnalogInputChannel('Dev1',4,'Voltage');
-            set(ch,...
-                'Name',             'Aurora Length OUT', ...
-                'TerminalConfig',   'SingleEnded')
-            
-            % Analog Input: DC Temperature Controller
-            ch = obj.SessionHandle.addAnalogInputChannel('Dev1',0,'Voltage');
-            set(ch,...
-                'Name',             'DC Temperature Controller', ...
-                'TerminalConfig',   'SingleEnded')
-            
-            % TTL Input: Stimulus Onset
-            for ii = 1:nThermodes
-                id = char(64+ii);
-                ch = obj.SessionHandle.addDigitalChannel('Dev1',['port0/line' num2str(ii)],'InputOnly');
-                ch.Name = ['TTL Thermode ' id ': Onset'];
-            end
-            
-            % TTL Input: Galvo
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line20:21','InputOnly');
-            ch(1).Name = 'TTL ScanImage: Res Galvo';
-            ch(2).Name = 'TTL ScanImage: Y Galvo';
-            
-            % TTL Output: ScanImage
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line3','OutputOnly'); %gunk in board. had to change channels
-            % ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line17:21','OutputOnly');
-            ch(1).Name = 'TTL ScanImage: Acq Start';
-            
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line5:6','OutputOnly');
-            ch(1).Name = 'TTL ScanImage: Acq Stop';
-            ch(2).Name = 'TTL ScanImage: Next File';
-            
-            % TTL Output: Widefield Imaging (Basler) %%CJW EDIT 2023.04.04
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line4','OutputOnly');
-            ch(1).Name = 'TTL Basler: Frame Trigger';
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line23','OutputOnly');
-            ch(1).Name = 'TTL Basler: UNUSED';
-            
-            % % TTL Output: Widefield Imaging (Basler) %%CJW ADD 2018.11.06
-            % ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line22:23','OutputOnly');
-            % ch(1).Name = 'TTL Basler: Frame Trigger';
-            % ch(2).Name = 'TTL Basler: UNUSED';
-            
-            % TTL Output: LED Control %%CJW ADD 2018.11.07 %% CJW and PB changed on 2025.05.01
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line0','OutputOnly');
-            % ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line24','OutputOnly');
-            ch.Name = 'BLUE LED';
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line25','OutputOnly');
-            ch.Name = 'GREEN LED';
-            
-            % TTL Output: Auditory Stimulus %%CJW ADD 2019.06.05
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line26','OutputOnly');
-            ch(1).Name = 'Speaker';
-            
-            % TTL Output: Optical Stimulus (LED) %%CJW ADD 2019.06.05
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line27','OutputOnly');
-            ch(1).Name = 'Optical Stimulus';
-            
-            % TTL Output: Hamamatsu Camera Drive %%CJW ADD 2019.06.05
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line28','OutputOnly');
-            ch(1).Name = 'HamamatsuTrigger';
-            
-            % TTL Output: LED
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line29','OutputOnly');
-            ch(1).Name = 'LED';
-            
-            % TTL Output: IR LED
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line30','OutputOnly');
-            ch(1).Name = 'IRLED_BaslerImaging';
-            
-            
-            % Digital Output: Vibration Motors
-            for ii = 1:obj.nThermodes
-                id = char(64+ii);
-                ch = obj.SessionHandle.addDigitalChannel('Dev1',['port0/line' num2str(ii+1)],'OutputOnly');
-                ch.Name = ['Vibration ' id];
-            end
-            
-            % Digital Output: Thermode Trigger
-            ch = obj.SessionHandle.addDigitalChannel('Dev1','port0/line7','OutputOnly');
-            ch(1).Name = 'Thermode Trigger';
-            
-            % Analog Output: Piezo Driver %added 2022.03.18. edited port 2022.04.12
-                        ch = obj.SessionHandle.addAnalogOutputChannel('Dev1',0,'Voltage');
-                        set(ch,...
-                            'Name',             'Aurora Force Command Voltage', ...
-                            'TerminalConfig',   'SingleEnded', ...
-                            'Range',            [0 10]);
-        end
-        % TODO function that only enables certain outputs without requiring
-        % a full setup of params?
 
         function r = GetRangeFromString(obj, rString)
             r0 = split(rString);
@@ -556,7 +428,6 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
 
         %%TODO!! STARTS HERE
         function preloadChannels(obj, name)
-
 
             % add listener for plotting/saving -- see function plotData() below
             lh = addlistener(obj.DAQ,'DataAvailable',@plotData);
