@@ -1,21 +1,21 @@
-Note,deviceID,portNum,channelName,ioType,signalType,TerminalConfig,Range
-Thermode,Dev1,(1:2),,input,Voltage,SingleEnded,[-5 5]
-Aurora Force OUT,Dev1,3,Aurora Force OUT,input,Voltage,SingleEnded,
-Aurora Length OUT,Dev1,4,Aurora Length OUT,input,Voltage,SingleEnded,
-DC Temperature Controller,Dev1,0,DC Temperature Controller,input,Voltage,SingleEnded,
-TTL Input: Stimulus Onset,Dev1,port0/line1,TTL Thermode Onset,input,Digital,,
-TTL Input: Galvo Res,Dev1,port0/line20,TTL ScanImage Res Galvo,input,Digital,,
-TTL Input: Galvo Y,Dev1,port0/line21,TTL ScanImage Y Galvo,input,Digital,,
-TTL Output: ScanImage,Dev1,port0/line3,TTL ScanImage: Acq Start,output,Digital,,
-Basler Widefield Imaging,Dev1,port0/line4,TTL Basler: Frame Trigger,output,Digital,,
-Basler Widefield Unused,Dev1,port0/line23,TTL Basler: UNUSED,output,Digital,,
-TTL Output: LEDControl,Dev1,port0/line0,BLUE LED,output,Digital,,
-TTL Output: LEDControl,Dev1,port0/line25,GREEN LED,output,Digital,,
-TTL Output: Auditory Stimulus,Dev1,port0/line26,Speaker,output,Digital,,
-TTL Output: Optical Stimulus,Dev1,port0/line27,Optical Stimulus,output,Digital,,
-TTL Output: Hamamatsu Camera Drive,Dev1,port0/line28,HamamatsuTrigger,output,Digital,,
-TTL Output: LED,Dev1,port0/line29,LED,output,Digital,,
-TTL Output: IR LED,Dev1,port0/line30,IRLED_BaslerImaging,output,Digital,,
-Vibration Motors,Dev1,port0/line2,Vibration,output,Digital,,
-Digital Output: Thermode Trigger,Dev1,port0/line7,Thermode Trigger,output,Digital,,
-Piezo Driver,Dev1,0,Aurora Force Command Voltage,output,Voltage,SingleEnded,[0 10]
+Note,deviceID,portNum,channelName,ioType,signalType,TerminalConfig,Range,ProtocolID
+Thermode,Dev1,(1:2),,input,Voltage,SingleEnded,[-5 5],THERMO
+Aurora Force OUT,Dev1,3,Aurora Force OUT,input,Voltage,SingleEnded,,AURFOO
+Aurora Length OUT,Dev1,4,Aurora Length OUT,input,Voltage,SingleEnded,,AURLEO
+DC Temperature Controller,Dev1,0,DC Temperature Controller,input,Voltage,SingleEnded,,DCTEMC
+TTL Input: Stimulus Onset,Dev1,port0/line1,TTL Thermode Onset,input,Digital,,,TTLSON
+TTL Input: Galvo Res,Dev1,port0/line20,TTL ScanImage Res Galvo,input,Digital,,,TTLGAR
+TTL Input: Galvo Y,Dev1,port0/line21,TTL ScanImage Y Galvo,input,Digital,,,TTLGAY
+TTL Output: ScanImage,Dev1,port0/line3,TTL ScanImage: Acq Start,output,Digital,,,TTLSCA
+Basler Widefield Imaging,Dev1,port0/line4,TTL Basler: Frame Trigger,output,Digital,,,BASWIM
+Basler Widefield Unused,Dev1,port0/line23,TTL Basler: UNUSED,output,Digital,,,BASWUN
+TTL Output: LEDControl,Dev1,port0/line0,BLUE LED,output,Digital,,,TTLLED
+TTL Output: LEDControl,Dev1,port0/line25,GREEN LED,output,Digital,,,TTLLED
+TTL Output: Auditory Stimulus,Dev1,port0/line26,Speaker,output,Digital,,,TTLAUD
+TTL Output: Optical Stimulus,Dev1,port0/line27,Optical Stimulus,output,Digital,,,TTLOPT
+TTL Output: Hamamatsu Camera Drive,Dev1,port0/line28,HamamatsuTrigger,output,Digital,,,TTLHCD
+TTL Output: LED,Dev1,port0/line29,LED,output,Digital,,,TTLLED
+TTL Output: IR LED,Dev1,port0/line30,IRLED_BaslerImaging,output,Digital,,,TTLIRL
+Vibration Motors,Dev1,port0/line2,Vibration,output,Digital,,,VIBMOT
+Digital Output: Thermode Trigger,Dev1,port0/line7,Thermode Trigger,output,Digital,,,THERMT
+Piezo Driver,Dev1,0,Aurora Force Command Voltage,output,Voltage,SingleEnded,[0 10],PIEZOD

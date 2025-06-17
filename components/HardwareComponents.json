@@ -1,0 +1,25 @@
+{"CAMERA": 
+  {
+    "Adaptor": "gentl",
+    "Binning": ["1", "2", "4"],
+    "BinningType": "Sum",
+    "DEVICE": "CAMERA",
+    "DeviceName": "",
+    "ExposureTime": "10000",
+    "FramesPerTrigger": "1",
+    "Gain": "20",
+    "OutputLine": "Line3",
+    "TriggerActivation": "RisingEdge",
+    "TriggerLine": "Line4",
+    "TriggerMode": ["hardware", "manual", "immediate"],
+    "TriggerSelector": "FrameStart"
+  },
+  "DAQ": 
+  {
+    "DEVICE": "DAQ",
+    "ID": "Dev1",
+    "Model": "",
+    "Rate": "1000",
+    "Vendor": "ni"
+  }
+}

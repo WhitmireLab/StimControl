@@ -1,0 +1,82 @@
+% NEW COMMENTS AS OF 02.05.2025
+% THIS IS A SAMPLE PROTOCOL FILE FOR QSTCONTROL
+% =============================================
+% COMMENTS
+% --------
+%
+% Add comments to your protocol using the percent (%) symbol. Comment lines
+% can appear anywhere in a protocol file. If you append a comments to
+% the end of a parameter line, it will be assigned to the respective
+% stimulus (and show up in the QSTcontrol GUI).
+%
+% Blank lines will be ignored.
+%
+% GENERAL PARAMETERS
+% ------------------
+%
+% The first line in a protocol file can be used to set general parameters:
+%
+% - nProtRepXXX     number of iterations across the whole protocol (default: 1)
+% - randomizeX      randomize sequenze (0 = off, 1 = randomize, 2 = pseudo; default: off)
+% - dPauseXXX       duration of the pause between stimuli (in seconds; default: 5 seconds)
+%
+%
+% OVERALL PROTOCOL
+% --------------------------------
+% Each line after the first should contain either a trial protocol, 
+% defined as a series of targeted commands, or a command definition. 
+% Stimulus commmands are defined with the syntax 
+% PROTNAME[TYPE](TARGETS, COMMASEPARATED) > DEFINITION
+% TYPE defines the kind of stimulus. Possible values: 
+%	THERM 	thermal 
+%	PWM	digital PWM
+%	DIG
+%	ARBA 	arbitrary analog
+%	ARBD 	arbitrary digital
+% TARGETS defines the target ports by ID, as defined in, e.g. ChanParams.csv
+% If no targets are defined, the program will choose sensible defaults.
+% Syntax for specific stimuli commands are outlined below.
+%
+%
+% STIMULUS DEFINITIONS: THERMODE & VIBRATION MOTOR
+% ------------------------------
+%
+% The thermode is adressed according to QST syntax:
+%
+% - Nxxx    set neutral temperature in 1/10 °C (xxx = 200-400)
+% - Sxxxxx  enable/disable area 1 to 5 (x=0: disable, x=1: enable)
+% - Csxxx   set stimulation temperature in 1/10 °C (s=0: all areas or s=1-5, xxx=100-600)
+% - Vsxxxx  set stimulation speed in 1/10 °C/s (s=0: all areas or s=1-5, xxxx=0001-9999)
+% - Dsxxxx  set stimulation Duration in ms (s=0: all areas or s=1-5, xxxx=0001-9999)
+% - Txxx    set Trigger number (xxx = 001-255)
+% - Ix      enable/disable Integral term (x=0: disable, x=1: enable)
+%
+% Additional parameters control the vibration motors (omit to disable):
+%
+% - VibDurX set vibration Duration in ms
+% - VibAmpX set vibration intensity in 1/10V (X=15-33)
+%
+% Append 'A' or 'B' to any of these parameters do address a specific
+% thermode (otherwise, the parameter is valid for both thermodes).
+%
+% STIMULUS DEFINITIONS: TIMING & REPETITIONS
+% ------------------------------------------
+%
+% - tPreX   recording duration before stimulus onset (s)
+% - tPostX  recording duration after stimulus onset (s)
+% - nRepX   number of stimulus repetitions
+
+nProtRep10 randomize1 dPause30
+
+COOL2S VIB2S
+WARM2S SLWINC
+
+COOL2S[THERM]()>N320 S11000 C0220 V03000 R03000 D002000 T001 I1
+WARM2S[THERM]()>N320 S11000 C0420 V03000 R03000 D002000 T001 I1
+VIB2S[]()>
+
+
+ tPre10000 tPost12000 VibDur2000 % 2 second vibration
+N320 S11000 C0220 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second cool
+N320 S11000 C0420 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second warm
+N320 S11000 C0320 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % control

@@ -4,6 +4,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
         SessionHandle
         Required
         SessionInfo = struct();
+        ChannelMap = struct();
     end
 
     methods
@@ -163,7 +164,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
             elseif contains(folderpath, "DaqParams")
                 obj = obj.ConfigureDAQ(folderpath);
             else
-                % assume a fold er with both params in it.
+                % assume a folder with both params in it.
                 try
                     obj = obj.ConfigureDAQ([folderpath filesep "DaqParams.csv"]);
                 catch exception
