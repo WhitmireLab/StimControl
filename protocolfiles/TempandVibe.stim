@@ -1,5 +1,4 @@
-% NEW COMMENTS AS OF 02.05.2025
-% THIS IS A SAMPLE PROTOCOL FILE FOR QSTCONTROL
+% THIS IS A SAMPLE PROTOCOL FILE FOR STIMCONTROL
 % =============================================
 % COMMENTS
 % --------
@@ -18,27 +17,42 @@
 %
 % - nProtRepXXX     number of iterations across the whole protocol (default: 1)
 % - randomizeX      randomize sequenze (0 = off, 1 = randomize, 2 = pseudo; default: off)
-% - dPauseXXX       duration of the pause between stimuli (in seconds; default: 5 seconds)
+% - dPauseXXX       duration of the pause between stimulus blocks (in seconds; default: 5 seconds)
 %
-%
-% OVERALL PROTOCOL
+% Each line after the first should contain either a trial protocol or a function definition. 
+% 
+% TRIAL PROTOCOLS
 % --------------------------------
-% Each line after the first should contain either a trial protocol, 
-% defined as a series of targeted commands, or a command definition. 
-% Stimulus commmands are defined with the syntax 
-% PROTNAME[TYPE](TARGETS, COMMASEPARATED) > DEFINITION
+% A trial is made up of a series of built-in commands and function calls.
+% all functions called must be defined as in FUNCTION DEFINITIONS below. 
+% functions and commands can be combined using brackets () and spaces - 
+%	e.g. "(COOLA & WARMB)" calls the cool and warm functions simultaneously, 
+%	while "(COOLA, WARMB)" and "COOLA WARMB" would call them sequentially.
+% 
+% Built-in commands:
+% 	holdX	hold all outputs at their current value for Xms before executing the next command.
+%	repX 	used in conjunction with other commands or sequences: rep1(COOLA, holdX)
+%
+%
+% FUNCTION DEFINITIONS
+% --------------------------------
+% Function definitions follow the syntax 
+% def PROTOCOLNAME-TYPE(TARGETS, COMMASEPARATED): DEFINITION
 % TYPE defines the kind of stimulus. Possible values: 
-%	THERM 	thermal 
-%	PWM	digital PWM
-%	DIG
-%	ARBA 	arbitrary analog
-%	ARBD 	arbitrary digital
+%	THERM 		thermal stim from Aurora + DAQ
+%	DAQPWM		digital PWM from DAQ
+%	DAQDIG		digital stim from DAQ
+% 	REC		
+%	DAQLED		LED stimulus from DAQ
+%	DAQANA		arbitrary analog stim from DAQ
+% 	DAQDIG		arbitrary digital stim from DAQ
+%	NESTFCN		nested function, calling other functions as in "trial protocols"
+%
 % TARGETS defines the target ports by ID, as defined in, e.g. ChanParams.csv
-% If no targets are defined, the program will choose sensible defaults.
-% Syntax for specific stimuli commands are outlined below.
+% Syntax for specific stimuli are outlined below.
 %
 %
-% STIMULUS DEFINITIONS: THERMODE & VIBRATION MOTOR
+% STIMULUS DEFINITIONS: THERMODE
 % ------------------------------
 %
 % The thermode is adressed according to QST syntax:
@@ -51,6 +65,8 @@
 % - Txxx    set Trigger number (xxx = 001-255)
 % - Ix      enable/disable Integral term (x=0: disable, x=1: enable)
 %
+% STIMULUS DEFINITIONS: VIBRATION MOTOR
+% ------------------------------
 % Additional parameters control the vibration motors (omit to disable):
 %
 % - VibDurX set vibration Duration in ms
@@ -68,15 +84,16 @@
 
 nProtRep10 randomize1 dPause30
 
-COOL2S VIB2S
-WARM2S SLWINC
+(WAIT1 (COOLA & WARMB & VIBA))x3
 
-COOL2S[THERM]()>N320 S11000 C0220 V03000 R03000 D002000 T001 I1
-WARM2S[THERM]()>N320 S11000 C0420 V03000 R03000 D002000 T001 I1
-VIB2S[]()>
+def COOLA-THERM(THERMA)>N320 S11000 C0220 V03000 R03000 D002000 T001 I1 %2 second cool
+def WARMB-THERM(THERMB)>N320 S11000 C0420 V03000 R03000 D002000 T001 I1 %2 second warm
+def VIBA-DAQ(VIBA, VIBB)>
 
 
- tPre10000 tPost12000 VibDur2000 % 2 second vibration
+tPre10000 tPost12000 nRep10
+
+VibDur2000 % 2 second vibration
 N320 S11000 C0220 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second cool
 N320 S11000 C0420 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second warm
 N320 S11000 C0320 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % control
