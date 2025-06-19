@@ -3,8 +3,6 @@ function [p,g] = readProtocol(filename,varargin)
 %% parse inputs
 ip = inputParser;
 addRequired(ip,'filename',...
-    @(x)validateattributes(x,{'char'},{'nonempty'}))
-addOptional(ip,'nThermodes',2,...
     @(x)validateattributes(x,{'numeric'},{'scalar','real','>',0,'<',5}));
 parse(ip,filename,varargin{:});
 
@@ -20,16 +18,12 @@ lines = lines{1};
 %% remove comment lines
 lines(cellfun(@(x) strcmp(x(1),'%'),lines)) = [];
 
-%% define fieldnames for thermodes
-fnThermodes = arrayfun(@(x) sprintf('Thermode%s',64+x),...
-	1:ip.Results.nThermodes,'UniformOutput',0);
-
 %% define defaults
+%%TODO ADD NumTHINGS?
 g = struct(...              % general parameters
     'dPause',               5,...
     'nProtRep',             1,...
     'randomize',            0);
-
 tmp = struct(...            % thermodes
     'NeutralTemp',          32,...    
     'PacingRate',           ones(1,5) * 999,...
@@ -41,31 +35,70 @@ tmp = struct(...            % thermodes
     'nTrigger',             255,...
     'VibrationDuration',    0);
 dig = struct( ...           %basic digital output
-    'delay',                0,...
-    'duration',             2);
+    'digDelay',             0,...
+    'digDuration',          2);
 pwm  = struct( ...          %PWM digital output
-    'dc',                   50,...
-    'freq',                 100,...
-    'dur',                  2,...
-    'delay',                0);
+    'pwmDc',                50,...
+    'pwmFreq',              100,...
+    'pwmDur',               2,...
+    'pwmDelay',             0);
 ana  = struct( ...          %basic analog output
-    'amp',                  5,...
-    'dur',                  2,...
-    'delay',                0,...
-    'freq',                  100); %TODO FREQ RELEVANT?
-cam  = struct(...
+    'anAmp',                5,...
+    'anDur',                2,...
+    'anDelay',              0,...
+    'anFreq',               100); %TODO FREQ RELEVANT?
+cam  = struct(...           % cameras
     'light',                111,...
     'enable',               1);
-gen = struct();
-p = struct(...              % timing / repetitions / LED
+general = struct(...        % timing / repetitions
     'Comments',             '',...
     'tPre',                 1000,...
     'tPost',                2000,...
 	'nRepetitions',         1);
-%TODO this for all of them.
-for fn = fnThermodes
-    p.(fn{:}) = tmp;
+arb = struct( ...           % arbitrary outputs
+    'type',                 'analog',...
+    'filename',             '');
+p = struct();
+% Count and initialise with names
+RegXTherm = 'V\d{4}[A-Z]?';
+RegXAn = '((An)|(Vib)|(Piezo))[A-Z]*\d*[A-Z]?';
+RegXDi = '(Di)[A-Z]*\d*)[A-Z]?'; 
+RegXPwm = '((PWM)|(LED))[A-Z]*\d*[A-Z]?';
+RegXCam = '(Cam)[A-Z]*\d*[A-Z]?';
+regexStrings = {RegXTherm, RegXAn, RegXDi, RegXPwm, RegXCam};
+for regexString = regexStrings
+    occasions = cellfun(@(x) regexpi(x, regexString, 'match'), lines);
+    min = any(~isempty(horzcat(occasions{:})));
+    if min == 0 %no matches
+        continue
+    end
+    if strcmp(regexString, RegXTherm)
+        occasions = cellfun(@(x) regexpi(x, '(?<=\d+)[A-Z]?', 'match'), horzcat(occasions{:}), 'UniformOutput', false);
+        ids = unique(horzcat(occasions{:}));
+        if length(ids) <= 1
+            p.('Thermode') = tmp;
+            continue
+        end
+    else
+        occasions = cellfun(@(x) extract(x, lettersPattern), horzcat(occasions{:}), 'UniformOutput', false);
+        ids = unique(horzcat(occasions{:}));
+        %if there are multiple strings with the same prefix and one is
+        %shorter, remove it?
+        % ids(ismember(animals)) = [];
+        %TODO IF THERE'S MULTIPLE GET RID OF THE BASE ONE?
+    end %TODO WHAT ABOUT ARBITRARY
+    for n = 1:length(ids)
+        if strcmp(regexString, RegXTherm)
+            name = sprintf('Thermode%s', 64+n);
+            str = tmp;
+        else
+            name = ids{n};
+            if contains(name, )
+        end
+        p.(name) = str;
+    end
 end
+
 p = repmat(p,1,1000);
 
 %% parse general specs - on first line only

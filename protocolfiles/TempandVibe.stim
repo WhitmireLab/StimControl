@@ -34,9 +34,9 @@
 %
 % - Nxxx    set neutral temperature in 1/10 °C (xxx = 200-400)
 % - Sxxxxx  enable/disable area 1 to 5 (x=0: disable, x=1: enable)
-% - Csxxx   set stimulation temperature in 1/10 °C (s=0: all areas or s=1-5, xxx=100-600)
-% - Vsxxxx  set stimulation speed in 1/10 °C/s (s=0: all areas or s=1-5, xxxx=0001-9999)
-% - Dsxxxx  set stimulation Duration in ms (s=0: all areas or s=1-5, xxxx=0001-9999)
+% - Cxxx   set stimulation temperature in 1/10 °C (s=0: all areas or s=1-5, xxx=100-600)
+% - Vxxxx  set stimulation speed in 1/10 °C/s (s=0: all areas or s=1-5, xxxx=0001-9999)
+% - Dxxxx  set stimulation Duration in ms (s=0: all areas or s=1-5, xxxx=0001-9999)
 % - Txxx    set Trigger number (xxx = 001-255)
 % - Ix      enable/disable Integral term (x=0: disable, x=1: enable)
 %
@@ -90,8 +90,8 @@
 
 nProtRep10 randomize1 dPause30
 
-N320 S11000 C0220 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second cool
-N320 S11000 C0420 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second warm
+N320 S11000 C0220 C0220B V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second cool
+N320 S11000 C0420 C0220A V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second warm
 N320 S11000 C0320 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % control
 
 tPre10000 tPost12000 nRep10
