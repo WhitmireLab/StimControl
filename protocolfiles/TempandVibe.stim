@@ -4,7 +4,7 @@
 % --------
 %
 % Add comments to your protocol using the percent (%) symbol. Comment lines
-% can appear anywhere in a protocol file. If you append a comments to
+% can appear anywhere in a protocol file. If you append a comment to
 % the end of a parameter line, it will be assigned to the respective
 % stimulus (and show up in the QSTcontrol GUI).
 %
@@ -19,42 +19,17 @@
 % - randomizeX      randomize sequenze (0 = off, 1 = randomize, 2 = pseudo; default: off)
 % - dPauseXXX       duration of the pause between stimulus blocks (in seconds; default: 5 seconds)
 %
-% Each line after the first should contain either a trial protocol or a function definition. 
+% Each line after the first should contain a trial protocol.
 % 
 % TRIAL PROTOCOLS
 % --------------------------------
-% A trial is made up of a series of built-in commands and function calls.
-% all functions called must be defined as in FUNCTION DEFINITIONS below. 
-% functions and commands can be combined using brackets () and spaces - 
-%	e.g. "(COOLA & WARMB)" calls the cool and warm functions simultaneously, 
-%	while "(COOLA, WARMB)" and "COOLA WARMB" would call them sequentially.
-% 
-% Built-in commands:
-% 	holdX	hold all outputs at their current value for Xms before executing the next command.
-%	repX 	used in conjunction with other commands or sequences: rep1(COOLA, holdX)
-%
-%
-% FUNCTION DEFINITIONS
-% --------------------------------
-% Function definitions follow the syntax 
-% def PROTOCOLNAME-TYPE(TARGETS, COMMASEPARATED): DEFINITION
-% TYPE defines the kind of stimulus. Possible values: 
-%	THERM 		thermal stim from Aurora + DAQ
-%	DAQPWM		digital PWM from DAQ
-%	DAQDIG		digital stim from DAQ
-% 	REC		
-%	DAQLED		LED stimulus from DAQ
-%	DAQANA		arbitrary analog stim from DAQ
-% 	DAQDIG		arbitrary digital stim from DAQ
-%	NESTFCN		nested function, calling other functions as in "trial protocols"
-%
-% TARGETS defines the target ports by ID, as defined in, e.g. ChanParams.csv
-% Syntax for specific stimuli are outlined below.
-%
+% A trial is made up of a series of parameter definitions.
+% Append 'A' or 'B' to any of these parameters do address a specific output
+% (otherwise, the parameter is valid for all outputs of that type).
+% To disable an output, omit the parameters for that output.
 %
 % STIMULUS DEFINITIONS: THERMODE
 % ------------------------------
-%
 % The thermode is adressed according to QST syntax:
 %
 % - Nxxx    set neutral temperature in 1/10 °C (xxx = 200-400)
@@ -65,18 +40,49 @@
 % - Txxx    set Trigger number (xxx = 001-255)
 % - Ix      enable/disable Integral term (x=0: disable, x=1: enable)
 %
-% STIMULUS DEFINITIONS: VIBRATION MOTOR
+% STIMULUS DEFINITIONS: ANALOG STIMULATION
+% Legacy: also supports Vib instead of An as a prefix
 % ------------------------------
-% Additional parameters control the vibration motors (omit to disable):
+% - AnDurX 		set analog output duration in ms (or VibDurX for legacy)
+% - AnAmpX 		set analog output intensity in 1/10V (X=15-33) (or VibAmpX for legacy)
+% - AnDelayX		set analog output delay in ms
 %
-% - VibDurX set vibration Duration in ms
-% - VibAmpX set vibration intensity in 1/10V (X=15-33)
+% STIMULUS DEFINITIONS: DIGITAL BINARY STIMULATION
+% ------------------------------
+% - DiDurX 		set digital output duration in ms
+% - DiDelayX		set digital output delay in ms
 %
-% Append 'A' or 'B' to any of these parameters do address a specific
-% thermode (otherwise, the parameter is valid for both thermodes).
+% STIMULUS DEFINITIONS: DIGITAL PWM STIMULATION
+% ------------------------------
+% Legacy: also supports LED instead of PWM as a prefix
+% - PWMDCX		set PWM duty cycle (X=1-100)
+% - PWMFreqX 		set PWM frequency in Hz (must be compatible with DAQ card rate)
+% - PWMDurX		set PWM duration in ms
+% - PWMDelay		set PWM delay in ms
+%
+% STIMULUS DEFINITIONS: CAMERA
+% ------------------------------
+% By default, all connected cameras will operate at their default settings for each trial. 
+% Override them with the following commands:
+% 
+% - CamLightXXX 	bit mask to enable specific camera lights (100=colour 1, 010=colour 2, 001=colour 3, 110=alternate 1 and 2, etc.)
+% - CamEnableXA		enable camera A/B (per suffix. 0=disable, 1=enable)
+% 
+% STIMULUS DEFINITIONS: ARBITRARY
+% ------------------------------
+% Arbitrary DAQ stimuli can be sent by including arbitrary stim files, or by defining the arbitrary stimulus at the bottom of the .stim file.
+% - ArbitraryStimX:filename.txt		filename of the stimulus file, or the full filepath. X=identifier of arbitrary stimulus
+%
+% LEGACY CONSIDERATIONS
+% ------------------------------------------
+% dtact and ttact - I feel probably in timing and repetitions?
+% piezofreq piezoamp piezodur and piezostimnum - I feel probably analog
+% 
 %
 % STIMULUS DEFINITIONS: TIMING & REPETITIONS
 % ------------------------------------------
+% Timing and repetitions can be set for all trials at the end of the stim file, 
+% or per trial by defining at the end of the line for that trial.
 %
 % - tPreX   recording duration before stimulus onset (s)
 % - tPostX  recording duration after stimulus onset (s)
@@ -84,16 +90,8 @@
 
 nProtRep10 randomize1 dPause30
 
-(WAIT1 (COOLA & WARMB & VIBA))x3
-
-def COOLA-THERM(THERMA)>N320 S11000 C0220 V03000 R03000 D002000 T001 I1 %2 second cool
-def WARMB-THERM(THERMB)>N320 S11000 C0420 V03000 R03000 D002000 T001 I1 %2 second warm
-def VIBA-DAQ(VIBA, VIBB)>
-
-
-tPre10000 tPost12000 nRep10
-
-VibDur2000 % 2 second vibration
 N320 S11000 C0220 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second cool
 N320 S11000 C0420 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second warm
 N320 S11000 C0320 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % control
+
+tPre10000 tPost12000 nRep10

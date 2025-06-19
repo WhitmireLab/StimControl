@@ -1,4 +1,4 @@
-function [p,g,h] = readProtocol(filename,varargin)
+function [p,g] = readProtocol(filename,varargin)
 
 %% parse inputs
 ip = inputParser;
@@ -29,10 +29,7 @@ g = struct(...              % general parameters
     'dPause',               5,...
     'nProtRep',             1,...
     'randomize',            0);
-h = struct(...              % enabled hardware
-    'DAQ',                  true, ...
-    'QST',                  false, ...
-    'DMD',                  false);
+
 tmp = struct(...            % thermodes
     'NeutralTemp',          32,...    
     'PacingRate',           ones(1,5) * 999,...
@@ -43,19 +40,29 @@ tmp = struct(...            % thermodes
     'integralTerm',         1,...
     'nTrigger',             255,...
     'VibrationDuration',    0);
+dig = struct( ...           %basic digital output
+    'delay',                0,...
+    'duration',             2);
+pwm  = struct( ...          %PWM digital output
+    'dc',                   50,...
+    'freq',                 100,...
+    'dur',                  2,...
+    'delay',                0);
+ana  = struct( ...          %basic analog output
+    'amp',                  5,...
+    'dur',                  2,...
+    'delay',                0,...
+    'freq',                  100); %TODO FREQ RELEVANT?
+cam  = struct(...
+    'light',                111,...
+    'enable',               1);
+gen = struct();
 p = struct(...              % timing / repetitions / LED
     'Comments',             '',...
     'tPre',                 1000,...
     'tPost',                2000,...
-	'nRepetitions',         1,...
-    'ledDuration',          0,...
-    'ledFrequency',         25,...
-    'ledDutyCycle',         50,...
-    'ledDelay',             0,...
-    'piezoFreq',       0,... %added 2022.03.18
-    'piezoStimNum',         0,... %added 2022.03.18
-    'piezoDur',         0,... %added 2024.11.15 (for Aurora)
-    'piezoAmp',             0); %added 2022.03.18
+	'nRepetitions',         1);
+%TODO this for all of them.
 for fn = fnThermodes
     p.(fn{:}) = tmp;
 end
@@ -94,35 +101,6 @@ if regexpi(lines{1},'(nProtRep)|(randomize)|(dPause)')
     lines(1) = [];
 end
 
-if regexpi(lines{1}, '(DAQ)|(QST)|(DMD)')
-    remain      = lines{1};
-    [remain,~]  = strtok(remain,'%');
-    remain      = strtrim(remain);
-    while ~isempty(remain)
-        [token,remain] = strtok(remain); %#ok<STTOK>
-        if ~isempty(token)
-            switch lower(token)
-                case 'daq'
-                    h.DAQ = true;
-                    continue
-                case 'qst'
-                    h.QST = true;
-                    continue
-                case 'dmd'
-                    h.DMD = true;
-                    continue
-            end
-        end
-        error('Unknown parameter "%s"',token)
-    end
-    lines(1) = [];
-else
-    % legacy - enable all
-    h.daq = true;
-    h.qst = true;
-    h.dmd = true;
-end
-
 %% parse stimulus definitions
 for idxStim = 1:length(lines)
     remain = lines{idxStim};
@@ -133,17 +111,30 @@ for idxStim = 1:length(lines)
         p(idxStim).Comments = cell2mat(regexp(tmp,'^[\s%]*(.*?)\s*$','tokens','once'));
         remain = strtrim(remain);
     end
-       
+    
     while ~isempty(remain)
         % obtain the next token
         [token,remain] = strtok(remain); %#ok<STTOK>
 
-        % check if token refers to thermode. If so, switch to subroutine
-        if regexpi(token,'^(I[01]|[NT]\d{3}|C\d{4}|S[01]{5}|[VR]\d{5}|D\d{6}|VibDur\d*)[A-Z]?$','once')
+        % Switch to appropriate subroutine for provided token.  
+        if regexpi(token,'^(I[01]|[NT]\d{3}|C\d{4}|S[01]{5}|[VR]\d{5}|D\d{6})[A-Z]?$','once')
+            %thermode
             p = parseThermode(p,token,idxStim,fnThermodes);
             continue
+        elseif regexpi(token, '^(((An)|(Vib)|(Piezo))((Amp)|(Dur)|(Delay))\d*)[A-Z]?$', 'once')
+            % analog oputput - vibration and piezo included.
+            p = parseToken(p, token, idxStim);
+            continue
+        elseif regexpi(token, '^([(Di)][(Dur)(Delay)]\d*)[A-Z]?$', 'once')
+            % simple digital output
+            continue
+        elseif regexpi(token, '^([(PWM)|(LED)][(DC)(Freq)(Dur)(Delay)]\d*)[A-Z]?$', 'once')
+            % PWM including LED control
+            continue
+        elseif regexpi(token, '^([(Cam)][(Light)(Enable)]\d*)[A-Z]?$', 'once')
+            % Specific camera acquisition controls
+            continue
         end
-            
         % parse remaining tokens
         tmp = regexpi(token,'^([a-z]+)(-?\d+)$','once','tokens');
         if ~isempty(tmp)
@@ -225,7 +216,6 @@ end
 
 
 function p = parseThermode(p,token,idxStim,fnThermodes)
-
 % Read the parameter's value, define the fieldname and wether the parameter
 % applies to multiple surfaces of the thermode
 if ~isempty(regexpi(token,'vibdur'))
