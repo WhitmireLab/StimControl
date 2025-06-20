@@ -43,14 +43,14 @@
 % STIMULUS DEFINITIONS: ANALOG STIMULATION
 % Legacy: also supports Vib instead of An as a prefix
 % ------------------------------
-% - AnDurX 		set analog output duration in ms (or VibDurX for legacy)
-% - AnAmpX 		set analog output intensity in 1/10V (X=15-33) (or VibAmpX for legacy)
-% - AnDelayX		set analog output delay in ms
+% - AnaDurX 		set analog output duration in ms (or VibDurX for legacy)
+% - AnaAmpX 		set analog output intensity in 1/10V (X=15-33) (or VibAmpX for legacy)
+% - AnaDelayX		set analog output delay in ms
 %
 % STIMULUS DEFINITIONS: DIGITAL BINARY STIMULATION
 % ------------------------------
-% - DiDurX 		set digital output duration in ms
-% - DiDelayX		set digital output delay in ms
+% - DigDurX 		set digital output duration in ms
+% - DigDelayX		set digital output delay in ms
 %
 % STIMULUS DEFINITIONS: DIGITAL PWM STIMULATION
 % ------------------------------
@@ -71,7 +71,7 @@
 % STIMULUS DEFINITIONS: ARBITRARY
 % ------------------------------
 % Arbitrary DAQ stimuli can be sent by including arbitrary stim files, or by defining the arbitrary stimulus at the bottom of the .stim file.
-% - ArbitraryStimX:filename.txt		filename of the stimulus file, or the full filepath. X=identifier of arbitrary stimulus
+% - ArbitraryStimIdentifier:filename.txt	filename of the stimulus file, or the full filepath. Can be CSV or TXT.
 %
 % LEGACY CONSIDERATIONS
 % ------------------------------------------
@@ -90,8 +90,8 @@
 
 nProtRep10 randomize1 dPause30
 
-N320 S11000 C0220 C0220B V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second cool
-N320 S11000 C0420 C0220A V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % 2 second warm
-N320 S11000 C0320 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 % control
+N320 S11000 C0220 C0220B V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 ArbitraryStimIdentifier:filename.txt AnaDur2A AnaDur3B
+N320 S11000 C0420 C0220A V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 AnaDur3
+N320 S11000 C0320 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 AnaDur4A AnaDur4b
 
 tPre10000 tPost12000 nRep10

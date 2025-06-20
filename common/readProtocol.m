@@ -3,7 +3,7 @@ function [p,g] = readProtocol(filename,varargin)
 %% parse inputs
 ip = inputParser;
 addRequired(ip,'filename',...
-    @(x)validateattributes(x,{'numeric'},{'scalar','real','>',0,'<',5}));
+    @(x)validateattributes(x,{'char'},{'nonempty'}));
 parse(ip,filename,varargin{:});
 
 %% read file
@@ -19,11 +19,16 @@ lines = lines{1};
 lines(cellfun(@(x) strcmp(x(1),'%'),lines)) = [];
 
 %% define defaults
-%%TODO ADD NumTHINGS?
 g = struct(...              % general parameters
     'dPause',               5,...
     'nProtRep',             1,...
-    'randomize',            0);
+    'randomize',            0, ...
+    'nTherm',               0,...
+    'nAna',                 0,...
+    'nDig',                 0,...
+    'nPwm',                 0,...
+    'nCam',                 0,...
+    'nArb',                 0);
 tmp = struct(...            % thermodes
     'NeutralTemp',          32,...    
     'PacingRate',           ones(1,5) * 999,...
@@ -59,43 +64,69 @@ arb = struct( ...           % arbitrary outputs
     'type',                 'analog',...
     'filename',             '');
 p = struct();
-% Count and initialise with names
-RegXTherm = 'V\d{4}[A-Z]?';
-RegXAn = '((An)|(Vib)|(Piezo))[A-Z]*\d*[A-Z]?';
-RegXDi = '(Di)[A-Z]*\d*)[A-Z]?'; 
-RegXPwm = '((PWM)|(LED))[A-Z]*\d*[A-Z]?';
-RegXCam = '(Cam)[A-Z]*\d*[A-Z]?';
-regexStrings = {RegXTherm, RegXAn, RegXDi, RegXPwm, RegXCam};
+
+%% Count and initialise with names
+regXSuffix = '[A-Z]*\d*[A-Z]?';
+regXTherm = 'V\d{4}[A-Z]?';
+regXAna = ['((Ana)|(Vib)|(Piezo))', regXSuffix];
+regXDig = ['(Dig)', regXSuffix]; 
+regXPwm = ['((PWM)|(LED))', regXSuffix];
+regXCam = ['(Cam)', regXSuffix];
+regXArb = '[A-Z]*\:[A-Z]+\.((txt)|(csv))';
+regexStrings = {regXTherm, regXAna, regXDig, regXPwm, regXCam, regXArb};
 for regexString = regexStrings
-    occasions = cellfun(@(x) regexpi(x, regexString, 'match'), lines);
-    min = any(~isempty(horzcat(occasions{:})));
-    if min == 0 %no matches
+    occs = cellfun(@(x) regexpi(x, regexString, 'match'), lines);
+    if ~any(~isempty(horzcat(occs{:})))
         continue
     end
-    if strcmp(regexString, RegXTherm)
-        occasions = cellfun(@(x) regexpi(x, '(?<=\d+)[A-Z]?', 'match'), horzcat(occasions{:}), 'UniformOutput', false);
-        ids = unique(horzcat(occasions{:}));
+    if strcmp(regexString, regXTherm)
+        occs = cellfun(@(x) regexpi(x, '(?<=\d+)[A-Z]?', 'match'), horzcat(occs{:}), 'UniformOutput', false);
+        ids = unique(horzcat(occs{:}));
         if length(ids) <= 1
             p.('Thermode') = tmp;
+            g.('nTherm') = 1;
             continue
         end
+    elseif strcmp(regexString, regXArb)
+        occs = cellfun(@(x) regexpi(x, '[A-Z]+(?=\:)', 'match'), horzcat(occs{:}), 'UniformOutput', false);
+        ids = unique(horzcat(occs{:}));
     else
-        occasions = cellfun(@(x) extract(x, lettersPattern), horzcat(occasions{:}), 'UniformOutput', false);
-        ids = unique(horzcat(occasions{:}));
-        %if there are multiple strings with the same prefix and one is
-        %shorter, remove it?
-        % ids(ismember(animals)) = [];
-        %TODO IF THERE'S MULTIPLE GET RID OF THE BASE ONE?
-    end %TODO WHAT ABOUT ARBITRARY
+        minireg = regexString{1}(1:end-length(regXSuffix));
+        occs = cellfun(@(x) strcat(regexpi(x, [minireg, '(?=[A-Z]+\d+)'], 'match'), ...
+            regexp(x, ['(?<=', minireg, '[A-Z]+[a-z]+\d+)[A-Z]*'], 'match')), horzcat(occs{:}), 'UniformOutput', false);
+        ids = unique(horzcat(occs{:}));
+    end 
     for n = 1:length(ids)
-        if strcmp(regexString, RegXTherm)
+        if strcmp(regexString, regXTherm)
             name = sprintf('Thermode%s', 64+n);
-            str = tmp;
+            p.(name) = tmp;
+            g.('nTherm') = g.('nTherm')+1;
         else
             name = ids{n};
-            if contains(name, )
+            for m = ids
+                if contains(m, name)
+                    continue
+                end
+            end
+            if contains(name, 'Ana') || contains(name, 'Vib') || contains(name, 'Piezo')
+                p.(name) = ana;
+                g.('nAna') = g.('nAna') + 1;
+            elseif contains(name, 'Dig')
+                p.(name) = dig;
+                g.('nDig') = g.('nDig') + 1;
+            elseif contains(name, 'PWM') || contains(name, 'LED')
+                p.(name) = pwm;
+                g.('nPwm') = g.('nPwm') + 1;
+            elseif contains(name, 'Cam')
+                p.(name) = cam;
+                g.('nCam') = g.('nCam') + 1;
+            elseif strcmp(regexString, regexArb)
+                p.(name) = arb;
+                g.('nArb') = g.('nArb') + 1;
+            else
+                error("Unknown Input Type %s", name);
+            end
         end
-        p.(name) = str;
     end
 end
 
@@ -154,18 +185,15 @@ for idxStim = 1:length(lines)
             %thermode
             p = parseThermode(p,token,idxStim,fnThermodes);
             continue
-        elseif regexpi(token, '^(((An)|(Vib)|(Piezo))((Amp)|(Dur)|(Delay))\d*)[A-Z]?$', 'once')
-            % analog oputput - vibration and piezo included.
-            p = parseToken(p, token, idxStim);
+        elseif regexpi(token, ['^(((Ana)|(Vib)|(Piezo)|(Dig)|(PWM)|(LED)|(Cam))' ...
+                '((Amp)|(Dur)|(Delay)|(DC)|(Freq)|(Light)|(Enable))\d*)[A-Z]?$'], 'once')
+            % standard output format
+            p = parseToken(p, token, idxStim, g);
             continue
-        elseif regexpi(token, '^([(Di)][(Dur)(Delay)]\d*)[A-Z]?$', 'once')
-            % simple digital output
-            continue
-        elseif regexpi(token, '^([(PWM)|(LED)][(DC)(Freq)(Dur)(Delay)]\d*)[A-Z]?$', 'once')
-            % PWM including LED control
-            continue
-        elseif regexpi(token, '^([(Cam)][(Light)(Enable)]\d*)[A-Z]?$', 'once')
-            % Specific camera acquisition controls
+        elseif regexpi(token, '^[A-Z]*\:[A-Z]+\.((txt)|(csv))$', 'once')
+            %Specific arbitrary control - gotta read a text file.
+            tmp = regexpi(token, '^([A-Z]*\:)(.*)$', 'once', 'tokens');
+            
             continue
         end
         % parse remaining tokens
