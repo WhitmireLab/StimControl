@@ -62,7 +62,8 @@ general = struct(...        % timing / repetitions
 	'nRepetitions',         1);
 arb = struct( ...           % arbitrary outputs
     'type',                 'analog',... %analog/digital
-    'filename',             '');
+    'filename',             '', ...
+    'data',                 []);
 p = struct();
 
 %% Count and initialise with names
@@ -75,7 +76,7 @@ regexAna = ['((Ana)|(Vib)|(Piezo))', regexSuffix];
 regexDig = ['(Dig)', regexSuffix]; 
 regexPwm = ['((PWM)|(LED))', regexSuffix];
 regexCam = ['(Cam)', regexSuffix];
-regexArb = '[A-Z]*\:[A-Z]+\.((txt)|(csv))';
+regexArb = '[A-Z]*\:([A-Z]+\/*)+\.((txt)|(csv)|(astim))';
 regexStrings = {regexTherm, regexAna, regexDig, regexPwm, regexCam, regexArb};
 for regexString = regexStrings
     occs = cellfun(@(x) regexpi(x, regexString, 'match'), lines);
@@ -204,7 +205,7 @@ for idxStim = 1:length(lines)
             % Thermode
             p = parseThermode(p,token,idxStim);
             continue
-        elseif regexpi(token, '^[A-Z]*\:[A-Z]+\.((txt)|(csv))$', 'once')
+        elseif regexpi(token, '^[A-Z]*\:([A-Z]+\/*)+\.((txt)|(csv)|(astim))$', 'once')
             % Specific arbitrary control - gotta read a text file.
             p = parseArbitrary(p,token,idxStim);
             continue
@@ -294,24 +295,49 @@ p(idxStim+1:end) = [];
 end
 
 function p = parseArbitrary(p, token, idxStim)
-    tmp = regexpi(token, '^([A-Z]*\:)(.*)$', 'once', 'tokens');
+    tmp = regexpi(token, '^([A-Z]*)(\:)(.*)$', 'once', 'tokens');
+    id = tmp{1};
+    filename = tmp{3};
+    % read file
+    if ~exist(filename,'file')
+        error('File not found: %s',file)
+    end
+    fid   = fopen(filename);
+    lines = textscan(fid,'%s','Delimiter','\n','MultipleDelimsAsOne',1);
+    fclose(fid);
+    lines = lines{1};
+    
+    % remove comment lines
+    lines(cellfun(@(x) (strcmp(x(1),'%') || strcmp(x(2), '%')) ,lines)) = [];
+    try
+        type = lower(lines{1});
+        protocol = str2num(lines{2});
+    catch
+        error("Invalid protocol in file %s. Protocol line should have only numbers", filename);
+    end
+    if ~contains(['digital', 'analog'], type)
+        error("invalid data type %s in file %s", type, filename);
+    end
+    p(idxStim).(id).type = type;
+    p(idxStim).(id).filename = filename;
+    p(idxStim).(id).data = protocol;
 end
 
 function p = parseToken(p, token, idxStim)
     tmp = regexpi(token, ['^((Ana)|(Vib)|(Piezo)|(Dig)|(PWM)|(LED)|(Cam))' ...
                             '((Amp)|(Dur)|(Delay)|(DC)|(Freq)|(Light)|(Enable))' ...
                             '(\d*)([A-Z]?)$'], 'once', 'tokens');
-    stimType = tmp(1);
-    attr = tmp(2);
-    val = str2double(tmp(3));
-    subtype = upper(tmp(4));
-    if isempty(subtype{:})
+    stimType = tmp{1};
+    attr = tmp{2};
+    val = str2double(tmp{3});
+    subtype = upper(tmp{4});
+    if isempty(subtype)
         % applies to all stimuli of that type
-        surfaces = cellfun(@(x) regexpi(x, ['(', stimType{:}, ')([A-Z]*)'], ...
+        surfaces = cellfun(@(x) regexpi(x, ['(', stimType, ')([A-Z]*)'], ...
             'match'), fields(p), 'UniformOutput', false);
         surfaces = unique(horzcat(surfaces{:}));
     else
-        surfaces = {strcat(stimType{:}, subtype{:})};
+        surfaces = {strcat(stimType, subtype)};
     end
     for sName = surfaces
         sName = sName{:};
@@ -319,7 +345,7 @@ function p = parseToken(p, token, idxStim)
             error('Faulty parameter "%s" for stimulus #%d (%s, valid values for %s: %s)', ...
                     attr,idxStim,p(idxStim).(sName),fields(p(idxStim).(sName)))
         end
-        p(idxStim).(sName).(lower(attr{:})) = val;
+        p(idxStim).(sName).(lower(attr)) = val;
     end
 end
 
