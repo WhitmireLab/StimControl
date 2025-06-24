@@ -1,3 +1,7 @@
+# STIM CONTROL
+This repo contains a Matlab-based stimulus/acquisition interfacing program. 
+Initially a fork from [WidefieldImager](https://github.com/churchlandlab/WidefieldImager) by the Churchland lab, and incorporating portions of code taken from the Whitmire Lab's QST control program, it aims to provide a fully modular and configurable interface for neural stimulus and imaging.
+
 # PARAMETER FILES
 Parameters are read from .csv files. These parameters can be either broad (simply select which types of input/output you would like) or granular (configure channels individually). Currently only granular  config files are supported.
 
