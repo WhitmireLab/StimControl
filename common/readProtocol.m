@@ -29,7 +29,7 @@ g = struct(...              % general parameters
     'nPwm',                 0,...
     'nCam',                 0,...
     'nArb',                 0);
-tmp = struct(...            % thermodes
+thrm = struct(...           % thermodes
     'NeutralTemp',          32,...    
     'PacingRate',           ones(1,5) * 999,...
     'ReturnSpeed',          ones(1,5) * 999,...
@@ -40,18 +40,18 @@ tmp = struct(...            % thermodes
     'nTrigger',             255,...
     'VibrationDuration',    0);
 dig = struct( ...           %basic digital output
-    'digDelay',             0,...
-    'digDuration',          2);
+    'delay',                0,...
+    'dur',                  2);
 pwm  = struct( ...          %PWM digital output
-    'pwmDc',                50,...
-    'pwmFreq',              100,...
-    'pwmDur',               2,...
-    'pwmDelay',             0);
+    'dc',                   50,...
+    'freq',                 100,...
+    'dur',                  2,...
+    'delay',                0);
 ana  = struct( ...          %basic analog output
-    'anAmp',                5,...
-    'anDur',                2,...
-    'anDelay',              0,...
-    'anFreq',               100); %TODO FREQ RELEVANT?
+    'amp',                  5,...
+    'dur',                  2,...
+    'delay',                0,...
+    'freq',                 100); %TODO FREQ RELEVANT?
 cam  = struct(...           % cameras
     'light',                111,...
     'enable',               1);
@@ -61,67 +61,86 @@ general = struct(...        % timing / repetitions
     'tPost',                2000,...
 	'nRepetitions',         1);
 arb = struct( ...           % arbitrary outputs
-    'type',                 'analog',...
+    'type',                 'analog',... %analog/digital
     'filename',             '');
 p = struct();
 
 %% Count and initialise with names
-regXSuffix = '[A-Z]*\d*[A-Z]?';
-regXTherm = 'V\d{4}[A-Z]?';
-regXAna = ['((Ana)|(Vib)|(Piezo))', regXSuffix];
-regXDig = ['(Dig)', regXSuffix]; 
-regXPwm = ['((PWM)|(LED))', regXSuffix];
-regXCam = ['(Cam)', regXSuffix];
-regXArb = '[A-Z]*\:[A-Z]+\.((txt)|(csv))';
-regexStrings = {regXTherm, regXAna, regXDig, regXPwm, regXCam, regXArb};
+%TODO maybe only do this if nTherm nAna nDig nPwm nCam and nArb are
+%undefined?
+regexSuffix = '[A-Z]*\d*[A-Z]?';
+regexTherm = 'V\d{5}[A-Z]?';
+regexTherm = '(I[01]|[NT]\d{3}|C\d{4}|S[01]{5}|[VR]\d{5}|D\d{6})[A-Z]?';
+regexAna = ['((Ana)|(Vib)|(Piezo))', regexSuffix];
+regexDig = ['(Dig)', regexSuffix]; 
+regexPwm = ['((PWM)|(LED))', regexSuffix];
+regexCam = ['(Cam)', regexSuffix];
+regexArb = '[A-Z]*\:[A-Z]+\.((txt)|(csv))';
+regexStrings = {regexTherm, regexAna, regexDig, regexPwm, regexCam, regexArb};
 for regexString = regexStrings
     occs = cellfun(@(x) regexpi(x, regexString, 'match'), lines);
     if ~any(~isempty(horzcat(occs{:})))
         continue
     end
-    if strcmp(regexString, regXTherm)
-        occs = cellfun(@(x) regexpi(x, '(?<=\d+)[A-Z]?', 'match'), horzcat(occs{:}), 'UniformOutput', false);
+    if strcmp(regexString, regexTherm)
+        % specific thermode parsing
+        occs = cellfun(@(x) regexpi(x, '(?<=\d+)[A-Z]?', 'match'), ...
+            horzcat(occs{:}), 'UniformOutput', false);
         ids = unique(horzcat(occs{:}));
-        if length(ids) <= 1
-            p.('Thermode') = tmp;
+        if length(ids) <= 1 && any(cellfun(@(x) ~isempty(x), occs))
+            % only one thermode
+            p.('Thermode') = thrm;
             g.('nTherm') = 1;
             continue
         end
-    elseif strcmp(regexString, regXArb)
-        occs = cellfun(@(x) regexpi(x, '[A-Z]+(?=\:)', 'match'), horzcat(occs{:}), 'UniformOutput', false);
+    elseif strcmp(regexString, regexArb)
+        % specific arbitrary stimulus parsing
+        occs = cellfun(@(x) regexpi(x, '[A-Z]+(?=\:)', 'match'), ...
+            horzcat(occs{:}), 'UniformOutput', false);
         ids = unique(horzcat(occs{:}));
     else
-        minireg = regexString{1}(1:end-length(regXSuffix));
-        occs = cellfun(@(x) strcat(regexpi(x, [minireg, '(?=[A-Z]+\d+)'], 'match'), ...
-            regexp(x, ['(?<=', minireg, '[A-Z]+[a-z]+\d+)[A-Z]*'], 'match')), horzcat(occs{:}), 'UniformOutput', false);
-        ids = unique(horzcat(occs{:}));
+        % parsing for everything else
+        minireg = regexString{1}(1:end-length(regexSuffix));
+        occs = cellfun(@(x) strcat(regexpi(x, [minireg, '(?=[A-Z]+[a-z]+\d+)'], 'match'), x(end)), ...
+                unique(horzcat(occs{:})), 'UniformOutput', false);
+        occs = cellfun(@(x) regexpi(x, '[A-Z]*', 'match'), unique(horzcat(occs{:})), 'UniformOutput', false);
+        ids = unique(horzcat(occs{:}));  %TODO this currently treats, e.g. AnaB and Anab as two different things. Might be fine?
     end 
     for n = 1:length(ids)
-        if strcmp(regexString, regXTherm)
-            name = sprintf('Thermode%s', 64+n);
-            p.(name) = tmp;
+        skip = false;
+        if strcmp(regexString, regexTherm)
+            name = ['Thermode' upper(ids{n})];
+            p.(name) = thrm;
             g.('nTherm') = g.('nTherm')+1;
         else
-            name = ids{n};
+            name = lower(ids{n});
             for m = ids
-                if contains(m, name)
-                    continue
+                % remove, e.g., Vib when VibA and VibB are defined
+                m2 = lower(m{:});
+                if contains(m2, name) && ~strcmp(m, ids{n})
+                    skip = true;
+                    if length(name) == length(m2) && upper(name(end)) == ids{n}(end)
+                        skip = false;
+                    end
                 end
             end
-            if contains(name, 'Ana') || contains(name, 'Vib') || contains(name, 'Piezo')
-                p.(name) = ana;
+            if skip
+                continue
+            end
+            if contains(name, 'ana') || contains(name, 'vib') || contains(name, 'piezo')
+                p.(ids{n}) = ana; %TODO this recapitalises but it maybe shouldn't?
                 g.('nAna') = g.('nAna') + 1;
-            elseif contains(name, 'Dig')
-                p.(name) = dig;
+            elseif contains(name, 'dig')
+                p.(ids{n}) = dig;
                 g.('nDig') = g.('nDig') + 1;
-            elseif contains(name, 'PWM') || contains(name, 'LED')
-                p.(name) = pwm;
+            elseif contains(name, 'pwm') || contains(name, 'led')
+                p.(ids{n}) = pwm;
                 g.('nPwm') = g.('nPwm') + 1;
-            elseif contains(name, 'Cam')
-                p.(name) = cam;
+            elseif contains(name, 'cam')
+                p.(ids{n}) = cam;
                 g.('nCam') = g.('nCam') + 1;
             elseif strcmp(regexString, regexArb)
-                p.(name) = arb;
+                p.(ids{n}) = arb;
                 g.('nArb') = g.('nArb') + 1;
             else
                 error("Unknown Input Type %s", name);
@@ -130,6 +149,7 @@ for regexString = regexStrings
     end
 end
 
+%% Finish initialising.
 p = repmat(p,1,1000);
 
 %% parse general specs - on first line only
@@ -179,21 +199,19 @@ for idxStim = 1:length(lines)
     while ~isempty(remain)
         % obtain the next token
         [token,remain] = strtok(remain); %#ok<STTOK>
-
         % Switch to appropriate subroutine for provided token.  
         if regexpi(token,'^(I[01]|[NT]\d{3}|C\d{4}|S[01]{5}|[VR]\d{5}|D\d{6})[A-Z]?$','once')
-            %thermode
-            p = parseThermode(p,token,idxStim,fnThermodes);
+            % Thermode
+            p = parseThermode(p,token,idxStim);
+            continue
+        elseif regexpi(token, '^[A-Z]*\:[A-Z]+\.((txt)|(csv))$', 'once')
+            % Specific arbitrary control - gotta read a text file.
+            p = parseArbitrary(p,token,idxStim);
             continue
         elseif regexpi(token, ['^(((Ana)|(Vib)|(Piezo)|(Dig)|(PWM)|(LED)|(Cam))' ...
                 '((Amp)|(Dur)|(Delay)|(DC)|(Freq)|(Light)|(Enable))\d*)[A-Z]?$'], 'once')
-            % standard output format
-            p = parseToken(p, token, idxStim, g);
-            continue
-        elseif regexpi(token, '^[A-Z]*\:[A-Z]+\.((txt)|(csv))$', 'once')
-            %Specific arbitrary control - gotta read a text file.
-            tmp = regexpi(token, '^([A-Z]*\:)(.*)$', 'once', 'tokens');
-            
+            % Standard format
+            p = parseToken(p, token, idxStim);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
             continue
         end
         % parse remaining tokens
@@ -211,7 +229,7 @@ for idxStim = 1:length(lines)
                         mfilename,token,idxStim)
                     p(idxStim).tPost = val;
                     continue
-                case 'ttact'
+                case 'ttact' %TODO WHAT THIS
                     p(idxStim).tTactile = val;
                     continue
                 case 'dtact'
@@ -224,7 +242,7 @@ for idxStim = 1:length(lines)
                         mfilename,token,idxStim)
                     p(idxStim).nRepetitions = val;
                     continue
-                case 'leddur'
+                case 'leddur' %TODO WHAT THIS
                     validateattributes(val,{'numeric'},{'nonnegative'},...
                         mfilename,token,idxStim)
                     p(idxStim).ledDuration = val;
@@ -244,7 +262,7 @@ for idxStim = 1:length(lines)
                         mfilename,token,idxStim)
                     p(idxStim).ledDelay = val;
                     continue
-                case 'piezofreq'%added 2022.03.18
+                case 'piezofreq'%added 2022.03.18 %TODO WHAT THIS
                     validateattributes(val,{'numeric'},{},...
                         mfilename,token,idxStim)
                     p(idxStim).piezoFreq = val;
@@ -275,15 +293,39 @@ p(idxStim+1:end) = [];
 
 end
 
+function p = parseArbitrary(p, token, idxStim)
+    tmp = regexpi(token, '^([A-Z]*\:)(.*)$', 'once', 'tokens');
+end
 
-function p = parseThermode(p,token,idxStim,fnThermodes)
+function p = parseToken(p, token, idxStim)
+    tmp = regexpi(token, ['^((Ana)|(Vib)|(Piezo)|(Dig)|(PWM)|(LED)|(Cam))' ...
+                            '((Amp)|(Dur)|(Delay)|(DC)|(Freq)|(Light)|(Enable))' ...
+                            '(\d*)([A-Z]?)$'], 'once', 'tokens');
+    stimType = tmp(1);
+    attr = tmp(2);
+    val = str2double(tmp(3));
+    subtype = upper(tmp(4));
+    if isempty(subtype{:})
+        % applies to all stimuli of that type
+        surfaces = cellfun(@(x) regexpi(x, ['(', stimType{:}, ')([A-Z]*)'], ...
+            'match'), fields(p), 'UniformOutput', false);
+        surfaces = unique(horzcat(surfaces{:}));
+    else
+        surfaces = {strcat(stimType{:}, subtype{:})};
+    end
+    for sName = surfaces
+        sName = sName{:};
+        if ~isfield(p(idxStim).(sName), lower(attr))
+            error('Faulty parameter "%s" for stimulus #%d (%s, valid values for %s: %s)', ...
+                    attr,idxStim,p(idxStim).(sName),fields(p(idxStim).(sName)))
+        end
+        p(idxStim).(sName).(lower(attr{:})) = val;
+    end
+end
+
+function p = parseThermode(p,token,idxStim)
 % Read the parameter's value, define the fieldname and wether the parameter
 % applies to multiple surfaces of the thermode
-if ~isempty(regexpi(token,'vibdur'))
-    fieldname = 'VibrationDuration';
-    value     = cellfun(@str2double,regexpi(token,'vibdur(\d*)','tokens'));
-    multiSurf = false;
-else
     switch token(1)
         case 'N'
             fieldname = 'NeutralTemp';
@@ -318,42 +360,37 @@ else
             value     = token(2)=='1';
             multiSurf = false;
     end
-end
-
-% Does the parameter apply to individual surfaces of the thermode?
-% Obtain logical index for respective surface(s) ...
-if multiSurf
-    idxSurface = readRangeThermode(token,2,[0 5],idxStim);
-    if ~idxSurface, idxSurface = 1:5; end
-end
-
-% Should the values by applied to a specific thermode? Define the
-% respective fieldnames ...
-if isstrprop(token(end),'alpha')
-    tmp = cellfun(@(x) x(end),fnThermodes);
-    if ~ismember(token(end),tmp)
-      	format = token;
-        format(end) = 'X';
-        error(['Faulty parameter "%s" for stimulus #%d (%s, valid ' ...
-            'values for X: %s)'],token,idxStim,format,tmp)
-    end
-    thermodes = {['Thermode' upper(token(end))]};
-else
-    thermodes = fnThermodes;
-end
-
-% Loop through the thermodes and assign the value
-for thermode = thermodes
+    
+    % Does the parameter apply to individual surfaces of the thermode?
+    % Obtain logical index for respective surface(s) ...
+    %TODO WHAT
     if multiSurf
-        if ~isfield(p(idxStim).(thermode{:}),fieldname)
-            p(idxStim).(thermode{:}).(fieldname) = NaN(1,5);
-        end
-        p(idxStim).(thermode{:}).(fieldname)(idxSurface) = value;
-    else
-        p(idxStim).(thermode{:}).(fieldname) = value;
-
+        idxSurface = readRangeThermode(token,2,[0 5],idxStim);
+        if ~idxSurface, idxSurface = 1:5; end
     end
-end
+
+    thermodes = cellfun(@(x) regexpi(x, '(Thermode)([A-Z]?)', ...
+            'match'), fields(p(idxStim)), 'UniformOutput', false); 
+    thermodes = unique(horzcat(thermodes{:}));
+    if isstrprop(token(end),'alpha')
+        if ~ismember(['Thermode', upper(token(end))],thermodes)
+      	    format = token;
+            format(end) = 'X';
+            error(['Faulty parameter "%s" for stimulus #%d (%s, valid ' ...
+                'values for X: %s)'],token,idxStim,format,thermodes{:})
+        end
+        thermodes = {['Thermode' upper(token(end))]};
+    end
+
+    % Loop through the thermodes and assign the value
+    for thermode = thermodes
+        if multiSurf
+            if ~isfield(p(idxStim).(thermode{:}),fieldname)
+                p(idxStim).(thermode{:}).(fieldname) = NaN(1,5);
+            end
+        end
+        p(idxStim).(thermode{:}).(fieldname) = value;
+    end
 
 end
 
