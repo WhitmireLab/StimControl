@@ -1,0 +1,18 @@
+Note,deviceID,portNum,channelName,ioType,signalType,TerminalConfig,Range,ProtocolID
+Thermode,Dev1,ai0,,input,Voltage,SingleEnded,[-5 5],THERMO
+Aurora Force OUT,Dev1,ai2,Aurora Force OUT,input,Voltage,SingleEnded,,AURFOO
+Aurora Length OUT,Dev1,ai3,Aurora Length OUT,input,Voltage,SingleEnded,,AURLEO
+DC Temperature Controller,Dev1,ai4,DC Temperature Controller,input,Voltage,SingleEnded,,DCTEMC
+TTL Input: Stimulus Onset,Dev1,port0/line1,TTL Thermode Onset,input,Digital,,,TTLSON
+TTL Input: Galvo Res,Dev1,port0/line2,TTL ScanImage Res Galvo,input,Digital,,,TTLGAR
+TTL Input: Galvo Y,Dev1,port0/line3,TTL ScanImage Y Galvo,input,Digital,,,TTLGAY
+TTL Output: ScanImage,Dev1,port0/line4,TTL ScanImage: Acq Start,output,Digital,,,TTLSCA
+Basler Widefield Imaging,Dev1,port0/line5,TTL Basler: Frame Trigger,output,Digital,,,BASWIM
+Basler Widefield Unused,Dev1,port0/line6,TTL Basler: UNUSED,output,Digital,,,BASWUN
+TTL Output: LEDControl,Dev1,port0/line7,BLUE LED,output,Digital,,,TTLLED
+TTL Output: LEDControl,Dev1,port1/line0,GREEN LED,output,Digital,,,TTLLED
+TTL Output: Auditory Stimulus,Dev1,port1/line1,Speaker,output,Digital,,,TTLAUD
+TTL Output: Optical Stimulus,Dev1,port1/line2,Optical Stimulus,output,Digital,,,TTLOPT
+TTL Output: Hamamatsu Camera Drive,Dev1,port1/line3,HamamatsuTrigger,output,Digital,,,TTLHCD
+TTL Output: LED,Dev1,port2/line0,LED,output,Digital,,,TTLLED
+Piezo Driver,Dev1,ao0,Aurora Force Command Voltage,output,Voltage,SingleEnded,[0 10],PIEZOD

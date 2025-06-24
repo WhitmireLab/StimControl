@@ -1,0 +1,97 @@
+% THIS IS A SAMPLE PROTOCOL FILE FOR STIMCONTROL
+% =============================================
+% COMMENTS
+% --------
+%
+% Add comments to your protocol using the percent (%) symbol. Comment lines
+% can appear anywhere in a protocol file. If you append a comment to
+% the end of a parameter line, it will be assigned to the respective
+% stimulus (and show up in the QSTcontrol GUI).
+%
+% Blank lines will be ignored.
+%
+% GENERAL PARAMETERS
+% ------------------
+%
+% The first line in a protocol file can be used to set general parameters:
+%
+% - nProtRepXXX     number of iterations across the whole protocol (default: 1)
+% - randomizeX      randomize sequenze (0 = off, 1 = randomize, 2 = pseudo; default: off)
+% - dPauseXXX       duration of the pause between stimulus blocks (in seconds; default: 5 seconds)
+%
+% Each line after the first should contain a trial protocol.
+% 
+% TRIAL PROTOCOLS
+% --------------------------------
+% A trial is made up of a series of parameter definitions.
+% Append 'A' or 'B' to any of these parameters do address a specific output
+% (otherwise, the parameter is valid for all outputs of that type).
+% To disable an output, omit the parameters for that output.
+%
+% STIMULUS DEFINITIONS: THERMODE
+% ------------------------------
+% The thermode is adressed according to QST syntax:
+%
+% - Nxxx    set neutral temperature in 1/10 °C (xxx = 200-400)
+% - Sxxxxx  enable/disable area 1 to 5 (x=0: disable, x=1: enable)
+% - Cxxx   set stimulation temperature in 1/10 °C (s=0: all areas or s=1-5, xxx=100-600)
+% - Vxxxx  set stimulation speed in 1/10 °C/s (s=0: all areas or s=1-5, xxxx=0001-9999)
+% - Dxxxx  set stimulation Duration in ms (s=0: all areas or s=1-5, xxxx=0001-9999)
+% - Txxx    set Trigger number (xxx = 001-255)
+% - Ix      enable/disable Integral term (x=0: disable, x=1: enable)
+%
+% STIMULUS DEFINITIONS: ANALOG STIMULATION
+% Legacy: also supports Vib instead of An as a prefix
+% ------------------------------
+% - AnaDurX 		set analog output duration in ms (or VibDurX for legacy)
+% - AnaAmpX 		set analog output intensity in 1/10V (X=15-33) (or VibAmpX for legacy)
+% - AnaDelayX		set analog output delay in ms
+%
+% STIMULUS DEFINITIONS: DIGITAL BINARY STIMULATION
+% ------------------------------
+% - DigDurX 		set digital output duration in ms
+% - DigDelayX		set digital output delay in ms
+%
+% STIMULUS DEFINITIONS: DIGITAL PWM STIMULATION
+% ------------------------------
+% Legacy: also supports LED instead of PWM as a prefix
+% - PWMDCX		set PWM duty cycle (X=1-100)
+% - PWMFreqX 		set PWM frequency in Hz (must be compatible with DAQ card rate)
+% - PWMDurX		set PWM duration in ms
+% - PWMDelay		set PWM delay in ms
+%
+% STIMULUS DEFINITIONS: CAMERA
+% ------------------------------
+% By default, all connected cameras will operate at their default settings for each trial. 
+% Override them with the following commands:
+% 
+% - CamLightXXX 	bit mask to enable specific camera lights (100=colour 1, 010=colour 2, 001=colour 3, 110=alternate 1 and 2, etc.)
+% - CamEnableXA		enable camera A/B (per suffix. 0=disable, 1=enable)
+% 
+% STIMULUS DEFINITIONS: ARBITRARY
+% ------------------------------
+% Arbitrary DAQ stimuli can be sent by including arbitrary stim files, or by defining the arbitrary stimulus at the bottom of the .stim file.
+% - ArbitraryStimIdentifier:filename.txt	filename of the stimulus file, or the full filepath. Can be CSV or TXT.
+%
+% LEGACY CONSIDERATIONS
+% ------------------------------------------
+% dtact and ttact - I feel probably in timing and repetitions?
+% piezofreq piezoamp piezodur and piezostimnum - I feel probably analog
+% 
+%
+% STIMULUS DEFINITIONS: TIMING & REPETITIONS
+% ------------------------------------------
+% Timing and repetitions can be set for all trials at the end of the stim file, 
+% or per trial by defining at the end of the line for that trial.
+%
+% - tPreX   recording duration before stimulus onset (s)
+% - tPostX  recording duration after stimulus onset (s)
+% - nRepX   number of stimulus repetitions
+
+nProtRep10 randomize1 dPause30
+
+N320 S11000 C0220 C0220B V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 ArbitraryStimIdentifier:WidefieldImager/protocolfiles/arbitrary.astim AnaDur2A AnaDur3B
+N320 S11000 C0420 C0220A V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 AnaDur3
+N320 S11000 C0320 V03000 R03000 D002000 T001 I1 tPre10000 tPost12000 VibDur0000 AnaDur4A AnaDur4b
+
+tPre10000 tPost12000 nRep10
