@@ -1,4 +1,7 @@
-classdef (HandleCompatible) DAQInterface < HardwareComponent
+classdef (HandleCompatible) DAQComponent < HardwareComponent
+    %UNTITLED2 Summary of this class goes here
+    %   Detailed explanation goes here
+    
     properties
         Name
         SessionHandle
@@ -10,7 +13,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
     end
 
     methods
-        function obj = DAQInterface(varargin)
+        function obj = DAQComponent(varargin)
             p = inputParser;
             strValidate = @(x) ischar(x) || isstring(x);
             daqValidate = @(x) (contains(class(x), 'daq.interfaces.DataAcquisition')) || isempty(x);
@@ -44,7 +47,7 @@ classdef (HandleCompatible) DAQInterface < HardwareComponent
                 % if the DAQ is uninitialised or the params have changed
                 if isempty(params.Struct)
                     warning("No DAQ config provided. Using default DAQ settings");
-                    daqStruct = GetDefaultStruct("daq");
+                    daqStruct = getDefaultComponentStruct("daq");
                     name = obj.FindDaqName(daqStruct.ID, '', '');
                 else
                     vendorID = params.Struct.Vendor;

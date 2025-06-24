@@ -1,5 +1,5 @@
-function componentStruct = GetDefaultStruct(componentType)
-    filename = 'C:\Users\labadmin\Documents\MATLAB\WidefieldImager\common\SupportedHardwareParams.txt';
+function componentStruct = getDefaultComponentStruct(componentType)
+    filename = 'C:\Users\labadmin\Documents\MATLAB\StimControl\common\SupportedHardwareParams.txt';
     jsonStr = fileread(filename);
     jsonData = jsondecode(jsonStr);
     componentStruct = struct();

@@ -1,4 +1,7 @@
-classdef (HandleCompatible) CameraInterface < HardwareComponent
+classdef (HandleCompatible) CameraComponent < HardwareComponent
+    %UNTITLED2 Summary of this class goes here
+    %   Detailed explanation goes here
+
     properties
         Name
         SessionHandle
@@ -10,7 +13,7 @@ classdef (HandleCompatible) CameraInterface < HardwareComponent
     end
 
     methods
-        function obj = CameraInterface(varargin)
+        function obj = CameraComponent(varargin)
             p = inputParser;
             strValidate = @(x) ischar(x) || isstring(x);
             handleValidate = @(x) (contains(class(x), 'daq.interfaces.DataAcquisition')) || isempty(x);
@@ -42,9 +45,9 @@ classdef (HandleCompatible) CameraInterface < HardwareComponent
             %---device---
             if isempty(obj.SessionHandle) || ~isempty(params.Struct)
                 % if the camera is uninitialised or the params have changed
-                default = GetDefaultStruct("camera");
+                default = getDefaultComponentStruct("camera");
                 if isempty(params.Struct)
-                    warning("No Camera config provided. Using default setup");
+                    warning("No camera config provided. Using default setup");
                     camstr = default;
                 else
                     camstr = params.Struct;
