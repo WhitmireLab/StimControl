@@ -1,5 +1,5 @@
 function componentStruct = getDefaultComponentStruct(componentType)
-    filename = 'C:\Users\labadmin\Documents\MATLAB\StimControl\common\SupportedHardwareParams.txt';
+    filename = [pwd filesep 'StimControl' filesep 'common' filesep 'SupportedHardwareParams.txt'];
     jsonStr = fileread(filename);
     jsonData = jsondecode(jsonStr);
     componentStruct = struct();

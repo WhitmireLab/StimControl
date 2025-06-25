@@ -56,78 +56,84 @@ classdef (HandleCompatible) CameraComponent < HardwareComponent
                     for i = 1:length(defaultFields)
                         f = defaultFields{i};
                         if ~isfield(camstr, f) %TODO & field is needed
-                            setfield(camstr, f, getfield(default, f));
+                            camstr = setfield(camstr, f, getfield(default, f));
                         end
                     end
                 end
 
                 obj.ConfigStruct = camstr;
-
-                try
-                    imaqreset;
-                    vidObj = videoinput(camstr.Adaptor);
-                    src = getselectedsource(vidObj);
-                    if contains(adaptorName, 'pcocameraadaptor')
-                        clockSpeed = set(src,'PCPixelclock_Hz');
-                        [~,idx] = max(str2num(cell2mat(clockSpeed))); %get fastest clockspeed
-                        src.PCPixelclock_Hz = clockSpeed{idx}; %fast scanning mode
-                        src.E2ExposureTime = 1000/str2double(app.FrameRate.Value) * 1000; %set framerate
-                        if isfield(camstr, 'Binning')
-                            bin = str2double(camstr.Binning);
-                            try 
-                                src.B1BinningHorizontal = num2str(bin);
-                                src.B2BinningVertical = num2str(bin);
-                            catch
-                                src.B1BinningHorizontal = num2str(bin,'%02i');
-                                src.B2BinningVertical = num2str(bin,'%02i');
-                            end
-                        end
-                    elseif contains(adaptorName, 'gentl')
-                        src.Gain = camstr.Gain;
-                        src.AutoTargetBrightness = 5.019608e-01;
-                        if isfield(camstr, 'Binning')
-                            src.BinningHorizontal = str2double(camstr.Binning);
-                            src.BinningVertical = str2double(camstr.Binning);
-                        end
-                    else
-                        %TODO fill out GENERIC CAMERAS
-                    end
-                    set(vidObj,'TriggerFrameDelay',camstr.TriggerFrameDelay);
-                    set(vidObj,'FrameGrabInterval',camstr.FrameGrabInterval);
-                    set(vidObj,'TriggerRepeat',camstr.TriggerRepeat);
-                    set(vidObj,'ROIposition',camstr.ROI);
-                    set(vidObj,'FramesPerTrigger',camstr.FramesPerTrigger);
-                    vidObj.FramesAcquiredFcnCount = camstr.FrameGrabInterval;
-                    vidObj.FramesAcquiredFcn = @obj.ReceiveFrame;
-                    switch camstr.TriggerMode
-                        %TODO FURTHER INTO THIS AND FIND THE DOCUMENTATION
-                        case "hardware"
-                            src.LineSelector = camstr.TriggerLine;
-                            src.LineMode = "Input";
-                            src.TriggerSelector = camstr.TriggerSelector;
-                            src.TriggerMode = "On";
-                            src.TriggerSource = camstr.TriggerLine;
-                            src.TriggerActivation = camstr.TriggerActivation;
-                        case "manual" %TODO TEST THESE
-                            src.TriggerSource = "Software";
-                            src.TriggerSelector = camstr.TriggerSelector;
-                        case "immediate" %TODO TEST THESE
-                            src.LineSelector = camstr.OutputLine;
-                            src.LineMode = "Output";
-                    end
-                    triggerconfig(vidObj,camstr.TriggerMode);
-                    obj.SessionHandle = vidObj;
-                    obj.Status = "ok";
-                catch e
-                    obj.SessionHandle = [];
-                    if obj.Required
-                        error(e);
-                        obj.Status = "error";
-                    else
-                        obj.Status = "empty";
-                        warning(e);
-                    end
+                imaqreset
+                if ~contains(imaqhwinfo().InstalledAdaptors, camstr.Adaptor)
+                    error("Camera adaptor %s not installed. Installed adaptors: %s", ...
+                        camstr.Adaptor, imaqhwinfo.InstalledAdaptors{:});
                 end
+                vidObj = videoinput(camstr.Adaptor);
+                src = getselectedsource(vidObj);
+                if contains(camstr.Adaptor, 'pcocameraadaptor')
+                    clockSpeed = set(src,'PCPixelclock_Hz');
+                    [~,idx] = max(str2num(cell2mat(clockSpeed))); %get fastest clockspeed
+                    src.PCPixelclock_Hz = clockSpeed{idx}; %fast scanning mode
+                    src.E2ExposureTime = 1000/str2double(app.FrameRate.Value) * 1000; %set framerate
+                    if isfield(camstr, 'Binning')
+                        bin = str2double(camstr.Binning);
+                        try 
+                            src.B1BinningHorizontal = num2str(bin);
+                            src.B2BinningVertical = num2str(bin);
+                        catch
+                            src.B1BinningHorizontal = num2str(bin,'%02i');
+                            src.B2BinningVertical = num2str(bin,'%02i');
+                        end
+                    end
+                elseif contains(camstr.Adaptor, 'gentl')
+                    src.Gain = str2double(camstr.Gain);
+                    src.AutoTargetBrightness = 5.019608e-01;
+                    if isfield(camstr, 'Binning')
+                        src.BinningHorizontal = str2double(camstr.Binning);
+                        src.BinningVertical = str2double(camstr.Binning);
+                    end
+                else
+                    %TODO fill out GENERIC CAMERAS
+                end
+                if isempty(camstr.ROIPosition)
+                    vidRes = get(vidObj,'VideoResolution');
+                    camstr.ROIPosition = [0 0 vidRes];
+                end
+                set(vidObj,'TriggerFrameDelay',camstr.TriggerFrameDelay);
+                set(vidObj,'FrameGrabInterval',camstr.FrameGrabInterval);
+                set(vidObj,'TriggerRepeat',camstr.TriggerRepeat);
+                set(vidObj,'ROIposition',camstr.ROIPosition);
+                set(vidObj,'FramesPerTrigger',str2double(camstr.FramesPerTrigger));
+                vidObj.FramesAcquiredFcnCount = camstr.FrameGrabInterval;
+                vidObj.FramesAcquiredFcn = @obj.ReceiveFrame;
+                switch camstr.TriggerMode
+                    %TODO FURTHER INTO THIS AND FIND THE DOCUMENTATION
+                    case "hardware"
+                        src.LineSelector = camstr.TriggerLine;
+                        src.LineMode = "Input";
+                        src.TriggerSelector = camstr.TriggerSelector;
+                        src.TriggerMode = "On";
+                        src.TriggerSource = camstr.TriggerLine;
+                        src.TriggerActivation = camstr.TriggerActivation;
+                    case "manual" %TODO TEST THESE
+                        src.TriggerSource = "Software";
+                        src.TriggerSelector = camstr.TriggerSelector;
+                    case "immediate" %TODO TEST THESE
+                        src.LineSelector = camstr.OutputLine;
+                        src.LineMode = "Output";
+                end
+                triggerconfig(vidObj,camstr.TriggerMode);
+                obj.SessionHandle = vidObj;
+                obj.Status = "ok";
+                % catch e
+                %     obj.SessionHandle = [];
+                %     if obj.Required
+                %         error(e.message);
+                %         obj.Status = "error";
+                %     else
+                %         obj.Status = "empty";
+                %         warning(e.message);
+                %     end
+                % end
             end
             
             % ---display---

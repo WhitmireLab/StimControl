@@ -6,9 +6,9 @@ function objs = readHardwareParams(filepath)
         hStruct = jsonData{i};
         switch lower(hStruct.DEVICE)
             case 'camera'
-                hObj = CameraInterface('Struct', hStruct);
+                hObj = CameraComponent('Struct', hStruct);
             case 'daq'
-                hObj = DaqInterface('Struct', hStruct);
+                hObj = DAQComponent('Struct', hStruct);
             otherwise
                 disp("Unsupported hardware type. Come back later.")
         end

@@ -1,5 +1,5 @@
 classdef (HandleCompatible) DAQComponent < HardwareComponent
-    %UNTITLED2 Summary of this class goes here
+    % Generic wrapper class for DAQ objects
     %   Detailed explanation goes here
     
     properties
@@ -14,6 +14,7 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
 
     methods
         function obj = DAQComponent(varargin)
+            %% Initialise and parse arguments
             p = inputParser;
             strValidate = @(x) ischar(x) || isstring(x);
             daqValidate = @(x) (contains(class(x), 'daq.interfaces.DataAcquisition')) || isempty(x);
@@ -32,8 +33,8 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
                 'Struct', params.Struct);
         end
 
-        % Initialise device
         function obj = Configure(obj, varargin)
+            %% Initialise device. 
             %TODO STOP/START
             strValidate = @(x) ischar(x) || isstring(x);
             p = inputParser;
@@ -75,6 +76,7 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
         end
 
         function status = GetStatus(obj)
+            %% Query device status. 
             %options: ready / acquiring / writing / error / stopped / empty
             %/ loading
             %TODO
@@ -98,9 +100,29 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
             end
         end
 
-        % get current device parameters for saving
-        function [daqStruct, channelData] = GetParams(obj)
-            % save channels
+        function daqStruct = GetParams(obj)
+            %% Get current device parameters for saving. Generic.          
+            daqs = daqlist().DeviceInfo;
+            correctIndex = -1;
+            for i = 1:length(daqs)
+                if strcmpi(obj.SessionHandle.Vendor.ID, daqs(i).Vendor.ID)
+                    correctIndex = i;
+                end
+            end
+            if correctIndex == -1
+                warning("Unable to find DAQ in daqlist. " + ...
+                    "DAQ device settings not saved."); %note this should NEVER happen
+            end
+            d = daqs(correctIndex);
+            daqStruct = struct();
+            daqStruct.Vendor = d.Vendor.ID;
+            daqStruct.Model = d.Model;
+            daqStruct.ID = d.ID;
+            daqStruct.Rate = obj.SessionHandle.Rate;
+        end
+
+        function channelData = GetChanParams(obj)
+            %% Get channel parameters for saving. DAQ-specific.
             channels = obj.SessionHandle.Channels;
             channelData = {'deviceID' 'portNum' 'channelName' 'ioType' ...
                 'signalType' 'TerminalConfig' 'Range'};
@@ -124,36 +146,6 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
                 chanCell = {deviceID portNum name ioType signalType terminalConfig range};
                 channelData(i+1,:) = chanCell;
             end
-            
-            % save daq
-            daqs = daqlist().DeviceInfo;
-            correctIndex = -1;
-            for i = 1:length(daqs)
-                if strcmpi(obj.SessionHandle.Vendor.ID, daqs(i).Vendor.ID)
-                    correctIndex = i;
-                end
-            end
-            if correctIndex == -1
-                warning("Unable to find DAQ in daqlist. " + ...
-                    "DAQ device settings not saved."); %note this should NEVER happen
-            end
-            d = daqs(correctIndex);
-            daqStruct = struct();
-            daqStruct.Vendor = d.Vendor.ID;
-            daqStruct.Model = d.Model;
-            daqStruct.ID = d.ID;
-            daqStruct.Rate = obj.SessionHandle.Rate;
-            % daqData{2,:} = {d.Vendor.ID d.Model d.ID obj.SessionHandle.Rate};
-            
-
-            % if ~isempty(identifier)
-            %     writecell(channelData, [folderpath filesep identifier '_DaqChanParams.csv']);
-            %     writecell(daqData, [folderpath filesep identifier '_DaqParams.csv']);
-            % else
-            %     % write to config folder
-            %     writecell(channelData, [folderpath filesep 'DaqChanParams.csv']);
-            %     writecell(daqData, [folderpath filesep 'DaqParams.csv']);
-            % end
         end
         
         % Gets output since last queried
@@ -166,8 +158,8 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
             
         end
         
-        % load in a saved set of parameters
         function obj = LoadParams(obj, folderpath)
+            %% Load in a saved set of parameters from a file. Largely deprecated
             if contains(folderpath, "ChanParams")
                 obj = obj.CreateChannels(folderpath);
             elseif contains(folderpath, "DaqParams")
@@ -195,23 +187,23 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
             end
         end
 
-        % Print device information
         function PrintInfo(obj)
+            %% Print device information.
             disp(' ');
             disp(obj.SessionHandle.Channels);
             disp(' ');
         end
 
-        % Kill the whole thing
         function Clear(obj)
+            %% Completely clear the component session.
             if obj.SessionHandle.Running
                 obj.Stop();
             end
             daqreset;
         end
         
-        % Dynamic visualisation of object output
         function VisualiseOutput(obj, varargin)
+            %% Dynamically visualise object output
             p = inputParser;
             p.addParameter("Plot", []);
             p.parse(varargin{:});
@@ -230,16 +222,17 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
             addParameter(parser, 'filepath', '', stringValidate);
             addParameter(parser, 'p', '', @isstruct);
             addParameter(parser, 'g','', @isstruct);
-            addParameter(parser, 'nThermodes', 1, intValidate);
             parse(parser, varargin{:});
 
-            obj.SessionInfo.idxStim = parser.Results.idxStim;
-            obj.SessionInfo.nThermodes = parser.Results.nThermodes; %TODO DEFAULT THERMODES BASED ON CHANNELS WITH THERMAL LABEL???
             if ~isempty(parser.Results.filepath)
                 [p, g] = readParameters(parser.Results.filepath);
-            else
+            elseif ~isempty(parser.Results.p) && ~isempty(parser.Results.g)
                 p = parser.Results.p;
                 g = parser.Results.g;
+            else
+                error("No protocol provided for DAQComponent. Provide a " + ...
+                    "protocol using LoadProtocol and defining either the " + ...
+                    "'filename' or 'p' and 'g' arguments.")
             end
             obj.SessionInfo.p = p;
             obj.SessionInfo.g = g;
@@ -247,8 +240,8 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
             obj.LoadTrial('idxStim', parser.Results.idxStim);
         end
         
-        % Preload a trial
         function LoadTrial(obj, varargin)
+            %% Preload a trial.
             parser = inputParser;
             stringValidate = @(x) ischar(x) || isstring(x);
             intValidate = @(x) ~isinf(x) && floor(x) == x;
@@ -256,14 +249,11 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
             addParameter(parser, 'filepath', '', stringValidate);
             addParameter(parser, 'p', '', @isstruct);
             addParameter(parser, 'g','', @isstruct);
-            addParameter(parser, 'h', '', @isstruct);
-            addParameter(parser, 'nThermodes', 1, intValidate);
             addParameter(parser, 'oneOff', false, @islogical);
             parse(parser, varargin{:});
             idxStim = parser.Results.idxStim;
-            nThermodes = parser.Results.nThermodes;
             if ~isempty(parser.Results.filepath)
-                [p, g] = readParameters(parser.Results.filepath);
+                [p, g] = readProtocol(parser.Results.filepath);
             elseif ~isempty(parser.Results.p)
                 p = parser.Results.p;
                 g = parser.Results.g;
@@ -280,7 +270,6 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
 
             channels = obj.SessionHandle.Channels;
             
-            IDtherm = arrayfun(@(x) {['Thermode' char(64+x)]},1:nThermodes);
             if isempty(p) || parser.Results.oneOff
                 % single stimulation: use default values for tPre (time before onset of
                 % stimulus) and tPost (time after onset of stimulus). Obtain duration
@@ -320,9 +309,10 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
             end
         end
 
-        %%% PRIVATE FUNCTIONS %%%
+        %% PRIVATE FUNCTIONS %%
 
         function name = FindDaqName(obj, deviceID, vendorID, model)
+            %% Find available daq names
             % https://au.mathworks.com/help/daq/daq.interfaces.dataacquisition.html
             try
                 daqs = daqlist().DeviceInfo;
@@ -359,6 +349,7 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
         end
 
         function obj = CreateChannels(obj, filename)
+            %% Create DAQ channels from filename.
             if isempty(obj.SessionHandle)
                 %create a default DAQ session to attach channels to
                 obj = obj.ConfigureDAQ('');
@@ -418,6 +409,7 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
         end
 
         function r = GetRangeFromString(obj, rString)
+            %% Get range from string. Used for parsing channel params.
             r0 = split(rString);
             r0 = split(r0{1}, '[');
             r0 = r0{2};
@@ -427,6 +419,10 @@ classdef (HandleCompatible) DAQComponent < HardwareComponent
             r1 = r1{1};
             r1 = str2double(r1);
             r = [r0 r1];
+        end
+
+        function stim = generateTrialOutput(obj, input)
+            
         end
 
         %%TODO!! STARTS HERE
