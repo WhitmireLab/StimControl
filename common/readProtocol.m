@@ -69,7 +69,7 @@ p = struct();
 %% Count and initialise with names
 %TODO maybe only do this if nTherm nAna nDig nPwm nCam and nArb are
 %undefined?
-regexSuffix = '[A-Z]*\d*[A-Z]?';
+regexSuffix = '[A-Z]*\d*[A-Z]?'; %TODO VIBRATION IS DIGITAL!! Piezo IS analog
 regexTherm = 'V\d{5}[A-Z]?';
 regexTherm = '(I[01]|[NT]\d{3}|C\d{4}|S[01]{5}|[VR]\d{5}|D\d{6})[A-Z]?';
 regexAna = ['((Ana)|(Vib)|(Piezo))', regexSuffix];
@@ -230,7 +230,7 @@ for idxStim = 1:length(lines)
                         mfilename,token,idxStim)
                     p(idxStim).tPost = val;
                     continue
-                case 'ttact' %TODO WHAT THIS
+                case 'ttact' %TODO WHAT THIS - REMOVE? :)
                     p(idxStim).tTactile = val;
                     continue
                 case 'dtact'
@@ -243,7 +243,7 @@ for idxStim = 1:length(lines)
                         mfilename,token,idxStim)
                     p(idxStim).nRepetitions = val;
                     continue
-                case 'leddur' %TODO WHAT THIS
+                case 'leddur' %TODO LED IS USUALLY JUST TTL - CAN BE DIGITAL, LED DRIVER TAKES DIGITAL AND ANALOG INPUTS
                     validateattributes(val,{'numeric'},{'nonnegative'},...
                         mfilename,token,idxStim)
                     p(idxStim).ledDuration = val;
