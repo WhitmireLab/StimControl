@@ -1,4 +1,8 @@
 function [p,g] = readProtocol(filename,varargin)
+%% DEBUG
+if isempty(filename)
+    filename = [pwd filesep 'StimControl' filesep 'protocolfiles' filesep 'TempandVibe.stim'];
+end
 
 %% parse inputs
 ip = inputParser;
@@ -300,7 +304,7 @@ function p = parseArbitrary(p, token, idxStim)
     filename = tmp{3};
     % read file
     if ~exist(filename,'file')
-        error('File not found: %s',file)
+        error('File not found: %s',filename)
     end
     fid   = fopen(filename);
     lines = textscan(fid,'%s','Delimiter','\n','MultipleDelimsAsOne',1);
