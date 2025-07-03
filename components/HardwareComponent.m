@@ -32,7 +32,7 @@ function p = GetBaseParser(obj)
     addParameter(p, 'Required', true, @islogical);
     addParameter(p, 'Handle', [], handleValidate);
     addParameter(p, 'Struct', []);
-    addParameter(p, 'SavePath', strValidate);
+    addParameter(p, 'SavePath', '', strValidate);
     addParameter(p, 'Abstract', false, @islogical);
 end
 
@@ -58,8 +58,12 @@ function configStruct = GetConfigStruct(obj, configStruct)
     %Fill out a config struct with existing or default values.
     default = obj.GetDefaultComponentStruct();
     if isempty(configStruct)
-        warning("No %s config provided. Using default setup", class(obj));
-        configStruct = default;
+        if isempty(obj.ConfigStruct)
+            warning("No %s config provided. Using default setup", class(obj));
+            configStruct = default;
+        else
+            configStruct = obj.ConfigStruct;
+        end
     else
         % fill in required fields with defaults.
         props = obj.GetComponentProperties();

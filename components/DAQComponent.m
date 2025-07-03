@@ -7,8 +7,8 @@ end
 properties (Access = protected)
     SessionInfo = struct();
     ChannelMap = struct();
-    ChannelIdentifiers = struct();
     HandleClass = 'daq.interfaces.DataAcquisition';
+    TrackedChannels = {};
 end
 
 methods (Access = public)
@@ -38,10 +38,10 @@ function obj = Configure(obj, varargin)
     params = p.Results;
 
     %---device---
-    if isempty(obj.SessionHandle) || ~isempty(params.Struct)
+    if isempty(obj.SessionHandle) || ~isvalid(obj.SessionHandle) || ~isempty(params.Struct)
         % if the DAQ is uninitialised or the params have changed
         daqStruct = obj.GetConfigStruct(params.Struct);
-        if isempty(params.Struct)
+        if isempty(params.Struct) && isempty(obj.ConfigStruct)
             name = obj.FindDaqName(daqStruct.ID, '', '');
         else
             deviceID = daqStruct.ID;
@@ -49,6 +49,7 @@ function obj = Configure(obj, varargin)
             model = daqStruct.Model;
             name = obj.FindDaqName(deviceID, vendorID, model);
         end
+        obj.ConfigStruct = daqStruct;
         obj.SessionHandle = daq(name);
         obj.SessionHandle.Rate = daqStruct.Rate;
     end
@@ -145,10 +146,10 @@ function obj = LoadParams(obj, folderpath)
     if contains(folderpath, "ChanParams")
         obj = obj.CreateChannels(folderpath);
     elseif contains(folderpath, "DaqParams")
-        obj = obj.ConfigureDAQ(folderpath);
+        obj = obj.Configure(folderpath);
     else
         % assume a folder with both params in it.
-        obj = obj.ConfigureDAQ([folderpath filesep "DaqParams.csv"]);
+        obj = obj.Configure([folderpath filesep "DaqParams.csv"]);
         obj = obj.CreateChannels([folderpath filesep "DaqChanParams.csv"]);
     end
 end
@@ -162,7 +163,7 @@ end
 
 function Clear(obj)
     % Completely clear the component session.
-    if obj.SessionHandle.Running
+    if isvalid(obj.SessionHandle) && obj.SessionHandle.Running
         obj.Stop();
     end
     daqreset;
@@ -234,24 +235,13 @@ function LoadTrial(obj, varargin)
         obj.SessionHandle.stop
     end
     % release(obj.SessionHandle)
-
+    
     channels = obj.SessionHandle.Channels;
     
-    if isempty(p) || parser.Results.oneOff
+    if isempty(p) || parser.Results.oneOff %TODO
         % single stimulation: use default values for tPre (time before onset of
         % stimulus) and tPost (time after onset of stimulus). Obtain duration
         % of vibration from respective GUI fields.
-        tPre	 = 1;
-        tPost 	 = 2;
-        vibDur   = cellfun(@(x) obj.h.(x).edit.vibDur.Value,IDtherm) / 1000;
-        ledDur   = h.LED.edit.ledDur.Value / 1000;
-        ledFreq  = h.LED.edit.ledFreq.Value;
-        ledDC    = h.LED.edit.ledDC.Value;
-        ledDelay = h.LED.edit.ledDelay.Value / 1000;
-        piezoAmp = 0;
-        piezoFreq= 0;
-        piezoDur = 0;
-        piezoStimNum = 0;
     else
         % protocol run: use values from protocol structure
         tPre     = p(idxStim).tPre  / 1000;
@@ -266,13 +256,36 @@ function LoadTrial(obj, varargin)
         piezoDur = p(idxStim).piezoDur;
         piezoStimNum= p(idxStim).piezoStimNum;
     end
+
+    obj.SessionHandle.ScansAvailableFcn = @obj.plotData;
+
+    fs = 1000;
     tTotal  = tPre + tPost;
 
-    for i = 1:length(channels)
-        switch channels(i).Name
-            %NB this is from stimulate.m 
-            
+    fds = fields(p);
+    unmatchedFields = 'No DAQ match found for protocol fields: ';
+    unmatchedFound = false;
+    for i = 1:length(fds)
+        fieldName = fds{i};
+        if contains(['tPre', 'tPost'], fieldName)
+            continue
+        elseif ~any(cellfun(@(x) contains(x, fieldName), fields(obj.ChannelMap)))
+            % if fieldname doesn't match with any channel identifiers
+            strcat(unmatchedFields, [fieldName ', '])
+            unmatchedFound = true;
+            continue
+        else
+            obj.TrackedChannels{length(matchedFields) + 1} = fieldName;
         end
+    end
+    if unmatchedFound 
+        warning(unmatchedFields);
+    end
+    timeAxis = linspace(1/obj.SessionHandle.Rate,tTotal,tTotal*obj.SessionHandle.Rate)-tPre;
+    % Preallocate all zeros
+    out = zeros(numel(timeAxis), length(d.SessionHandle.Channels));
+    for fieldName = matchedFields
+        out = obj.FillChannelData(out, numel(timeAxis), p(fieldName), fieldName);
     end
 end
 
@@ -311,7 +324,7 @@ end
 end
 
 %% Private Methods
-methods (Access = private)
+methods (Access = public)
 function name = FindDaqName(obj, deviceID, vendorID, model)
     % Find available daq names
     % https://au.mathworks.com/help/daq/daq.interfaces.dataacquisition.html
@@ -347,9 +360,10 @@ end
 
 function obj = CreateChannels(obj, filename)
     % Create DAQ channels from filename.
-    if isempty(obj.SessionHandle)
+    if isempty(obj.SessionHandle) || ~isvalid(obj.SessionHandle)
         %create a default DAQ session to attach channels to
-        obj = obj.ConfigureDAQ('');
+        obj.Clear();
+        obj = obj.Configure();
     end
     tab = readtable(filename);
     s = size(tab);
@@ -358,6 +372,7 @@ function obj = CreateChannels(obj, filename)
     end
     for ii = 1:s(1)
         try
+            warning('');
             line = tab(ii, :); %TODO CHECK FOR BLANKS
             % line.("deviceID") or line.(1);
             deviceID = line.("deviceID"){1};
@@ -370,7 +385,7 @@ function obj = CreateChannels(obj, filename)
             signalType = line.("signalType"){1};
             terminalConfig = line.("TerminalConfig"){1};
             range = line.("Range"){1};
-            channelID = line.(""){1};
+            channelID = line.("ProtocolID"){1};
             if ~isMATLABReleaseOlderThan("R2024b")
                 channelList = add(channelList, ioType, deviceID, portNum, signalType, TerminalConfig=terminalConfig, Range=range);
             else
@@ -390,8 +405,13 @@ function obj = CreateChannels(obj, filename)
                     range = obj.GetRangeFromString(range);
                     ch.Range = range;
                 end
+                [warnMsg, warnId] = lastwarn;
+                if ~isempty(warnMsg)
+                    message = ['Warning encountered on line ' char(string(ii))];
+                    warning(message);
+                end
             end
-            set(obj.ChannelIdentifiers, channelID, ch);
+            obj.ChannelMap.(channelID) =  ch;
         catch exception
             % dbstack
             % keyboard
@@ -418,52 +438,51 @@ function r = GetRangeFromString(obj, rString)
     r = [r0 r1];
 end
 
-function stim = generateTrialOutput(obj, input)
-    
+function out = FillChannelData(obj, out, chanLen, params, fieldName)
+    chIdx = obj.ChannelMap.fieldName.Index;
+    if regexpi(fieldName, '(Thermode)')
+        % Thermode
+
+    elseif regexpi(fieldName, '((Ana)|(Vib)|(Piezo))')
+        % Analog / vibration / piezo
+        
+    elseif regexpi(fieldName, '(Dig)')
+        % Digital
+        
+    elseif regexpi(fieldname, '((PWM)|(LED))')
+        % PWM
+        out(:,chIdx) =  pwmStim(chanLen, params, obj.SessionHandle.Rate);
+    elseif regexpi(fieldname, '(Cam)')
+        % Camera TODO LIGHTS
+        framerate = 20; %Hz
+        framerate_unitstep = round(obj.SessionHandle.Rate/framerate);
+        for jj = 1:round(framerate_unitstep/2)
+            out(jj:framerate_unitstep:end, chIdx) = 1;
+        end
+    else
+        % arbitrary stimulus
+
+    end
 end
 
 %%TODO!! STARTS HERE
-function preloadChannels(obj, name)
-
-    % add listener for plotting/saving -- see function plotData() below
-    lh = addlistener(obj.DAQ,'DataAvailable',@plotData);
-    
+function preloadChannels(obj, p, idxStim)
+    % add listener for plotting/saving
+    lh = addlistener(obj.SessionHandle,'DataAvailable',@plotData);
     fs = 1000;
-    Aurorasf = 1/52; % (1V per 50mN as per book,20241125 measured as 52mN per 1 V PB)
-    
-    
-    IDtherm = arrayfun(@(x) {['Thermode' char(64+x)]},1:obj.nThermodes);
-    if isempty(obj.p)
-        % single stimulation: use default values for tPre (time before onset of
-        % stimulus) and tPost (time after onset of stimulus). Obtain duration
-        % of vibration from respective GUI fields.
-        tPre	 = 1;
-        tPost 	 = 2;
-        vibDur   = cellfun(@(x) obj.h.(x).edit.vibDur.Value,IDtherm) / 1000;
-        ledDur   = obj.h.LED.edit.ledDur.Value / 1000;
-        ledFreq  = obj.h.LED.edit.ledFreq.Value;
-        ledDC    = obj.h.LED.edit.ledDC.Value;
-        ledDelay = obj.h.LED.edit.ledDelay.Value / 1000;
-        piezoAmp = 0;
-        piezoFreq= 0;
-        piezoDur = 0;
-        piezoStimNum = 0;
-    else
-        % protocol run: use values from protocol structure
-        tPre     = obj.p(obj.idxStim).tPre  / 1000;
-        tPost    = obj.p(obj.idxStim).tPost / 1000;
-        vibDur   = cellfun(@(x) obj.p(obj.idxStim).(x).VibrationDuration,IDtherm) / 1000;
-        ledDur   = obj.p(obj.idxStim).ledDuration / 1000;
-        ledFreq  = obj.p(obj.idxStim).ledFrequency;
-        ledDC    = obj.p(obj.idxStim).ledDutyCycle;
-        ledDelay = obj.p(obj.idxStim).ledDelay / 1000;
-        piezoAmp = obj.p(obj.idxStim).piezoAmp * Aurorasf; piezoAmp = min([piezoAmp 9.5]);  %added a safety block here 2024.11.15
-        piezoFreq = obj.p(obj.idxStim).piezoFreq;
-        piezoDur = obj.p(obj.idxStim).piezoDur;
-        piezoStimNum= obj.p(obj.idxStim).piezoStimNum;
+    % Aurorasf = 1/52; % (1V per 50mN as per book,20241125 measured as 52mN per 1 V PB)
+    tPre = p(idxStim).tPre / 1000;
+    tPost = p(idxStim).tPost / 1000;
+    fds = fields(p);
+    for i = 1:length(fds)
+        fieldName = fds{i};
+        if contains(['tPre', 'tPost'], fieldName)
+            continue
+        end
+        % if ~contains(obj.)
     end
-    tTotal  = tPre + tPost;
-        
+    
+
     % prepare DAQ output (TTL TRIGGERS)
     npreQSTtrig = 12;    %matches the number of entries outlined before QST and thermode triggers
     tax = linspace(1/obj.DAQ.Rate,tTotal,tTotal*obj.DAQ.Rate)-tPre;
@@ -572,48 +591,48 @@ function preloadChannels(obj, name)
     
     % delete listener
     delete(lh);
+end
+
+
+function plotData(~,event)
     
+    % manage persistent variables
+    persistent nTherm idTherm idxData
+    if isempty(nTherm)
+        nTherm = obj.nThermodes;
+    end
+    if isempty(idxData)
+        idxData = 1:(4*nTherm);
+    end
+    if isempty(idTherm)
+        idTherm = arrayfun(@(x) {['Thermode' char(64+x)]},1:nTherm);
+    end
     
-    function plotData(~,event)
-        
-        % manage persistent variables
-        persistent nTherm idTherm idxData
-        if isempty(nTherm)
-            nTherm = obj.nThermodes;
-        end
-        if isempty(idxData)
-            idxData = 1:(4*nTherm);
-        end
-        if isempty(idTherm)
-            idTherm = arrayfun(@(x) {['Thermode' char(64+x)]},1:nTherm);
-        end
-        
-        % build indices for plotting
-        a   = event.Source.NotifyWhenDataAvailableExceeds;
-        b   = event.Source.ScansAcquired;
-        idx = (1:a)+(b-a);
-        
-        % scale data from thermodes
-        dat = event.Data;
-        % dat(:,idxData(1:2)) = dat(:,idxData(1:2)) * 17.0898 - 5.0176;
-        dat(:,idxData(1:2)) = dat(:,idxData(1:2)) * 12  - 2; % PB 20241219
-        dat(:,idxData(3:4)) = (dat(:,idxData(3:4))*10 + 32) ;
-        ylim([12 50])
-        
-        % plot data
-        for ii = 1:5
-            for jj = 1:nTherm
-                obj.h.(idTherm{jj}).plot(ii).YData(idx) = dat(:,ii+(jj-1)*5);
-            end
-        end
-        
-        % save to disk (optional)
-        if output
-            fwrite(fid1,[event.TimeStamps-tPre,dat,out(idx,:)]','double');
+    % build indices for plotting
+    a   = event.Source.NotifyWhenDataAvailableExceeds;
+    b   = event.Source.ScansAcquired;
+    idx = (1:a)+(b-a);
+    
+    % scale data from thermodes
+    dat = event.Data;
+    % dat(:,idxData(1:2)) = dat(:,idxData(1:2)) * 17.0898 - 5.0176;
+    dat(:,idxData(1:2)) = dat(:,idxData(1:2)) * 12  - 2; % PB 20241219
+    dat(:,idxData(3:4)) = (dat(:,idxData(3:4))*10 + 32) ;
+    ylim([12 50])
+    
+    % plot data
+    for ii = 1:5
+        for jj = 1:nTherm
+            obj.h.(idTherm{jj}).plot(ii).YData(idx) = dat(:,ii+(jj-1)*5);
         end
     end
-
-    %TODO!! ENDS HERE
+    
+    % save to disk (optional)
+    if output
+        fwrite(fid1,[event.TimeStamps-tPre,dat,out(idx,:)]','double');
+    end
 end
+
+%TODO!! ENDS HERE
 end
 end
