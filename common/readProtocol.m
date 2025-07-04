@@ -45,17 +45,23 @@ thrm = struct(...           % thermodes
     'VibrationDuration',    0);
 dig = struct( ...           %basic digital output
     'delay',                0,...
-    'dur',                  2);
+    'dur',                  2, ...
+    'rep',                  0, ...
+    'repdel',               0);
 pwm  = struct( ...          %PWM digital output
     'dc',                   50,...
     'freq',                 100,...
-    'dur',                  2,...
-    'delay',                0);
+    'dur',                  50,...
+    'delay',                0, ...
+    'rep',                  0, ...
+    'repdel',               0);
 ana  = struct( ...          %basic analog output
     'amp',                  5,...
-    'dur',                  2,...
+    'dur',                  50,...
     'delay',                0,...
-    'freq',                 100); %TODO FREQ RELEVANT?
+    'freq',                 100, ...
+    'rep',                  0, ...
+    'repdel',               0); %TODO FREQ RELEVANT?
 cam  = struct(...           % cameras
     'light',                111,...
     'enable',               1);
@@ -73,7 +79,7 @@ p = struct();
 %% Count and initialise with names
 %TODO maybe only do this if nTherm nAna nDig nPwm nCam and nArb are
 %undefined?
-regexSuffix = '[A-Z]*\d*[A-Z]?'; %TODO VIBRATION IS DIGITAL!! Piezo IS analog
+regexSuffix = '[A-Z]*(-?\d*)[A-Z]?'; %TODO VIBRATION IS DIGITAL!! Piezo IS analog
 regexTherm = 'V\d{5}[A-Z]?';
 regexTherm = '(I[01]|[NT]\d{3}|C\d{4}|S[01]{5}|[VR]\d{5}|D\d{6})[A-Z]?';
 regexAna = ['((Ana)|(Vib)|(Piezo))', regexSuffix];
@@ -214,7 +220,7 @@ for idxStim = 1:length(lines)
             p = parseArbitrary(p,token,idxStim);
             continue
         elseif regexpi(token, ['^(((Ana)|(Vib)|(Piezo)|(Dig)|(PWM)|(LED)|(Cam))' ...
-                '((Amp)|(Dur)|(Delay)|(DC)|(Freq)|(Light)|(Enable))\d*)[A-Z]?$'], 'once')
+                '((Amp)|(Dur)|(Delay)|(DC)|(Freq)|(Light)|(Enable)|(Rep)|(RepDel))(-?\d*))[A-Z]*$'], 'once')
             % Standard format
             p = parseToken(p, token, idxStim);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
             continue
@@ -246,46 +252,6 @@ for idxStim = 1:length(lines)
                     validateattributes(val,{'numeric'},{'nonnegative'},...
                         mfilename,token,idxStim)
                     p(idxStim).nRepetitions = val;
-                    continue
-                case 'leddur' %TODO LED IS USUALLY JUST TTL - CAN BE DIGITAL, LED DRIVER TAKES DIGITAL AND ANALOG INPUTS
-                    validateattributes(val,{'numeric'},{'nonnegative'},...
-                        mfilename,token,idxStim)
-                    p(idxStim).ledDuration = val;
-                    continue
-                case 'ledfreq'
-                    validateattributes(val,{'numeric'},{'positive'},...
-                        mfilename,token,idxStim)
-                    p(idxStim).ledFrequency = val;
-                    continue
-                case 'leddc'
-                    validateattributes(val,{'numeric'},{'>=',0,'<=',100},...
-                        mfilename,token,idxStim)
-                    p(idxStim).ledDutyCycle = round(val);
-                    continue
-                case 'leddelay'
-                    validateattributes(val,{'numeric'},{},...
-                        mfilename,token,idxStim)
-                    p(idxStim).ledDelay = val;
-                    continue
-                case 'piezofreq'%added 2022.03.18 %TODO WHAT THIS
-                    validateattributes(val,{'numeric'},{},...
-                        mfilename,token,idxStim)
-                    p(idxStim).piezoFreq = val;
-                    continue
-                case 'piezoamp'%added 2022.03.18
-                    validateattributes(val,{'numeric'},{},...
-                        mfilename,token,idxStim)
-                    p(idxStim).piezoAmp = val;
-                    continue
-                case 'piezodur'%added 2024.11.15
-                    validateattributes(val,{'numeric'},{},...
-                        mfilename,token,idxStim)
-                    p(idxStim).piezoDur = val;
-                    continue
-                case 'piezostimnum'
-                    validateattributes(val,{'numeric'},{},...
-                        mfilename,token,idxStim)
-                    p(idxStim).piezoStimNum = val;
                     continue
             end
         end
@@ -329,8 +295,8 @@ end
 
 function p = parseToken(p, token, idxStim)
     tmp = regexpi(token, ['^((Ana)|(Vib)|(Piezo)|(Dig)|(PWM)|(LED)|(Cam))' ...
-                            '((Amp)|(Dur)|(Delay)|(DC)|(Freq)|(Light)|(Enable))' ...
-                            '(\d*)([A-Z]?)$'], 'once', 'tokens');
+                            '((Amp)|(Dur)|(Delay)|(DC)|(Freq)|(Light)|(Enable)|(Rep)|(RepDel))' ...
+                            '(-?\d*)([A-Z])*$'], 'once', 'tokens');
     stimType = tmp{1};
     attr = tmp{2};
     val = str2double(tmp{3});

@@ -24,7 +24,8 @@ classdef StimControl < handle
     properties (Dependent)
         dirAnimal
         animalID
-        nThermodes
+        experimentID
+        trialNum
    end
     
     methods

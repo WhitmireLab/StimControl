@@ -46,11 +46,15 @@
 % - AnaDurX 		set analog output duration in ms (or VibDurX for legacy)
 % - AnaAmpX 		set analog output intensity in 1/10V (X=15-33) (or VibAmpX for legacy)
 % - AnaDelayX		set analog output delay in ms
+% - AnaRepX         set number of output repeats. Default = 0. -1 will repeat until end of stimulus period
+% - AnaRepDelX      set delay between repetitions in ms. Default = 0
 %
 % STIMULUS DEFINITIONS: DIGITAL BINARY STIMULATION
 % ------------------------------
 % - DigDurX 		set digital output duration in ms
 % - DigDelayX		set digital output delay in ms
+% - DigRepX         set number of output repeats. Default = 0. -1 will repeat until end of stimulus period
+% - DigRepDelX      set delay between repetitions in ms. Default = 0
 %
 % STIMULUS DEFINITIONS: DIGITAL PWM STIMULATION
 % ------------------------------
@@ -59,6 +63,8 @@
 % - PWMFreqX 		set PWM frequency in Hz (must be compatible with DAQ card rate)
 % - PWMDurX		set PWM duration in ms
 % - PWMDelay		set PWM delay in ms
+% - PWMRepX         set number of output repeats. Default = 0. -1 will repeat until end of stimulus period
+% - PWMRepDelX      set delay between repetitions in ms. Default = 0
 %
 % STIMULUS DEFINITIONS: CAMERA
 % ------------------------------

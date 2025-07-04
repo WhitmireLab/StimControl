@@ -51,6 +51,8 @@ Component properties are defined per hardware component. A ComponentProperties s
 - See about making a generic inspect() style interface for all components [(see here)](https://au.mathworks.com/help/instrument/generic-instrument-drivers.html?s_tid=CRUX_lftnav)
 - add ability to repeat stimulus independently within a trial
 - I don't looove that the component defaults are hardcoded but they're also not really hardcoded? maybe if we just add the option to ignore defaults we should be fine?
+- NB with repInf it doesn't quite work - maybe support for rep-1 instead??
+
 
 ### Widefield GUI
 - jank when changing bin size / folders / etc.
