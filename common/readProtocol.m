@@ -502,7 +502,7 @@ p = [trials{:}];
                         "In oddball paradigms with multiple oddballs, put all oddball " + ...
                         "stimuli into their own bracket block within the oddball block."+ ...
                         "(relationships defined: %s, %s)", ...
-                        trial.trialIdx, comment, currentParent.childRel, childRel); 
+                        trial.trialIdx, trial.comment, currentParent.childRel, childRel); 
                 else
                     currentParent.childRel = childRel;
                 end
@@ -515,7 +515,7 @@ p = [trials{:}];
                     if ~strcmpi(currentParent.childRel, 'sim') && ~isempty(currentParent.childRel) % todo this doesn't check the whole way up. Document that isAcquisitionTrigger is separate
                         error("Syntax error in trial line %d (%s): " + ...
                             "Stimuli marked as AcquisitionTrigger cannot occur within sequential or oddball relationships",  ...
-                            trial.trialIdx, comment);
+                            trial.trialIdx, trial.comment);
                     end
                     newNode = StimulusBlock('stimParams', stimuli.(token), ...
                         'parentIdx', acquisitionIdx);
@@ -537,7 +537,7 @@ p = [trials{:}];
                 end
                 if trialParamsTracker.(name)
                     error("Invalid syntax on trial line %d (%s): %s can only be defined once per trial.", ...
-                        trial.trialIdx, comment, name);
+                        trial.trialIdx, trial.comment, name);
                 end
                 trialParamsTracker.(name) = true;
                 trial.(name) = value; % todo check this works all the time, I think it does
@@ -549,7 +549,7 @@ p = [trials{:}];
                         if ~strcmpi(currentParent.childRel, 'odd')
                             % gotta be an oddball to use this
                             error("Invalid syntax on trial definition line %d (%s): " + ...
-                                "OddDistrX is set, but the relationship for its stimulus block is not oddball (^.X)", trial.trialIdx, comment);
+                                "OddDistrX is set, but the relationship for its stimulus block is not oddball (^.X)", trial.trialIdx, trial.comment);
                         end
                         if value == 0
                             currentParent.oddParams.distributionMethod = 'even';
@@ -562,22 +562,22 @@ p = [trials{:}];
                                     % can't set semirandom without also setting a minimum distance
                                     error("Invalid syntax on trial definition line %d (%s): " + ...
                                         "to make oddball distribution semirandom, you must also define the minimum distance between oddballs using OddMinDistX. " + ...
-                                        "Add this parameter or change to another OddDistr (0=even, 1=random, 2=semirandom)", trial.trialIdx, comment);
+                                        "Add this parameter or change to another OddDistr (0=even, 1=random, 2=semirandom)", trial.trialIdx, trial.comment);
                             end
                         else
                             error("Invalid syntax on trial definition line %d (%s): " + ...
-                                "OddDistrX accepts X values 0=even, 1=random, 2=semirandom", trial.trialIdx, comment);
+                                "OddDistrX accepts X values 0=even, 1=random, 2=semirandom", trial.trialIdx, trial.comment);
                         end
                     case 'oddmindist'
                         % some syntax checking.
                         if ~strcmpi(currentParent.childRel, 'odd')
                             % gotta be an oddball to use this
                             error("Invalid syntax on trial definition line %d (%s): " + ...
-                                "OddMinDistX is set, but the relationship for its stimulus block is not oddball (^.X).", trial.trialIdx, comment);
+                                "OddMinDistX is set, but the relationship for its stimulus block is not oddball (^.X).", trial.trialIdx, trial.comment);
                         elseif isfield(currentParent.oddParams, 'distributionMethod')
                             % shouldn't be set! likely the wrong kind of oddball distribution method.
                             error("Invalid syntax on trial definition line %d (%s): " + ...
-                                "OddMinDistX is set, but the OddDistr value for its stimulus block is not semirandom (OddDistr2).", trial.trialIdx, comment);
+                                "OddMinDistX is set, but the OddDistr value for its stimulus block is not semirandom (OddDistr2).", trial.trialIdx, trial.comment);
                         end
                         currentParent.oddParams.distributionMethod = ['semirandom' char(string(value))];
                     case 'repdel'
@@ -594,9 +594,10 @@ p = [trials{:}];
                     name = name{:};
                 end
                  error("Invalid parameter on trial definition line %d (%s): %s. " + ...
-                    "Parameters must be a stimulis defined in the stimulus section " + ...
-                    "or one of the following: %s, StartDel, RepDel, nStims, OddDistr, OddMinDist", trial.trialIdx, comment, name, ...
-                    GetListFromArray(fields(validTrialParams)));
+                    "Parameters must be a stimulus defined in the stimulus section " + ...
+                    "or one of the following: %s, StartDel, RepDel, nStims, OddDistr, OddMinDist," + ...
+                    "Stimulus names should only contain characters - digits and underscores are not supported.", ...
+                    trial.trialIdx, trial.comment, name, GetListFromArray(fields(validTrialParams)));
             end
             % put parent back on the stack
             stack.push(currentParentIdx);

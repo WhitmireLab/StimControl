@@ -373,8 +373,10 @@ methods
             target.Text = ['ERROR: ' char(message)];
             target.FontColor = 'red';
             obj.status = 'error';
+            dbstack
             error(message)
         catch % handle likely not initialised
+            dbstack
             error(message)
         end
         %PHILL: COMMENT OUT DOWN TO HERE

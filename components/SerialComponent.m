@@ -113,6 +113,7 @@ function Stop(obj)
             delete(obj.TriggerTimer);
         end
     end
+    obj.tStimStarted = [];
 end
 
 function Close(obj)
@@ -147,36 +148,55 @@ function StartPreview(obj)
         return;
     end
     [p, thermP] = obj.GetLoadedParams(false);
-    % todo account for multi-stim trials
+    if iscell(p)
+        p = [p{:}];
+    else
+        thermP = {thermP}; 
+    end
     % startDelay = obj.TrialData.delay(1); 
     sampleRate = 1000;
-    S = str2num([char(p(5:end))]); %#ok     % Selected surfaces
-    N = p(1)/10;                            % Neutral temp (C)
-    C = thermP(1,:)/10;                     % SetPoint Temp (C)
-    D = thermP(4,:)/1000;                   % Duration (sec)
-    V = thermP(2,:)/10;                     % Pacing Rate (C/sec)
-    R = thermP(3,:)/10;                     % Return Speed (C/sec)
     stimTicks = (obj.TrialData.tPre + obj.TrialData.tPost) * sampleRate / 1000;
-    tPost = obj.TrialData.tPost;
-    % TODO it's different??? future michelle here: what does this MEAN
-
+    tPost = obj.TrialData.tPost*sampleRate;
     tax = linspace(1/sampleRate, stimTicks/sampleRate, stimTicks) - obj.TrialData.tPre/1000;
-    stim = ones(length(tax),5) * N;
+    stim = ones(length(tax),5);
     [~,t0] = min(abs(tax));
     labels = [];
-
-    for ii = find(S')
-        dP    = D(ii)*sampleRate-1;
-        pulse = ones(dP,1);
-        dV    = round(abs(C(ii)-N)/V(ii)*sampleRate);
-        dR    = round(abs(C(ii)-N)/R(ii)*sampleRate);
-        tmp   = linspace(0,1,dV)';
-        pulse(1:min([dV dP])) = tmp((1:min([dV dP])));
-        pulse = [pulse; linspace(pulse(end),0,dR)'] * (C(ii)-N) + N;
-        
-        tmp   = min([round(tPost*sampleRate)+1 length(pulse)]);
-        stim(t0+(1:tmp)-1,ii) = pulse(1:tmp);
+    allS = logical(str2num([char(p(4:end, :))])); 
+    for ii = find(allS')
         labels = [labels string(['Thermode' char(64+ii)])]; %#ok
+    end
+
+    for j = 1:length(obj.TrialData.sequence)
+        i = obj.TrialData.sequence(j);
+        if j > 1
+            t0 = t0 + obj.TrialData.delay(j);
+        end
+        thermp = thermP{i};
+        
+        N = p(1,i)/10;                          % Neutral temp (C)
+        C = thermp(1,:)/10;                     % SetPoint Temp (C)
+        D = thermp(4,:)/1000;                   % Duration (sec)
+        V = thermp(2,:)/10;                     % Pacing Rate (C/sec)
+        R = thermp(3,:)/10;                     % Return Speed (C/sec)
+        if j == 1
+            stim(1:end,:) = 1*N;
+        else
+            stim(t0:end, :) = 1 * N;
+        end
+        tRemain = tPost - t0;
+
+        for ii = find(allS')
+            dP    = D(ii)*sampleRate-1;
+            pulse = ones(dP,1);
+            dV    = round(abs(C(ii)-N)/V(ii)*sampleRate);
+            dR    = round(abs(C(ii)-N)/R(ii)*sampleRate);
+            tmp   = linspace(0,1,dV)';
+            pulse(1:min([dV dP])) = tmp((1:min([dV dP])));
+            pulse = [pulse; linspace(pulse(end),0,dR)'] * (C(ii)-N) + N;
+            tmp   = min([round(t0 + tRemain)+1 length(pulse)]);
+            stim(t0+(1:tmp)-1,ii) = pulse(1:tmp);
+        end
+        t0 = t0 + (max(D)*sampleRate-1);
     end
 
     plot(obj.PreviewPlot, tax, stim);
@@ -189,8 +209,8 @@ function StartPreview(obj)
 end
 
 function [p, thermP] = GetLoadedParams(obj, fromDevice)
-    p = [];
-    thermP = [];
+    p = {};
+    thermP = {};
     if fromDevice
         ps = strsplit(obj.query('P'),'\r');
         if length(ps) < 2
@@ -200,20 +220,23 @@ function [p, thermP] = GetLoadedParams(obj, fromDevice)
         p = sscanf(ps{2},'N%d T%d I%d Y%d S%s');
         thermP = cell2mat(cellfun(@(x) {sscanf(x,'C%d V%d R%d D%d')},ps(3:end)));
     else
-        td = obj.TrialData.params;
-        p = [td.NeutralTemp*10; ...
-                td.nTrigger; ...
-                td.integralTerm; ...
-                double(td.SurfaceSelect)'+48];      
-        thermP = [td.SetpointTemp*10; ...
-                td.PacingRate*10; ...
-                td.ReturnSpeed*10; ...
-                td.dStimulus];
+        for i = 1:length(obj.TrialData.params)
+            td = obj.TrialData.params(i);
+            p{end+1} = [td.NeutralTemp*10; ...
+                    td.nTrigger; ...
+                    td.integralTerm; ...
+                    double(td.SurfaceSelect)'+48];      
+            thermP{end+1} = [[td.SetpointTemp]*10; ...
+                    [td.PacingRate]*10; ...
+                    [td.ReturnSpeed]*10; ...
+                    [td.dStimulus]];
+            thermP{end} = repmat(thermP{end}, 1, length(p{end})-3);
         % N = p(1)/10;                            % Neutral temp (C)
         % C = thermP(1,:)/10;                     % SetPoint Temp (C)
         % D = thermP(4,:)/1000;                   % Duration (sec)
         % V = thermP(2,:)/10;                     % Pacing Rate (C/sec)
         % R = thermP(3,:)/10;                     % Return Speed (C/sec)
+        end
     end
 end
 
@@ -242,7 +265,7 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
         % of structure for commands. Hm.
         componentTrialData.params = [componentTrialData.params{:}];
     end
-    componentTrialData.params = componentTrialData.params.commands;
+    componentTrialData.params = [componentTrialData.params.commands];
     obj.TrialData = componentTrialData;
     obj.TrialData.tPre = genericTrialData.tPre;
     obj.TrialData.tPost = genericTrialData.tPost;
@@ -281,7 +304,7 @@ function TrialMaintain(obj)
         return
     end
     if ~isempty(obj.tStimStarted) ...
-            && toc(obj.tStimStarted) > max(obj.CurrentCommand().dStimulus)
+            && toc(obj.tStimStarted) > max(obj.CurrentCommand().dStimulus)/1000
         obj.idxStim = obj.idxStim + 1;
         obj.tStimStarted = [];
         obj.preloadSingleQSTStim([]);
@@ -321,6 +344,7 @@ function status = GetSessionStatus(obj)
             % temperature is changing or button is pressed
             if isempty(obj.tStimStarted)
                 obj.tStimStarted = tic;
+                % disp("Stimulation started")
             end
             status = 'running';
         elseif ~isempty(obj.TrialData)
@@ -335,6 +359,9 @@ function preloadSingleQSTStim(obj, stimStruct)
     %QSTControl p2Serial
     %TODO flush previous
     % build command stack
+    % disp(sprintf("Loading %d: %d", obj.idxStim, obj.TrialData.sequence(obj.idxStim)))
+    % dbstack    
+    obj.tStimStarted = [];
     stack = {};
     if isempty(stimStruct)
         stimStruct = obj.CurrentCommand;
