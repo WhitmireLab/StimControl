@@ -601,10 +601,11 @@ function stim = piezoStim(varargin)
     piezostimunitx = -ramp:ramp;
     piezostimunity = normpdf(piezostimunitx,0,3);
     piezostimunity = piezostimunity./max(piezostimunity);
-    piezohold = ones(1,params.duration);
+    piezohold = ones(1,(params.duration - (2*ramp + 1)));
     piezostimunity = [piezostimunity(1:ramp) piezohold piezostimunity(ramp+1:end)];
-    
-    if params.nStims>0
+    if params.nStims == 1
+        stim = piezostimunity;
+    elseif params.nStims>0 %legacy
         for pp = 1:params.nStims
             pos1 = (pp-1) .*(1/params.frequency) ; % in seconds
             tloc = find(tax>=pos1); tloc = tloc(1);

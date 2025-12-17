@@ -32,7 +32,7 @@ else
         previousStatus = obj.status;
     end
     if ~strcmpi(previousStatus, obj.status)
-        disp(obj.status);
+        % disp(obj.status);
         previousStatus = obj.status;
     end
     % state handling

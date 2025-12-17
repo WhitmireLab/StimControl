@@ -1,8 +1,8 @@
 portNum,channelName,ioType,signalType,TerminalConfig,Range,Device,Label,Preview
 ai1,ThermodeA,input,Voltage,SingleEnded,[-5 5],QST,thermodeA,0
 ai2,ThermodeB,input,Voltage,SingleEnded,[-5 5],QST,thermodeB,0
-ai3,Aurora Force OUT,input,Voltage,SingleEnded,,Aurora,force,0
-ai4,Aurora Length OUT,input,Voltage,SingleEnded,,Aurora,length,0
+ai3,Aurora Force OUT,input,Voltage,SingleEnded,,Aurora,force,1
+ai4,Aurora Length OUT,input,Voltage,SingleEnded,,Aurora,length,1
 ai5,DC Temperature Controller,input,Voltage,SingleEnded,,Heatpad,temp,0
 port0/line20,TTL ScanImage Res Galvo,input,Digital,,,TwoPhoton,res,0
 port0/line21,TTL ScanImage Y Galvo,input,Digital,,,TwoPhoton,y,0
@@ -20,12 +20,12 @@ port0/line29,LED,output,Digital,,,FlashLED,ttl,0
 port0/line30,IRLED_BaslerImaging,output,Digital,,,IRLED,ttl,0
 port0/line2,Vibration,output,Digital,,,VibrationMotor,out,0
 port0/line7,Thermode Trigger,output,Digital,,,QST,trigger,0
-ao0,Aurora Force Command Voltage,output,Voltage,SingleEnded,[-10 10],Aurora,out,0
-ai8,Wheel 1A,input,Voltage,SingleEnded,,Wheel,A1,1
+ao0,Aurora Force Command Voltage,output,Voltage,SingleEnded,[-10 10],Aurora,out,1
+ai8,Wheel 1A,input,Voltage,SingleEnded,,Wheel,A1,0
 ai9,Wheel 1B,input,Voltage,SingleEnded,,Wheel,A2,0
-ai10,Wheel 2A,input,Voltage,SingleEnded,,Wheel,B1,1
+ai10,Wheel 2A,input,Voltage,SingleEnded,,Wheel,B1,0
 ai11,Wheel 2B,input,Voltage,SingleEnded,,Wheel,B2,0
-ai12,Wheel 3A,input,Voltage,SingleEnded,,Wheel,C1,1
+ai12,Wheel 3A,input,Voltage,SingleEnded,,Wheel,C1,0
 ai13,Wheel 3B,input,Voltage,SingleEnded,,Wheel,C3,0
-ai14,Wheel 4A,input,Voltage,SingleEnded,,Wheel,D1,1
+ai14,Wheel 4A,input,Voltage,SingleEnded,,Wheel,D1,0
 ai15,Wheel 4B,input,Voltage,SingleEnded,,Wheel,D2,0

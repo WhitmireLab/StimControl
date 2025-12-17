@@ -667,12 +667,12 @@ function plotData(obj, ~,event)
                 data(:,i) = data(:,i) * 12  - 2; % PB 20241219
             end
         end
-        if isfield(obj.ChannelMap, 'Aurora')
-            auroraIdxes = [obj.ChannelMap.Aurora.force.idx obj.ChannelMap.Aurora.length.idx];
-            for i = auroraIdxes
-                data(:,i) = data(:,i)*10 + 32;
-            end
-        end
+        % if isfield(obj.ChannelMap, 'Aurora')
+        %     auroraIdxes = [obj.ChannelMap.Aurora.force.idx obj.ChannelMap.Aurora.length.idx];
+        %     for i = auroraIdxes
+        %         data(:,i) = data(:,i)*10 + 32;
+        %     end
+        % end
         % TODO DC TEMPERATURE CONTROLLER ALSO NEEDS CALIBRATION - FHC DC TEMPERATURE CONTROLLER
         obj.PreviewData(targetIdx, obj.InChanIdxes) = data;  
         warning('off');
