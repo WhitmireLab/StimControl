@@ -310,11 +310,11 @@ function LoadTrial(obj, out)
         obj.SessionHandle.stop
     end
     flush(obj.SessionHandle);
-    if obj.SessionHandle.Rate == 0 && any(contains({obj.SessionHandle.Channels.Type}, 'Output'))
+    if obj.SessionHandle.Rate == 0 && any(contains({obj.SessionHandle.Channels.Type}, 'Output')) 
         % clocked sampling not supported - timer required for outputs.
-        % TODO this might not strictly be true - might be possible to
-        % connect to a clock for SOME DAQS - USB6001 is not one of them though
-        % look at obj.deviceInfo to check this
+        % todo - logic above isn't quite right. The actual logic (for a USB-6001) is 
+        % (rate == 0 && any digital channels) or (rate == 0 and any analog channels and no clock input)
+        % https://docs-be.ni.com/bundle/usb-6000-6001-6002-6003-features/raw/resource/enus/374259a.pdf
         obj.CreateSoftwareTriggerTimer(obj.ConfigStruct.Rate);
 
     elseif any(contains({obj.SessionHandle.Channels.Type}, 'Output'))
@@ -554,16 +554,50 @@ end
 
 function SoftwareTrigger(obj, ~, ~)
     persistent triggerIdx;
+    persistent t0;
+    persistent tax;
     if isempty(triggerIdx)
         triggerIdx = 1; 
+        t0 = tic;
+        tax = zeros(length(obj.PreviewData), 1);
     end
     % nb using an incrementing IDX may lead to longer execution times.
     % could estimate the appropriate index based off execution time, but
     % that feels like overengineering.
+    disp(triggerIdx)
     if triggerIdx <= length(obj.PreviewData)
         write(obj.SessionHandle, obj.PreviewData(triggerIdx,obj.OutChanIdxes));
+        readData = read(obj.SessionHandle);
+        obj.PreviewData(triggerIdx, obj.InChanIdxes) = readData{:,:};
+        tax(triggerIdx) = seconds(seconds(toc(t0)));
         triggerIdx = triggerIdx + 1;
+        % update display? might be WAY too slow
+        if ~mod(triggerIdx, 100)
+            displayLabels = obj.StackedPreview.DisplayLabels;
+            obj.StackedPreview.YData = obj.PreviewData(:,obj.PreviewChannels); %todo fix this it's VERY SLOW but I'm going to have to fix it by changing the plot function
+            obj.StackedPreview.DisplayLabels = displayLabels;
+        end
     else
+        % write the whole thing at once
+        if ~isfolder(obj.SavePath)
+            mkdir(obj.SavePath)
+        end
+        tax = tax - tax(obj.tPrePost(0));
+        % scale data from thermodes, if relevant. TODO could be less hardcoded but this will do for now.
+        if isfield(obj.ChannelMap, 'QST')
+            qstIdxes = [obj.ChannelMap.QST.thermodeA.idx obj.ChannelMap.QST.thermodeB.idx];
+            for i = qstIdxes
+                data(:,i) = data(:,i) * 12  - 2;
+            end
+        end
+        try
+            writematrix([tax - obj.tPrePost(1),obj.PreviewData(:,:)], ...
+            strcat(obj.SavePath, filesep, obj.SavePrefix, '.csv'), ...
+            'WriteMode', 'append');
+        catch e
+            keyboard;
+            rethrow(e);
+        end
         obj.Stop();
     end
 end

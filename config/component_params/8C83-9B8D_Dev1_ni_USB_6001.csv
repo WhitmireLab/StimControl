@@ -16,8 +16,8 @@ port0/line3,GPIO03,output,Digital,,,Widefield1,Trigger,1
 port0/line4,GPIO04,input,Digital,,,Widefield1,Record,1
 port0/line5,TTL Basler: Frame Trigger,output,Digital,,,Widefield1,NA,0
 port0/line6,GPIO06,output,Digital,,,Widefield2,NA,0
-port0/line7,GPIO07,output,Digital,,,GPIO7,NA,0
-port1/line0,GPIO10,output,Digital,,,GPIO8,NA,0
+port0/line7,GPIO07,output,Digital,,,QST,NA,0
+port1/line0,GPIO10,output,Digital,,,Aurora,NA,0
 port1/line1,GPIO11,output,Digital,,,GPIO9,NA,0
 port1/line2,GPIO12,output,Digital,,,GPIO10,NA,0
 port1/line3,HamamatsuTrigger,output,Digital,,,GPIO12,NA,0
