@@ -29,6 +29,15 @@ elseif strcmpi(event.NewValue.Title, 'Setup')
         obj.warnMsg("Can't change tabs when a trial is running. Stop the trial and try again.");
         obj.h.tabs.SelectedTab = obj.h.Session.Tab;
         return
+    else
+        for i = 1:length(obj.d.Available)
+            component = obj.d.Available{i};
+            try
+                component.Stop(); %stop components so their properties can be changed
+            catch error
+                disp(sprintf("Error stopping component ", component.ConfigStruct.ProtocolID));
+            end
+        end
     end
 end
 % warning: cursed

@@ -7,16 +7,16 @@ ai4,analogIn4,input,Voltage,SingleEnded,[-10 10],ai4,NA,0
 ai5,analogIn5,input,Voltage,SingleEnded,[-10 10],ai5,NA,0
 ai6,analogIn6,input,Voltage,SingleEnded,[-10 10],ai6,NA,0
 ai7,analogIn7,input,Voltage,SingleEnded,[-10 10],ai7,NA,0
-ao0,analogOut0,output,Voltage,SingleEnded,[-10 10],ao0,NA,1
-ao1,analogOut1,output,Voltage,SingleEnded,[-10 10],ao1,NA,1
+ao0,analogOut0,output,Voltage,SingleEnded,[-10 10],ao0,NA,0
+ao1,analogOut1,output,Voltage,SingleEnded,[-10 10],ao1,NA,0
 port0/line0,GPIO00,output,Digital,,,TwoPhotonStart,NA,0
 port0/line1,GPIO01,output,Digital,,,TwoPhotonStop,NA,0
 port0/line2,GPIO02,output,Digital,,,TwoPhotonNext,NA,0
-port0/line3,GPIO03,output,Digital,,,QST,NA,0
-port0/line4,GPIO04,output,Digital,,,Aurora,NA,0
+port0/line3,GPIO03,output,Digital,,,Widefield1,Trigger,1
+port0/line4,GPIO04,input,Digital,,,Widefield1,Record,1
 port0/line5,TTL Basler: Frame Trigger,output,Digital,,,Widefield1,NA,0
 port0/line6,GPIO06,output,Digital,,,Widefield2,NA,0
-port0/line7,GPIO07,output,Digital,,,GPIO7,NA,1
+port0/line7,GPIO07,output,Digital,,,GPIO7,NA,0
 port1/line0,GPIO10,output,Digital,,,GPIO8,NA,0
 port1/line1,GPIO11,output,Digital,,,GPIO9,NA,0
 port1/line2,GPIO12,output,Digital,,,GPIO10,NA,0
