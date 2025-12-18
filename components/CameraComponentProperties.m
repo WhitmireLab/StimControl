@@ -105,6 +105,16 @@ properties (Constant)
         'note'        , 'how long to wait without acquiring new data before the camera no longer registers as acquiring')
 end
 
+methods (Static, Access=private)
+    function out = GetDefaultAdaptor()
+        if isempty(imaqhwinfo().InstalledAdaptors)
+            out = '';
+        else
+            out = imaqhwinfo().InstalledAdaptors{1};
+        end
+    end
+end
+
 methods (Access=public)
     function componentID = GetComponentID(obj)
         componentID = convertStringsToChars([obj.Adaptor '-' obj.ProtocolID]);

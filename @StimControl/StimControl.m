@@ -85,7 +85,6 @@ methods
         %% Find available hardware
         disp("Initialising Available Hardware...")
         obj.d = obj.d.FindAvailableHardware(); %TODO CHANGE THIS SO IT ONLY FINDS HARDWARE WITHOUT AN ACTVIE SESSION ELSEWHERE. Or at least doesn't initialise
-
         %% Create figure and get things going
         disp("Creating figure...")
         createFigure(obj)

@@ -100,6 +100,12 @@ obj.h.Session.Message = uilabel(obj.h.Session.Grid, ...
         'Column',3), ...
     "WordWrap","on");
 
+if isempty(obj.d.Available)
+    displayText = sprintf("Welcome to StimControl! \nNo devices found. Please check you have devices connected, then restart StimControl.");
+    obj.h.Setup.Message.Text = displayText;
+    obj.h.Session.Message.Text = displayText;
+end
+
 %% helper functions
 function varargout = RestartTimer(obj, src, event)
     start(obj.t);
