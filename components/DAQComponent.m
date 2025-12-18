@@ -215,10 +215,11 @@ function SetParams(obj, paramsStruct)
                 obj.ConfigStruct.ProtocolID = val;
             case "Rate"
                 obj.Stop();
-                if ~isdouble(val)
+                if ~isnumeric(val)
                     val = str2double(val);
                 end
                 obj.SessionHandle.Rate = val;
+                obj.ConfigStruct.Rate = val;
         end
     end
 end
@@ -564,7 +565,7 @@ function SoftwareTrigger(obj, ~, ~)
     % nb using an incrementing IDX may lead to longer execution times.
     % could estimate the appropriate index based off execution time, but
     % that feels like overengineering.
-    disp(triggerIdx)
+    % disp(triggerIdx)
     if triggerIdx <= length(obj.PreviewData)
         write(obj.SessionHandle, obj.PreviewData(triggerIdx,obj.OutChanIdxes));
         readData = read(obj.SessionHandle);
@@ -582,16 +583,18 @@ function SoftwareTrigger(obj, ~, ~)
         if ~isfolder(obj.SavePath)
             mkdir(obj.SavePath)
         end
-        tax = tax - tax(obj.tPrePost(0));
+        tax = tax - tax(round(obj.tPrePost(1)*obj.ConfigStruct.Rate/1000));
         % scale data from thermodes, if relevant. TODO could be less hardcoded but this will do for now.
         if isfield(obj.ChannelMap, 'QST')
-            qstIdxes = [obj.ChannelMap.QST.thermodeA.idx obj.ChannelMap.QST.thermodeB.idx];
-            for i = qstIdxes
-                data(:,i) = data(:,i) * 12  - 2;
+            if isfield(obj.ChannelMap.QST, 'thermodeA') && isfield(obj.ChannelMap.QST, 'thermodeB')
+                qstIdxes = [obj.ChannelMap.QST.thermodeA.idx obj.ChannelMap.QST.thermodeB.idx];
+                for i = qstIdxes
+                    obj.PreviewData(:,i) = obj.PreviewData(:,i) * 12  - 2;
+                end
             end
         end
         try
-            writematrix([tax - obj.tPrePost(1),obj.PreviewData(:,:)], ...
+            writematrix([tax,obj.PreviewData(:,:)], ...
             strcat(obj.SavePath, filesep, obj.SavePrefix, '.csv'), ...
             'WriteMode', 'append');
         catch e
