@@ -6,3 +6,4 @@ WidefieldImager/WidefieldImager.asv
 *.stim
 *.qst
 !*/Example*
+*.exe

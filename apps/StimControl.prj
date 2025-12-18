@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="1179985332" file="C:\Users\labadmin\OneDrive - The University of Queensland\Documents\MATLAB\StimControl\apps\StimControl.prj" location="C:\Users\labadmin\OneDrive - The University of Queensland\Documents\MATLAB\StimControl\apps" name="StimControl" preferred-package-location="C:\Users\labadmin\OneDrive - The University of Queensland\Documents\MATLAB\StimControl\apps\StimControl\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="3065175739" file="C:\Users\labadmin\OneDrive - The University of Queensland\Documents\MATLAB\StimControl\apps\StimControl.prj" location="C:\Users\labadmin\OneDrive - The University of Queensland\Documents\MATLAB\StimControl\apps" name="StimControl" preferred-package-location="C:\Users\labadmin\OneDrive - The University of Queensland\Documents\MATLAB\StimControl\apps\StimControl\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>StimControl</param.appname>
     <param.icon>${PROJECT_ROOT}\StimControl_resources\icon.ico</param.icon>
     <param.icons>
@@ -16,7 +16,7 @@
     <param.description />
     <param.screenshot>C:\Users\labadmin\OneDrive - The University of Queensland\Documents\misc RA projects\Manufacturing\Visual-Assets\logo_sml.png</param.screenshot>
     <param.guid />
-    <param.installpath.string>\University of Queensland\StimControl\</param.installpath.string>
+    <param.installpath.string>\StimControl\</param.installpath.string>
     <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
     <param.logo />
     <param.install.notes />
@@ -32,8 +32,8 @@
       <item>&lt;package displayname="GenICam Interface" enabled="true" name="GenICam Interface" product="Image Acquisition Toolbox"/&gt;</item>
       <item>&lt;package displayname="GigE Vision Hardware" enabled="true" name="GigE Vision Hardware" product="Image Acquisition Toolbox"/&gt;</item>
     </param.support.packages>
-    <param.web.mcr>true</param.web.mcr>
-    <param.package.mcr>false</param.package.mcr>
+    <param.web.mcr>false</param.web.mcr>
+    <param.package.mcr>true</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
     <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
     <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
@@ -55,7 +55,6 @@
       <param.summary />
       <param.description />
       <param.guid />
-      <param.installpath.string />
       <param.installpath.combo />
       <param.logo />
       <param.install.notes />
@@ -67,8 +66,6 @@
       <param.enable.clean.build />
       <param.user.defined.mcr.options />
       <param.target.type />
-      <param.web.mcr />
-      <param.package.mcr />
       <param.no.mcr />
       <param.web.mcr.name />
       <param.package.mcr.name />
