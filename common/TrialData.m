@@ -1,5 +1,4 @@
 classdef (HandleCompatible) TrialData < handle &  matlab.mixin.indexing.RedefinesBrace
-% TODO https://au.mathworks.com/help/matlab/matlab_oop/indexed-reference-and-assignment.html
 % Handle wrapper for cell array of stimulus blocks so that they can be
 % passed to one another without data reduplication. 
 
@@ -428,7 +427,7 @@ function tree = GenerateTreeFromLine(obj)
                     obj.trialIdx, obj.comment, name);
             else
                 trialParamsTracker.(name) = true;
-                obj.(name) = value; % todo check this works all the time, I think it does
+                obj.(name) = value;
             end
         elseif isfield(validStimBlockParams, name)
             % params for current parent! set em.

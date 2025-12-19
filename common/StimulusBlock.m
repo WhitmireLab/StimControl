@@ -331,7 +331,7 @@ methods
                 duration = obj.startDelay + obj.nStimRuns*(stimDur + obj.repeatDelay) - obj.repeatDelay;
             elseif strcmpi(obj.childRel, 'odd')
                 duration = obj.startDelay;
-                %TODO
+                %TODO - we're never hitting this at the moment but would be good to have if we do.
                 dbstack
                 keyboard
                 error("not implemented.");

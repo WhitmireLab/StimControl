@@ -359,7 +359,7 @@ methods
     end
 
     function errorMsg(obj, message)
-        %PHILL: COMMENT OUT FROM HERE
+        % displays an error message in the bottom right of the program.
         if obj.h.tabs.SelectedTab == obj.h.Setup.Tab
             target = obj.h.Setup.Message;
         elseif obj.h.tabs.SelectedTab == obj.h.Session.Tab
@@ -378,11 +378,10 @@ methods
             dbstack
             error(message)
         end
-        %PHILL: COMMENT OUT DOWN TO HERE
     end
 
     function warnMsg(obj, message)
-        %PHILL: COMMENT OUT FROM HERE
+        % displays a warning in the bottom right of the program.
         if obj.h.tabs.SelectedTab == obj.h.Setup.Tab
             target = obj.h.Setup.Message;
         elseif obj.h.tabs.SelectedTab == obj.h.Session.Tab
@@ -397,7 +396,23 @@ methods
         catch % handle likely not initialised
             warning(message)
         end
-        %PHILL: COMMENT OUT TO HERE
+    end
+
+    function clearMsg(obj)
+        if obj.h.tabs.SelectedTab == obj.h.Setup.Tab
+            target = obj.h.Setup.Message;
+        elseif obj.h.tabs.SelectedTab == obj.h.Session.Tab
+            target = obj.h.Session.Message;
+        else
+            error("clearMsg not implemented for this tab.")
+        end
+        if isempty(obj.d.Available)
+            displayText = sprintf("Welcome to StimControl! \nNo devices found. Please check you have devices connected, then restart StimControl.");
+        else
+            displayText = "Welcome to StimControl!";
+        end
+        target.Text = displayText;
+        target.FontColor = '#000000';
     end
 
     function obj = loadDefaultSession(obj)

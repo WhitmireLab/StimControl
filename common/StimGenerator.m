@@ -536,7 +536,6 @@ function stim = arbitraryStim(varargin)
         if length(stim) ~= expectedTicks
             if params.interpolate
                 % warning("Given stimulus %s does not have an appropriate number of samples for %s ticks at %s rate. Interpolating...", params.filename, expectedTicks, params.sampleRate);
-                % TODO INTERP1 https://au.mathworks.com/help/matlab/ref/double.interp1.html
                 samplePoints = linspace(1, length(stim), length(stim));
                 queryPoints = linspace(1, length(stim), expectedTicks);
                 stim = interp1(samplePoints, stim, queryPoints);
@@ -710,7 +709,6 @@ function stim = thermalPreview(varargin)
         stim(t0+(1:tmp)-1,ii) = pulse(1:tmp);
     end
 
-    %% TODO
     if params.display
         StimGenerator.show(stim);
     end
@@ -792,14 +790,9 @@ function stim = thermalPulsePreview(varargin)
     tmp   = linspace(0,1,dV)';
     pulse(1:min([dV dP])) = tmp((1:min([dV dP])));
     pulse = [pulse; linspace(pulse(end),0,dR)'] * (C-N) + N;
-    
-    % tmp   = min([round((params.totalTicks/params.sampleRate)*fs)+1 length(pulse)]);
-    % stim = pulse(1:tmp);
 
     stim = pulse';
-    % stim = stim';
 
-    %% TODO
     if params.display
         StimGenerator.show(stim);
     end

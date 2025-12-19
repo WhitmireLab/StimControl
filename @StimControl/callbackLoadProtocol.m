@@ -51,7 +51,6 @@ end
 
 if ~isfile(obj.path.SessionProtocolFile)
     obj.warnMsg('Protocol file not found. Passive mode enabled.');
-    %TODO MAKE SURE START TRIAL IS DISABLED HERE
     obj.status = 'no protocol loaded';
     return
 end

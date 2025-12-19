@@ -77,7 +77,6 @@ function obj = CameraComponent(varargin)
     end
 end
 
-% TODO REMOVE
 function Debug(obj)
     vidObj = obj.SessionHandle;
     src = getselectedsource(obj.SessionHandle);
@@ -150,7 +149,7 @@ function obj = InitialiseSession(obj, varargin)
             % src.LineMode = "Input";
             % src.TriggerSource = val;
         else
-            %TODO fill out GENERIC CAMERAS
+            %Generic cameras - not yet implemented
         end
         if isempty(obj.ConfigStruct.ROIPosition)
             vidRes = get(vidObj,'VideoResolution');

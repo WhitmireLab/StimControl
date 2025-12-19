@@ -2,7 +2,6 @@ function callbackLoadConfig(obj, src, event)
 % Generic function for loading config files from various dropdowns in StimControl's Setup tab.
 value = src.Value;
 if strcmpi(src.Value, 'Auto')
-    % do nothing - todo is this the expected behaviour?
     return
 end
 
@@ -30,7 +29,6 @@ elseif src == obj.h.ComponentConfigDropDown
 elseif src == obj.h.ComponentMapDropDown
     obj = MapComponents(obj, filepath);
 end
-% todo change display a la protocolSelect
 end
 
 %% LOAD COMPONENT CONFIG
@@ -129,7 +127,6 @@ function obj = loadSessionHelper(obj, data, fieldName, defaultPath, fcnHandle)
     if strcmpi(fieldName, 'activeHardware')
         if length(data.activeHardware) == 1 && strcmpi(data.activeHardware{1}, 'all')
             obj.errorMsg("'All' as a value for active hardware in session param files is not currently implemented. Please list all hardware.");
-            % TODO
         end
         obj.d.ActiveIDs = data.activeHardware;
     else
