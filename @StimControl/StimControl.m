@@ -28,7 +28,7 @@ properties (Access = private)
 
 end
 
-properties (Dependent)
+properties (Dependent, Access=private)
     animalID
     experimentID
     trialNum                    % number of trial as defined in protocol file
@@ -398,7 +398,7 @@ methods
         end
     end
 
-    function clearMsg(obj)
+    function clearMsg(obj, src, event)
         if obj.h.tabs.SelectedTab == obj.h.Setup.Tab
             target = obj.h.Setup.Message;
         elseif obj.h.tabs.SelectedTab == obj.h.Session.Tab
