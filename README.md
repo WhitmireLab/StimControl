@@ -12,4 +12,4 @@ Check out [the wiki](github.com/WhitmireLab/StimControl/wiki) for in-depth expla
 * Configure session-wide parameters like active hardware and DAQ channel visibility through the config files
 * Open StimControl
 * configure device parameters in the setup tab if desired, press save if desired
-* In the session tab, choose an animal and experiment. Press 'start' to start a full session, or 'start passive' to start a session with all selected devices awaiting triggers.
+* In the session tab, choose an animal and experiment. Press 'start' to start a full session, or 'start passive' to start a session with all selected devices awaiting triggers
