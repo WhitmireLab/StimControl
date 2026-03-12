@@ -41,7 +41,7 @@ methods (Access = public, Static)
         % RETURNS:
         %     components (cell array): cell array of all detected Components.
         p = inputParser();
-        addParameter(p, 'Initialise', true, @islogical);
+        addParameter(p, 'Initialise', false, @islogical);
         addParameter(p, 'Params', [], @(x) isstruct(x) || isempty(x));
         p.parse(varargin{:});
         components = {};
@@ -53,6 +53,8 @@ methods (Access = public, Static)
             %todo - temp while I get above working
             if contains(s.Model, 'Sim')
                 protocolID = 'SIM';
+            elseif ~strcmpi(s.DeviceID, "Dev1")
+                protocolID = char(s.DeviceID);
             else
                 protocolID = 'TriggerDAQ';
             end
@@ -127,10 +129,12 @@ function obj = InitialiseSession(obj, varargin)
         pcID = pcInfo{2}(end-8:end);
         filename = [pcID '_' obj.ComponentID '.csv'];
         if ~contains(obj.ConfigStruct.ChannelConfig, filename)
-            if ~strcmpi(obj.ConfigStruct.ChannelConfig(end), filesep)
-                obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filesep filename];
-            else
-                obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filename];
+            if ~isfile(obj.ConfigStruct.ChannelConfig)
+                if ~strcmpi(obj.ConfigStruct.ChannelConfig(end), filesep)
+                    obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filesep filename];
+                else
+                    obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filename];
+                end
             end
         end
         obj = obj.MapChannels(obj.ConfigStruct.ChannelConfig);
@@ -172,7 +176,7 @@ end
 
 % Stop device
 function Stop(obj)
-    if obj.SessionHandle.Running
+    if ~isempty(obj.SessionHandle) && obj.SessionHandle.Running
         stop(obj.SessionHandle);
     end
     if ~isempty(obj.TriggerTimer) && isvalid(obj.TriggerTimer) && strcmpi(obj.TriggerTimer.Running, 'on')
@@ -216,7 +220,9 @@ function SetParams(obj, paramsStruct)
                 if ~isnumeric(val)
                     val = str2double(val);
                 end
-                obj.SessionHandle.Rate = val;
+                if ~isempty(obj.SessionHandle) && isvalid(obj.SessionHandle)
+                    obj.SessionHandle.Rate = val;
+                end
                 obj.ConfigStruct.Rate = val;
         end
     end
@@ -327,8 +333,7 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
     
     rate = obj.SessionHandle.Rate;
     if rate==0
-        % Software triggering required - only on-demand operations
-        % supported.
+        % Software triggering required - only on-demand operations supported.
         rate = obj.ConfigStruct.Rate;
     end
     tPre     = genericTrialData.tPre  / 1000;

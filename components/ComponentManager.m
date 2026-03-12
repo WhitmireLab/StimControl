@@ -50,6 +50,53 @@ methods
         end
     end
 
+    function obj = LoadConfig(obj, jsonData)
+        for i = 1:length(jsonData)
+            if length(jsonData) > 1
+                hStruct = jsonData{i};
+            else
+                hStruct = jsonData;
+            end
+            if any(contains(obj.componentIDs, hStruct.ComponentID))
+                componentIdx = obj.cIdx(hStruct.ComponentID);
+                component = obj.Available{componentIdx};
+                Previewing = hStruct.Previewing;
+                
+                if class(component) ~= hStruct.type
+                    warning("Component %s not configured: type mismatch", hStruct.ComponentID);
+                    continue
+                end
+
+                % sanitise params struct and set params.
+                hStruct = rmfield(hStruct, {'type', 'Previewing', 'Active', 'ComponentID'});
+                component.SetParams(hStruct);
+                
+                % start preview
+                if Previewing
+                    component.StartPreview;
+                end
+            else
+                warning("Component not found: %s", hStruct.ComponentID);
+            end
+        end
+    end
+
+    function Initialise(obj)
+        for i = 1:length(obj.Available)
+            if obj.Active{i}
+                obj.Available{i}.InitialiseSession();
+            end
+        end
+    end
+
+    % function Refresh(obj)
+    % % TODO
+    % end
+
+    % function ForceStop(obj)
+    %     %todo
+    % end
+
     function StartPreviews(obj)
         for i = 1:length(obj.Available)
             obj.Available{i}.StartPreview();

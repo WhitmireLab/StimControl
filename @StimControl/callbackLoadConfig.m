@@ -21,61 +21,7 @@ if strcmpi(src.Value, 'Browse...')
 else
     filepath = [basePath filesep src.Value];
 end
-    
-if src == obj.h.SessionSelectDropDown
-    obj = LoadSessionConfig(obj, filepath);
-elseif src == obj.h.ComponentConfigDropDown
-    obj = LoadComponentConfig(obj, filepath);
-elseif src == obj.h.ComponentMapDropDown
-    obj = MapComponents(obj, filepath);
-end
-end
-
-%% LOAD COMPONENT CONFIG
-function obj = LoadComponentConfig(obj, filepath)
-    obj.indicateLoading("Loading Component Config...");
-    if isempty(filepath) || ~any(filepath)
-        return
-    end
-    jsonStr = fileread(filepath);
-    jsonData = jsondecode(jsonStr);
-    componentIDs = obj.d.componentIDs;
-    for i = 1:length(jsonData)
-        if length(jsonData) > 1
-            hStruct = jsonData{i};
-        else
-            hStruct = jsonData;
-        end
-        if any(contains(componentIDs, hStruct.ComponentID))
-            componentIdx = obj.d.cIdx(hStruct.ComponentID);
-            component = obj.d.Available{componentIdx};
-            Previewing = hStruct.Previewing;
-            
-            % activate or deactivate component if required
-            if hStruct.Active ~= obj.h.AvailableHardwareTable.Data(componentIdx,:).Enable
-                event = struct('Indices', [componentIdx, 5], ...
-                    'NewData', hStruct.Active, ...
-                    'PreviousData', obj.h.AvailableHardwareTable.Data(componentIdx,:).Enable);
-                obj.h.AvailableHardwareTable.CellEditCallback(obj.h.AvailableHardwareTable, event);
-            end
-            if class(component) ~= hStruct.type
-                obj.warnMsg(sprintf("Component %s not configured: type mismatch", hStruct.ComponentID));
-                continue
-            end
-
-            % sanitise params struct and set params.
-            hStruct = rmfield(hStruct, {'type', 'Previewing', 'Active'});
-            component.SetParams(hStruct);
-            
-            % start preview
-            if Previewing
-                component.StartPreview;
-            end
-        else
-            obj.warnMsg(sprintf("Component not found: %s", hStruct.ComponentID));
-        end
-    end
-    obj.status = obj.status;
+obj = LoadSessionConfig(obj, filepath);
 end
 
 %% LOAD SESSION CONFIG
@@ -84,8 +30,9 @@ function obj = LoadSessionConfig(obj, filepath)
     data = jsondecode(txt);
     obj = loadSessionHelper(obj, data, 'componentParams', obj.path.paramBase, @LoadComponentConfig);
     obj = loadSessionHelper(obj, data, 'activeHardware', '', '');
-    obj = loadSessionHelper(obj, data, 'protocol', obj.path.sessionBase, '');
-    
+    obj.indicateLoading("Loading Component Config...");
+    obj.d = obj.d.LoadConfig(data.hardwareSettings);
+
     %update availableHardwareTable
     if isfield(data, 'hardwareTableData')
         fs = fields(data.hardwareTableData);
@@ -118,6 +65,7 @@ function obj = LoadSessionConfig(obj, filepath)
             end
         end
     end
+    obj.status = obj.status;
 end
 
 function obj = loadSessionHelper(obj, data, fieldName, defaultPath, fcnHandle)
@@ -135,12 +83,6 @@ function obj = loadSessionHelper(obj, data, fieldName, defaultPath, fcnHandle)
         else
             filepath = [defaultPath filesep data.(fieldName)];
         end
-    
-        if strcmpi(fieldName, 'protocol')
-            %TODO UNTESTED
-            obj.callbackLoadProtocol(obj.h.SessionSelectDropDown, filepath);
-        else
-            obj = fcnHandle(obj, filepath);
-        end
     end
 end
+

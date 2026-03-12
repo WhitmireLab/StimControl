@@ -429,6 +429,7 @@ methods
     end
 
     function obj = MapConnectedHardware(obj)
+        %todo what if two daqs have the same channel?
         for i = 1:length(obj.d.Available)
             comp = obj.d.Available{i};
             cid = comp.ConfigStruct.ProtocolID;

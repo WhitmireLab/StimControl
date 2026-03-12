@@ -166,8 +166,8 @@ function obj = InitialiseSession(obj, varargin)
         end
         set(vidObj, 'TriggerRepeat', obj.ConfigStruct.TriggerRepeat); % special case bc it defaults to one trigger.
         set(vidObj,'FramesPerTrigger',str2double(obj.ConfigStruct.FramesPerTrigger));
-        vidObj.FramesAcquiredFcnCount = 10; %TODO parametrise?
-        vidObj.FramesAcquiredFcn = @obj.ReceiveFrame;
+        % vidObj.FramesAcquiredFcnCount = 10; %TODO parametrise?
+        % vidObj.FramesAcquiredFcn = @obj.ReceiveFrame;
         obj.SessionHandle = vidObj;
         obj.UpdateTriggerMode();
         obj.Status = "ok";

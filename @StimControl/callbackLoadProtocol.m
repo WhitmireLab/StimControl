@@ -5,15 +5,7 @@ function callbackLoadProtocol(obj, src, event)
 % the mapping files need to be perfectly aligned to the protocol.
 obj.indicateLoading('Loading protocol');
 
-if src == obj.h.SessionSelectDropDown
-    %TODO TEST
-    % obj.path.SessionProtocolFile = event;
-    % experimentID = strsplit(event, filesep);
-    % experimentID = experimentID{end};
-    % experimentID = strsplit(experimentID, '.');
-    % obj.experimentID = experimentID{1}; %todo as below this may cause issues later
-    return
-elseif src == obj.h.menuCheckStimulus
+if src == obj.h.menuCheckStimulus
     % start protocolchecker app
     protocolchecker;
     return
@@ -70,7 +62,9 @@ catch exception
 end
 
 createChans = isempty(obj.p);
-
+if createChans
+    obj.MapConnectedHardware; % just in case it hasn't been hit yet.
+end
 allTargets = getAllTargets(p);
 % Construct appropriate trial for each device
 deviceTargets = [];
