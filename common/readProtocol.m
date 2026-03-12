@@ -402,9 +402,15 @@ p = [trials{:}];
                     idx = regexpi(params, [sepPlusQ '(' sgFieldName ')' sepPlusQ]);
                     if ~isempty(idx)
                         for idxi = idx
-                            params = [params(1:idxi-1) ...
+                            if idxi == 1 % am I stupid or is matlab's indexing system stupid. The world may never know.
+                                params = [params(1:idxi-1) ...
                                 '(' stimulusGroups.(sgFieldName) ')' ...
                                 params(length(sgFieldName)+idxi:end)];
+                            else
+                                params = [params(1:idxi) ...
+                                '(' stimulusGroups.(sgFieldName) ')' ...
+                                params(length(sgFieldName)+idxi+1:end)];
+                            end
                         end
                     end
                 end
