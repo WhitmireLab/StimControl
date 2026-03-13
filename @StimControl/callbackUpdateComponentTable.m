@@ -2,7 +2,7 @@ function callbackUpdateComponentTable(obj, src, event)
     idxRow = event.Indices(1);
     property = src.Data.Properties.VariableNames(event.Indices(2));
     component = obj.d.Available{idxRow};
-    if strcmpi(property, "Protocol ID")
+    if strcmpi(property, "ProtocolID")
         component.SetParam("ProtocolID", event.NewData);
         % TODO REFRESH BUTTON
         obj.d.ProtocolIDMap = remove(obj.d.ProtocolIDMap, event.PreviousData);
@@ -23,7 +23,7 @@ function callbackUpdateComponentTable(obj, src, event)
         if event.NewData    
             if ~obj.d.Active(idxRow)
                 % can't preview if not active.
-                src.Data.Preview{idxRow} = false;
+                src.Data.Preview(idxRow) = false;
                 return
             end
             component.PreviewPlot.Parent.Parent.Visible = "on";

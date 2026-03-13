@@ -81,6 +81,10 @@ for fi = 1:length(allTargets)
     componentIDs = obj.pids.(targetName);
     for ci = 1:length(componentIDs)
         componentID = componentIDs(ci);
+        if ~isfield(deviceTargets, componentID)
+            % not active for this session
+            continue
+        end
         deviceTargets.(componentIDs(ci)) = [deviceTargets.(componentIDs(ci)) string(targetName)];
     end
 end

@@ -28,15 +28,14 @@ end
 function obj = LoadSessionConfig(obj, filepath)
     txt = fileread(filepath);
     data = jsondecode(txt);
-    obj = loadSessionHelper(obj, data, 'componentParams', obj.path.paramBase, @LoadComponentConfig);
-    obj = loadSessionHelper(obj, data, 'activeHardware', '', '');
     obj.indicateLoading("Loading Component Config...");
     obj.d = obj.d.LoadConfig(data.hardwareSettings);
-
-    %update availableHardwareTable
+    
+    obj.indicateLoading("Loading Display Settings...");
+    % update availableHardwareTable
     if isfield(data, 'hardwareTableData')
         fs = fields(data.hardwareTableData);
-        lineIds = {obj.h.AvailableHardwareTable.Data.('Protocol ID')};
+        lineIds = {obj.h.AvailableHardwareTable.Data.('ID')};
         for i = 1:length(fs)
             lineIdx = cellfun(@(x)strcmpi(x, fs{i}), lineIds, 'UniformOutput', false);
             lineIdx = find(lineIdx{:});
@@ -55,34 +54,16 @@ function obj = LoadSessionConfig(obj, filepath)
                     'Indices', [lineIdx paramIdx], ...
                     'PreviousData', line.(param), ...
                     'NewData', data.hardwareTableData.(fs{i}).(param));
-                try
-                    obj.h.AvailableHardwareTable.Data(lineIdx, paramIdx) = {data.hardwareTableData.(fs{i}).(param)};
-                    obj.callbackUpdateComponentTable(src, event);
-                catch err
-                    obj.errorMsg("Unable to load saved session. Likely the automatically generated grid size is not compatible with" + ...
-                        "saved parameters. Change the parameters manually, save the session, and try again.");
+                if (strcmpi(param, 'PRow') && any(str2num(event.NewData) > numel(obj.h.PreviewGrid.RowHeight))) ...
+                    || (strcmpi(param, 'PColumn') && any(str2num(event.NewData) > numel(obj.h.PreviewGrid.ColumnWidth)))
+                    % don't try to assign to a grid position that doesn't exist.
+                    continue
                 end
+                obj.h.AvailableHardwareTable.Data(lineIdx, paramIdx) = {data.hardwareTableData.(fs{i}).(param)};
+                obj.callbackUpdateComponentTable(src, event);
             end
         end
     end
     obj.status = obj.status;
-end
-
-function obj = loadSessionHelper(obj, data, fieldName, defaultPath, fcnHandle)
-    if ~isfield(data, fieldName) || all(strcmpi(data.(fieldName), 'none')) || all(strcmpi(data.(fieldName), ''))
-        return
-    end
-    if strcmpi(fieldName, 'activeHardware')
-        if length(data.activeHardware) == 1 && strcmpi(data.activeHardware{1}, 'all')
-            obj.errorMsg("'All' as a value for active hardware in session param files is not currently implemented. Please list all hardware.");
-        end
-        obj.d.ActiveIDs = data.activeHardware;
-    else
-        if contains(data.(fieldName), filesep)
-            filepath = data.(fieldName);
-        else
-            filepath = [defaultPath filesep data.(fieldName)];
-        end
-    end
 end
 

@@ -668,6 +668,9 @@ end
 
 function [idxes, labels] = getDeviceChannelIdxes(obj, targetName)
     % get indexes of all 'out' channels for the device.
+    if isempty(obj.ChannelMap)
+
+    end
     chans = fields(obj.ChannelMap.(targetName));
     idxes = [];
     labels = [];

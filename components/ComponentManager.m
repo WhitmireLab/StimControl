@@ -30,7 +30,8 @@ methods
         obj.Active = [];
         obj.IDComponentMap = configureDictionary('string', 'uint32');
         obj.ProtocolIDMap = configureDictionary('string', 'uint32');
-        
+
+        warning('off', 'MATLAB:JavaEDTAutoDelegation'); % suppress auto delegation warnings bc they're annoying
         tmpPlur = ["", "s"];
         pluralStr = @(input) tmpPlur(double(length(input)~=1)+1);
         daqs = DAQComponent.FindAll();
@@ -40,6 +41,7 @@ methods
         serials = SerialComponent.FindAll();
         fprintf("\t found %d serial device%s\n", length(serials), pluralStr(serials));
         components = [cameras serials daqs]; %daqs on the end because they're activated together too
+        warning('off', 'MATLAB:JavaEDTAutoDelegation'); % turn em back on
     
         for ci = 1:length(components)
             comp = components{ci};
@@ -53,7 +55,11 @@ methods
     function obj = LoadConfig(obj, jsonData)
         for i = 1:length(jsonData)
             if length(jsonData) > 1
-                hStruct = jsonData{i};
+                if isstruct(jsonData)
+                    hStruct = jsonData(i); % matlab does this awesome thing where it converts from cells to structs in text representations (read: json) without telling you sometimes.
+                else
+                    hStruct = jsonData{i};
+                end
             else
                 hStruct = jsonData;
             end
@@ -76,8 +82,14 @@ methods
                     component.StartPreview;
                 end
             else
-                warning("Component not found: %s", hStruct.ComponentID);
+                warning("Component not found: %s (%s)", hStruct.ComponentID, hStruct.ProtocolID);
             end
+        end
+        % refresh maps
+        for ci = 1:length(obj.Available)
+            comp = obj.Available{ci};
+            obj.IDComponentMap(comp.ComponentID) = ci;
+            obj.ProtocolIDMap(comp.ConfigStruct.ProtocolID) = ci;
         end
     end
 
@@ -113,10 +125,12 @@ methods
     end
 
     function ClearAll(obj)
+        warning('off', 'MATLAB:JavaEDTAutoDelegation'); % suppress auto delegation warnings bc they're annoying
         obj.CloseAll();
         CameraComponent.ClearAll();
         SerialComponent.ClearAll();
         DAQComponent.ClearAll();
+        warning('on', 'MATLAB:JavaEDTAutoDelegation');
     end
 
     function activeComponents = get.activeComponents(obj)

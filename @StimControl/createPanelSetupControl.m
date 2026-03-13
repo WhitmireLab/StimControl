@@ -71,7 +71,7 @@ obj.h.AvailableHardwareTable = uitable('Parent', grid, ...
     'CellEditCallback', @obj.callbackUpdateComponentTable);
 
 %% Populate Component Table
-columnNames = {'Type', 'ID', 'Protocol ID', 'Status', 'Enable', 'Preview', 'PRow', 'PColumn'};
+columnNames = {'Type', 'ID', 'ProtocolID', 'Status', 'Enable', 'Preview', 'PRow', 'PColumn'};
 tData = table();
 available = obj.d.Available;
 if isempty(obj.d.Available) % prevent errors with no hardware attached
