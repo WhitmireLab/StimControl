@@ -388,7 +388,7 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
         stim = StimGenerator.GenerateStimTrain(componentTrialData.(fieldName), genericTrialData, rate);
         for idx = outIdxes
             if length(out) ~= length(stim)
-                keyboard
+                %keyboard % not sure why this is here? PB 20260126
                 stim = stim(1:length(out)); 
             end
             out(:,idx) = stim;
