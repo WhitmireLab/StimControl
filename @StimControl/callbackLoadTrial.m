@@ -29,19 +29,25 @@ genericTrialData = struct( ...
     'tPre', trialData.tPre, ...
     'tPost', trialData.tPost, ...
     'nRuns', trialData.nRuns);
-
+warnIDs = {};
 ct = fields(obj.d.componentTargets);
 for cIdx = 1:length(ct)
     compID = ct{cIdx};
     component = obj.d.Available{obj.d.ProtocolIDMap(compID)};
-    componentData = trialData.params.(compID);
-    if ~isempty(componentData)
-        component.LoadTrialFromParams(componentData, genericTrialData, false);
-    else
-        obj.warnMsg(sprintf("Component %s is connected to the PC, " + ...
-            "but is not targeted in this trial (trial %d).", ...
-        compID, obj.trialNum));
+    if ~isfield(trialData.params, compID) || isempty(trialData.params.(compID))
+        warnIDs{end+1} = char(compID);
+        continue
     end
+    componentData = trialData.params.(compID);
+    component.LoadTrialFromParams(componentData, genericTrialData, false);
+end
+
+if ~isempty(warnIDs)
+    obj.warnMsg(sprintf("Component(s) connected but not targeted in trial%d:  " + ...
+            "%s", trialData.trialIdx, strjoin(warnIDs, ', ')));
+else
+    % clear warning message
+    obj.status = obj.status;
 end
 
 if src ~= obj.h.StartStopBtn
