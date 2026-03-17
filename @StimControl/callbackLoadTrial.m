@@ -35,6 +35,7 @@ for cIdx = 1:length(ct)
     compID = ct{cIdx};
     component = obj.d.Available{obj.d.ProtocolIDMap(compID)};
     if ~isfield(trialData.params, compID) || isempty(trialData.params.(compID))
+        trialData.params.(compID) = [];
         warnIDs{end+1} = char(compID);
         continue
     end
