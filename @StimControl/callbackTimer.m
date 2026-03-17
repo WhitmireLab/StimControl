@@ -5,19 +5,19 @@ persistent nTrials;
 persistent startTic;
 persistent previousStatus; %todo this may cause issues with multiple sessions of different status? edge case
 persistent pauseOffset;
-persistent debugtic
-% if isempty(debugtic)
-%     debugtic = tic;
+% persistent debug
+% if isempty(debug)
+%     debug = true;
 % end
 % toc(debugtic);
 % debugtic = tic;
+% disp("timer")
 if isempty(startTic)
     startTic = tic;
 end
 if isempty(pauseOffset)
     pauseOffset = 0;
 end
-
 if strcmpi(obj.h.tabs.SelectedTab.Title, 'Setup')
     % update GUI in setup tab
     for i = 1:height(obj.h.AvailableHardwareTable)
@@ -237,6 +237,8 @@ end
 
 function startTrial(obj)
     updateInteractivity(obj, 'off');
+    profile off;
+    profile on;
     obj.indicateLoading('Loading trial data');
     if ~obj.f.trialLoaded
         obj.callbackLoadTrial([]);

@@ -1,1 +1,73 @@
-{"displayGrid":{"NRows":2,"NCols":4},"hardwareTableData":{"Dev1_ni_USB_6001":{"ProtocolID":"USBDAQ","Enable":false,"Preview":false,"PRow":"1  2","PColumn":"1  2"},"Dev2_ni_PCIe_6323":{"ProtocolID":"TriggerDAQ","Enable":true,"Preview":true,"PRow":"1  2","PColumn":"3  4"}},"hardwareSettings":[{"Adaptor":"gentl","ID":"acA1440-220um (40407241)","ProtocolID":"Widefield1","Binning":1,"BinningType":"Sum","ExposureTime":"10000","FramesPerTrigger":"1","Gain":"0","OutputLine":"Line3","TriggerActivation":"RisingEdge","TriggerMode":"hardware","TriggerLine":"Line4","TriggerFrameDelay":0,"FrameGrabInterval":1,"TriggerRepeat":[],"ROIPosition":"0     0  1456  1088","TriggerSelector":"FrameStart","TrialTimeout":3,"ComponentID":"gentl_acA1440_220um_40407241","type":"CameraComponent","Active":true,"Previewing":false},{"Vendor":"ni","ID":"Dev1","Model":"USB-6001","ProtocolID":"USBDAQ","Rate":200,"ChannelConfig":"C:\\Users\\labadmin\\OneDrive - The University of Queensland\\Documents\\MATLAB\\StimControl\\config\\component_params\\USB_6001.csv","ComponentID":"Dev1_ni_USB_6001","type":"DAQComponent","Active":false,"Previewing":false},{"Vendor":"ni","ID":"Dev2","Model":"PCIe-6323","ProtocolID":"TriggerDAQ","Rate":1000,"ChannelConfig":"C:\\Users\\labadmin\\OneDrive - The University of Queensland\\Documents\\MATLAB\\StimControl\\config\\component_params\\PCIe_6323.csv","ComponentID":"Dev2_ni_PCIe_6323","type":"DAQComponent","Active":true,"Previewing":true}],"activeHardware":[]}
+{
+    "displayGrid": {
+        "NRows": 2,
+        "NCols": 4
+    },
+    "hardwareTableData": {
+        "Dev1_ni_USB_6001": {
+            "ProtocolID": "USBDAQ",
+            "Enable": false,
+            "Preview": false,
+            "PRow": "1  2",
+            "PColumn": "1  2"
+        },
+        "Dev2_ni_PCIe_6323": {
+            "ProtocolID": "TriggerDAQ",
+            "Enable": true,
+            "Preview": true,
+            "PRow": "1  2",
+            "PColumn": "3  4"
+        }
+    },
+    "hardwareSettings": [
+        {
+            "Adaptor": "gentl",
+            "ID": "acA1440-220um (40407241)",
+            "ProtocolID": "Widefield1",
+            "Binning": 1,
+            "BinningType": "Sum",
+            "ExposureTime": "10000",
+            "FramesPerTrigger": "1",
+            "Gain": "0",
+            "OutputLine": "Line3",
+            "TriggerActivation": "RisingEdge",
+            "TriggerMode": "hardware",
+            "TriggerLine": "Line4",
+            "TriggerFrameDelay": 0,
+            "FrameGrabInterval": 1,
+            "TriggerRepeat": [],
+            "ROIPosition": "0     0  1456  1088",
+            "TriggerSelector": "FrameStart",
+            "TrialTimeout": 3,
+            "ComponentID": "gentl_acA1440_220um_40407241",
+            "type": "CameraComponent",
+            "Active": true,
+            "Previewing": false
+        },
+        {
+            "Vendor": "ni",
+            "ID": "Dev1",
+            "Model": "USB-6001",
+            "ProtocolID": "USBDAQ",
+            "Rate": 200,
+            "ChannelConfig": "C:\\Users\\labadmin\\OneDrive - The University of Queensland\\Documents\\MATLAB\\StimControl\\config\\component_params\\USB_6001.csv",
+            "ComponentID": "Dev1_ni_USB_6001",
+            "type": "DAQComponent",
+            "Active": false,
+            "Previewing": false
+        },
+        {
+            "Vendor": "ni",
+            "ID": "Dev2",
+            "Model": "PCIe-6323",
+            "ProtocolID": "TriggerDAQ",
+            "Rate": 1000,
+            "ChannelConfig": "C:\\Users\\labadmin\\OneDrive - The University of Queensland\\Documents\\MATLAB\\StimControl\\config\\component_params\\PCIe_6323.csv",
+            "ComponentID": "Dev2_ni_PCIe_6323",
+            "type": "DAQComponent",
+            "Active": true,
+            "Previewing": true
+        }
+    ],
+    "activeHardware": []
+}
