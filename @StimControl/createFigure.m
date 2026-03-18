@@ -113,6 +113,7 @@ end
 
 %% helper functions
 function varargout = RestartTimer(obj, src, event)
+    stop(obj.t);
     start(obj.t);
 end
 end

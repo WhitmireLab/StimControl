@@ -36,6 +36,7 @@ for cIdx = 1:length(ct)
     component = obj.d.Available{obj.d.ProtocolIDMap(compID)};
     componentData = trialData.params.(compID);
     if ~isempty(componentData)
+        obj.status = obj.status; % reset error message
         component.LoadTrialFromParams(componentData, genericTrialData, false);
     else
         obj.warnMsg(sprintf("Component %s is connected to the PC, " + ...

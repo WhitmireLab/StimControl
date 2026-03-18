@@ -302,7 +302,6 @@ function StartPreview(obj)
         ax.Title = text(ax, 'String', displayLabels{i}, ...
             'HorizontalAlignment', 'left');
         ax.TitleHorizontalAlignment = 'left';
-        disableDefaultInteractivity(ax);
         % obj.axHandles(i) = ax;
         % obj.pltHandles(i) = plt;
         % obj.anHandles(i) = an;
@@ -349,8 +348,7 @@ function LoadTrial(obj, out)
 end
 
 function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadDevice)
-    % load trial from params. Does not preload data.
-    
+    % load trial from params. Does not preload data to session handle
     rate = obj.SessionHandle.Rate;
     if rate==0
         % Software triggering required - only on-demand operations supported.
@@ -740,7 +738,7 @@ function plotData(obj, ~,event)
         obj.PreviewData(targetIdx, obj.InChanIdxes) = data;  
 
         % update plots
-        for i = 1:length(obj.pltHandles)
+        for i = 1:length(obj.previewIdxes)
             % this is cursed but hey if it works. Still way quicker than StackedPlot.
             obj.PreviewPlot.Parent.Children(i+1).Children(1).YData(targetIdx) = obj.PreviewData(targetIdx, obj.previewIdxes(i));
         end
