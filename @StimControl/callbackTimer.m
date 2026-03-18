@@ -217,6 +217,7 @@ function StartTrial()
         component = obj.d.activeComponents{ci};
         component.StartTrial;
     end
+    updateInteractivity('on');
 end
 
 function StartPassiveTrial()
