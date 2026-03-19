@@ -33,6 +33,9 @@ obj.h.menuRestartTimer = uimenu(obj.h.menuFixes, ...
 obj.h.menuCheckStimulus = uimenu(obj.h.menuTools, ...
     'Label', 'Check Stimulus', ...
     'Callback', @(src, event)obj.callbackLoadProtocol(src, event));
+obj.h.menuRefreshHardware = uimenu(obj.h.menuTools, ...
+    "Label", "Refresh Hardware Table", ...
+    "Callback", @(src, event) obj.callbackUpdateComponentTable(src, event));
 
 %% Setup Tab
 obj.h.Setup.Tab = uitab(obj.h.tabs, 'Title', 'Setup');
@@ -113,6 +116,7 @@ end
 
 %% helper functions
 function varargout = RestartTimer(obj, src, event)
+    stop(obj.t);
     start(obj.t);
 end
 end

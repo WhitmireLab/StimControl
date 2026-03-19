@@ -25,6 +25,11 @@ properties(Access = private)
     StackedPreview = [];
     triggerIdx = 1; % for on-demand DAQ write operations only.
     timeoutWait = 0;
+    axHandles = {};
+    pltHandles = {};
+    anHandles = {};
+    previewIdxes = [];
+    nScans = 0;
 end
 
 methods (Access = public, Static)
@@ -41,7 +46,7 @@ methods (Access = public, Static)
         % RETURNS:
         %     components (cell array): cell array of all detected Components.
         p = inputParser();
-        addParameter(p, 'Initialise', true, @islogical);
+        addParameter(p, 'Initialise', false, @islogical);
         addParameter(p, 'Params', [], @(x) isstruct(x) || isempty(x));
         p.parse(varargin{:});
         components = {};
@@ -53,6 +58,8 @@ methods (Access = public, Static)
             %todo - temp while I get above working
             if contains(s.Model, 'Sim')
                 protocolID = 'SIM';
+            elseif ~strcmpi(s.DeviceID, "Dev1")
+                protocolID = char(s.DeviceID);
             else
                 protocolID = 'TriggerDAQ';
             end
@@ -127,10 +134,12 @@ function obj = InitialiseSession(obj, varargin)
         pcID = pcInfo{2}(end-8:end);
         filename = [pcID '_' obj.ComponentID '.csv'];
         if ~contains(obj.ConfigStruct.ChannelConfig, filename)
-            if ~strcmpi(obj.ConfigStruct.ChannelConfig(end), filesep)
-                obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filesep filename];
-            else
-                obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filename];
+            if ~isfile(obj.ConfigStruct.ChannelConfig)
+                if ~strcmpi(obj.ConfigStruct.ChannelConfig(end), filesep)
+                    obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filesep filename];
+                else
+                    obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filename];
+                end
             end
         end
         obj = obj.MapChannels(obj.ConfigStruct.ChannelConfig);
@@ -172,7 +181,7 @@ end
 
 % Stop device
 function Stop(obj)
-    if obj.SessionHandle.Running
+    if ~isempty(obj.SessionHandle) && obj.SessionHandle.Running
         stop(obj.SessionHandle);
     end
     if ~isempty(obj.TriggerTimer) && isvalid(obj.TriggerTimer) && strcmpi(obj.TriggerTimer.Running, 'on')
@@ -216,7 +225,9 @@ function SetParams(obj, paramsStruct)
                 if ~isnumeric(val)
                     val = str2double(val);
                 end
-                obj.SessionHandle.Rate = val;
+                if ~isempty(obj.SessionHandle) && isvalid(obj.SessionHandle)
+                    obj.SessionHandle.Rate = val;
+                end
                 obj.ConfigStruct.Rate = val;
         end
     end
@@ -248,40 +259,53 @@ function StartPreview(obj)
             'Color', 'black');
         return
     end
+    
+    % construct labels
     obj.Previewing = true;
     names = {obj.SessionHandle.Channels.Name};
+    names = cellfun(@(x) replace(x, '_', ' '), names, 'UniformOutput', false);
     ids = {obj.SessionHandle.Channels.ID};
-    comb = {names{:}; ids{:}}';
-    fmt = ['%s' newline '%s'];
+    comb = {ids{:}; names{:}}';
+    fmt = ['%s' ': ' '%s']; % prev newline
     displayLabels = compose(fmt, string(comb));
-    % obj.charts = gobjects(length(displayLabels), 1);
-    % for i = 1:length(names)
-    %     plt = plot(obj.PreviewTimeAxis, obj.PreviewData(:,i));
-    %     % set(plt, 'XDataSource', obj.PreviewTimeAxis);
-    %     % set(plt, 'YDataSource', obj.PreviewData(:,i));
-    %     % plt.XDataSource = obj.PreviewTimeAxis;
-    %     % plt.YDataSource = obj.PreviewData(:,i);
-    %     plt.title = displayLabels(i);
-    %     obj.charts{i} = plt;
-    % end
     displayLabels = displayLabels(obj.PreviewChannels);
-    obj.StackedPreview = stackedplot(obj.PreviewPlot.Parent, obj.PreviewTimeAxis, obj.PreviewData(:,obj.PreviewChannels), ...
-        'DisplayLabels', displayLabels, ...
-        'Layout', obj.PreviewPlot.Layout, ...
-        'Position', obj.PreviewPlot.Position);
-    if isfield(obj.ChannelMap, 'QST')
-        % manually scale y data for QST
-        % TODO un hardcode this? add channel scaling file somewhere.
-        idxFirstAxes = length(displayLabels) + 2;
-        thermodeIdxes = cellfun(@(c) contains(c, 'thermode'), displayLabels);
-        tmp = linspace(idxFirstAxes, idxFirstAxes+length(thermodeIdxes)-1, length(thermodeIdxes));
-        tmp = tmp(thermodeIdxes);
-        for i = tmp
-            obj.StackedPreview.NodeChildren(i).YLim = [10 60];
-        end
-    end
-    % obj.dataLink = linkdata(obj.StackedPreview); %todo deal with this when causes bugs later :)
+    
+    % set up plots
     obj.PreviewPlot.Visible = 'off';
+    nPlots = sum(obj.PreviewChannels);
+    obj.previewIdxes = find(obj.PreviewChannels);
+    obj.PreviewPlot.Parent.RowHeight = repmat({'1x'}, [1 nPlots]);
+    obj.PreviewPlot.Layout.Row = [1 nPlots];
+    xLims = [obj.PreviewTimeAxis(1) obj.PreviewTimeAxis(end)];
+    
+    % clear plots
+    if length(obj.PreviewPlot.Parent.Children) > 1
+        delete(obj.PreviewPlot.Parent.Children(2:end));
+        % obj.axHandles = gobjects([nPlots 1]); %this copies them :(((((
+        % obj.pltHandles = gobjects([nPlots 1]);
+        % obj.anHandles = gobjects([nPlots 1]);
+    end    
+    
+    % create axes and plots
+    for i = 1:nPlots
+        ax = axes(obj.PreviewPlot.Parent);
+        ax.Layout.Row = i;
+        ax.Layout.Column = 1;
+
+        plt = plot(ax, obj.PreviewTimeAxis, obj.PreviewData(:,obj.previewIdxes(i)));
+        plt.YDataSource = sprintf('obj.PreviewData(:,obj.previewIdxes(%d))', i);
+        % an = animatedline(ax, obj.PreviewTimeAxis, obj.PreviewData(:,obj.previewIdxes(i)));
+        % an.Color = 'red';
+        % datalink might be handy
+        ax.XLim = xLims; %why does this sometimes work and sometimes not?
+        ax.YLim = [-11 11];
+        ax.Title = text(ax, 'String', displayLabels{i}, ...
+            'HorizontalAlignment', 'left');
+        ax.TitleHorizontalAlignment = 'left';
+        % obj.axHandles(i) = ax;
+        % obj.pltHandles(i) = plt;
+        % obj.anHandles(i) = an;
+    end
 end
 
 function StopPreview(obj)
@@ -320,15 +344,14 @@ function LoadTrial(obj, out)
         % normal DAQ things hell yeah
         preload(obj.SessionHandle, out); 
     end
+    obj.nScans = length(obj.PreviewData);
 end
 
 function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadDevice)
-    % load trial from params. Does not preload data.
-    
+    % load trial from params. Does not preload data to session handle
     rate = obj.SessionHandle.Rate;
     if rate==0
-        % Software triggering required - only on-demand operations
-        % supported.
+        % Software triggering required - only on-demand operations supported.
         rate = obj.ConfigStruct.Rate;
     end
     tPre     = genericTrialData.tPre  / 1000;
@@ -663,6 +686,9 @@ end
 
 function [idxes, labels] = getDeviceChannelIdxes(obj, targetName)
     % get indexes of all 'out' channels for the device.
+    if isempty(obj.ChannelMap)
+
+    end
     chans = fields(obj.ChannelMap.(targetName));
     idxes = [];
     labels = [];
@@ -679,7 +705,7 @@ function plotData(obj, ~,event)
     persistent emptyCount
     eventData = read(event.Source);
 
-    if obj.idxData > size(obj.StackedPreview.YData)
+    if obj.idxData > obj.nScans
         % cut off the end of the data? TODO CHECK THIS IS DESIRED BEHAVIOUR
         if ~isempty(eventData)
             disp("we have too much data??");
@@ -710,11 +736,13 @@ function plotData(obj, ~,event)
         % end
         % TODO DC TEMPERATURE CONTROLLER ALSO NEEDS CALIBRATION - FHC DC TEMPERATURE CONTROLLER
         obj.PreviewData(targetIdx, obj.InChanIdxes) = data;  
-        warning('off');
-        displayLabels = obj.StackedPreview.DisplayLabels;
-        obj.StackedPreview.YData = obj.PreviewData(:,obj.PreviewChannels); %todo fix this it's VERY SLOW but I'm going to have to fix it by changing the plot function
-        obj.StackedPreview.DisplayLabels = displayLabels;
-        warning('on');
+
+        % update plots
+        for i = 1:length(obj.previewIdxes)
+            % this is cursed but hey if it works. Still way quicker than StackedPlot.
+            obj.PreviewPlot.Parent.Children(i+1).Children(1).YData(targetIdx) = obj.PreviewData(targetIdx, obj.previewIdxes(i));
+        end
+
         try
             writematrix([eventData.Timestamps-obj.tPrePost(1),obj.PreviewData(targetIdx,:)], ...
             strcat(obj.SavePath, filesep, obj.SavePrefix, '.csv'), ...

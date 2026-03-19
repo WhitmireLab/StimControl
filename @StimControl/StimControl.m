@@ -113,11 +113,10 @@ methods (Access = private)
     % figure creation
     createFigure(obj)
     createPanelSetupControl(obj, hPanel, ~)
-    createPanelSetupPreview(obj, hPanel, ~)
     createPanelComponentConfig(obj, hPanel, ~, component)
     createPanelSessionControl(obj, hPanel, ~)
-    createPanelSessionPreview(obj, hPanel, ~)
     createPanelSessionHardware(obj, hPanel, ~)
+    createPanelPreview(obj, hPanel, ~)
 
     % app control callbacks
     callbackChangeTab(obj, src, event)
@@ -429,6 +428,8 @@ methods
     end
 
     function obj = MapConnectedHardware(obj)
+        %todo what if two daqs have the same channel?
+        obj.pids = []; % clear previous
         for i = 1:length(obj.d.Available)
             comp = obj.d.Available{i};
             cid = comp.ConfigStruct.ProtocolID;

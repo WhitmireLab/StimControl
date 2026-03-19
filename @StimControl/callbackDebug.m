@@ -16,5 +16,4 @@ function PlotSavedData()
     path = 'C:\Users\labadmin\Desktop\logs\debug\251112\251112_161302_TempandVibe';
     daqDataFile = '00011_stim00004.csv';
     daqChannelNames = 'TriggerDAQ_channelNames.csv';
-
 end
