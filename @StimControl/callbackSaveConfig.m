@@ -64,7 +64,7 @@ function callbackSaveConfig(obj, src, event)
         component.SaveAuxiliaryConfig(obj.path.paramBase);
     end
     if ~isempty(componentData)
-        saveData.hardwareSettings = [saveData.hardwareSettings; componentData];
+        saveData.hardwareSettings = [saveData.hardwareSettings; componentData'];
     end
     jsonData = jsonencode(saveData);
     file = fopen([pBase filesep filename], 'w+');

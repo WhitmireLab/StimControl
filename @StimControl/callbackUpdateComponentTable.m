@@ -6,6 +6,7 @@ function callbackUpdateComponentTable(obj, src, event)
             obj.errorMsg("Please switch to the setup tab before reloading hardware.");
             return
         end
+        stop(obj.t); % pause the timer to prevent errors in iterating over devices
         selection = uiconfirm(obj.h.fig, ...
             "WARNING: This will reset any unsaved changes made to existing hardware configurations. Continue?","Confirm Reload", ...
             "Icon","warning", ...
@@ -20,7 +21,7 @@ function callbackUpdateComponentTable(obj, src, event)
             elseif strcmpi(selection, "Continue Without Saving")
                 filename = obj.h.SessionSelectDropDown.Value;
             end
-            obj.createPanelPreview([], []); % update preview panel
+            obj.createPanelPreview(obj.h.Preview.panel.params, []); % update preview panel
             obj.h.AvailableHardwareTable.Data = PopulateHardwareTable(); % refresh hardware table
             obj.loadDefaultSession;
             if ~isempty(filename) && isfile([obj.path.sessionBase filesep filename]) % reload saved info.
@@ -29,6 +30,7 @@ function callbackUpdateComponentTable(obj, src, event)
             end
             obj.MapConnectedHardware;
             obj.status = obj.status;
+            start(obj.t); % restart the timer
         else % cancel
             return;
         end
