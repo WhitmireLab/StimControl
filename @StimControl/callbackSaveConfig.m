@@ -8,7 +8,7 @@ function callbackSaveConfig(obj, src, event)
         tmp = split(obj.h.SessionSelectDropDown.Value, '.');
         defaultInput = tmp{1};
     else
-        defaultInput = {[pcID '_default']}; %todo this should actually be currently selected file, if any,else default
+        defaultInput = {[pcID '_default']};
     end
     filename = inputdlg('Enter filename:','Save config',[1 45],{defaultInput});
     if isempty(filename)
