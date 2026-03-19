@@ -89,14 +89,12 @@ function obj = DAQComponent(varargin)
     end
 end
 
-% TODO REMOVE
 function Debug(obj)
     keyboard
 end
 
 function obj = InitialiseSession(obj, varargin)
     % Initialise device. 
-    %TODO STOP/START
     p = inputParser;
     addParameter(p, 'ChannelConfig', '', @(x) ischar(x) || isstring(x) || islogical(x));
     addParameter(p, 'ConfigStruct', []);
@@ -192,7 +190,7 @@ end
 function Close(obj)
     % safely close the session
     Stop(obj);
-    %todo disconnect
+    %todo disconnect?
 end
 
 % Change device parameters TODO ALL OF THESE REQUIRE A RESTART I THINK
@@ -330,7 +328,7 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
     rate = obj.SessionHandle.Rate;
     if rate==0
         % Software triggering required - only on-demand operations
-        % supported. TODO
+        % supported.
         rate = obj.ConfigStruct.Rate;
     end
     tPre     = genericTrialData.tPre  / 1000;
