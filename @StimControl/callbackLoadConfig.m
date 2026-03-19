@@ -29,7 +29,9 @@ function obj = LoadSessionConfig(obj, filepath)
     txt = fileread(filepath);
     data = jsondecode(txt);
     obj.indicateLoading("Loading Component Config...");
-    obj.d = obj.d.LoadConfig(data.hardwareSettings);
+    if isfield(data, 'hardwareSettings')
+        obj.d = obj.d.LoadConfig(data.hardwareSettings);
+    end
     
     obj.indicateLoading("Loading Display Settings...");
     % update availableHardwareTable
