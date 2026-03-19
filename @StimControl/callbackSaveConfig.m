@@ -42,7 +42,10 @@ function callbackSaveConfig(obj, src, event)
     % Save component params
     componentData = {};
     if ~isempty(saveData.hardwareSettings)
-        existingComponentIDs = cellfun(@(x) x.ComponentID, saveData.hardwareSettings, 'UniformOutput', false);
+        if isstruct(saveData.hardwareSettings) % if you're only saving one kind of object matlab loads it as a struct, not a cell. Hrgh.
+            saveData.hardwareSettings = num2cell(saveData.hardwareSettings);
+        end
+            existingComponentIDs = cellfun(@(x) x.ComponentID, saveData.hardwareSettings, 'UniformOutput', false);
     else
         existingComponentIDs = {};
     end
@@ -61,7 +64,7 @@ function callbackSaveConfig(obj, src, event)
         component.SaveAuxiliaryConfig(obj.path.paramBase);
     end
     if ~isempty(componentData)
-        saveData.hardwareSettings = {saveData.hardwareSettings; componentData};
+        saveData.hardwareSettings = [saveData.hardwareSettings; componentData];
     end
     jsonData = jsonencode(saveData);
     file = fopen([pBase filesep filename], 'w+');

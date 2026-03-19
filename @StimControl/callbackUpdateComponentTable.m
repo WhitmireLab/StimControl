@@ -2,6 +2,10 @@ function callbackUpdateComponentTable(obj, src, event)
     if isstring(event) && strcmpi(event, "CreateTable")
         obj.h.AvailableHardwareTable.Data = PopulateHardwareTable();
     elseif src == obj.h.menuRefreshHardware % refresh hardware
+        if obj.h.tabs.SelectedTab ~= obj.h.Setup.Tab % if selected tab isn't setup, don't allow this.
+            obj.errorMsg("Please switch to the setup tab before reloading hardware.");
+            return
+        end
         selection = uiconfirm(obj.h.fig, ...
             "WARNING: This will reset any unsaved changes made to existing hardware configurations. Continue?","Confirm Reload", ...
             "Icon","warning", ...
@@ -14,13 +18,14 @@ function callbackUpdateComponentTable(obj, src, event)
                 filename = obj.h.SessionSelectDropDown.Value;
                 obj.d = obj.d.FindAvailableHardware();
             elseif strcmpi(selection, "Continue Without Saving")
-                filename = [];
+                filename = obj.h.SessionSelectDropDown.Value;
             end
-            obj.h.AvailableHardwareTable.Data = PopulateHardwareTable(); % refresh GUI
+            obj.createPanelPreview([], []); % update preview panel
+            obj.h.AvailableHardwareTable.Data = PopulateHardwareTable(); % refresh hardware table
             obj.loadDefaultSession;
-            if ~isempty(filename) % reload saved info.
+            if ~isempty(filename) && isfile([obj.path.sessionBase filesep filename]) % reload saved info.
                 obj.h.SessionSelectDropDown.Value = filename;
-                obj.callbackLoadConfig()
+                obj.callbackLoadConfig(obj.h.SessionSelectDropDown, []);
             end
             obj.MapConnectedHardware;
             obj.status = obj.status;

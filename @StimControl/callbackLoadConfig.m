@@ -1,6 +1,5 @@
 function callbackLoadConfig(obj, src, event)
 % Generic function for loading config files from various dropdowns in StimControl's Setup tab.
-value = src.Value;
 if strcmpi(src.Value, 'Auto')
     return
 end

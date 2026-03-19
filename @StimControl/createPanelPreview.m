@@ -7,8 +7,9 @@ numCols = ceil(numComponents/numRows);
 % if the display is being updated and not created, flag that component preview plots
 % should also be updated.
 updatePlots = isfield(obj.h, 'PreviewGrid');
-
-obj.h.PreviewGrid = uigridlayout(hPanel);
+if ~updatePlots
+    obj.h.PreviewGrid = uigridlayout(hPanel);
+end
 
 obj.h.PreviewGrid.RowHeight = repmat("1x", [1 numRows*2]);
 obj.h.PreviewGrid.ColumnWidth = repmat("1x", [1 numCols*2]);

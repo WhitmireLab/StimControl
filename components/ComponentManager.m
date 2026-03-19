@@ -53,6 +53,10 @@ methods
     end
 
     function obj = LoadConfig(obj, jsonData)
+        if isempty(jsonData)
+            % no config information
+            return
+        end
         for i = 1:length(jsonData)
             if length(jsonData) > 1
                 if isstruct(jsonData)
