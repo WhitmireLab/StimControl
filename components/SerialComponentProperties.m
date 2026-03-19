@@ -34,7 +34,9 @@ end
 methods (Static, Access=private)
 function out = GetAvailablePorts()
     if isMATLABReleaseOlderThan('R2024b')
-        out = cellstr(seriallist);
+         warning('off', 'instrument:seriallist:FunctionToBeRemoved');
+            out = seriallist; %#ok<*SERLL>
+        warning('on', 'instrument:seriallist:FunctionToBeRemoved');
     else
         out = cellstr(serialportlist);
     end
