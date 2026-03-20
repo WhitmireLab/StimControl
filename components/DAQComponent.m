@@ -463,6 +463,9 @@ function info = deviceInfo(obj)
     deviceID = obj.ConfigStruct.ID;
     daqs = daqlist;
     info = daqs(strcmpi(daqs.DeviceID, deviceID),:).DeviceInfo;
+
+    channelNames = info.Subsystems.ChannelNames;
+    % channelProperties = info.
 end
 
 function obj = CreateChannels(obj, filename, protocolIDs)
@@ -473,6 +476,13 @@ function obj = CreateChannels(obj, filename, protocolIDs)
     if isempty(filename)
         filename = obj.ConfigStruct.ChannelConfig;
     end
+    if isempty(obj.PreviewPlot)
+        progressfig = uifigure;
+    else
+        progressfig = obj.PreviewPlot.Parent.Parent.Parent.Parent.Parent.Parent.Parent.Parent.Parent; %cursed but it's late on a friday.
+    end
+    progressdlg = uiprogressdlg(progressfig,'Title','Creating Channels...',...
+        'Message','');
     % clear previous channels, if any
     % obj = obj.ClearChannels();
     % obj.SessionHandle.
@@ -491,7 +501,6 @@ function obj = CreateChannels(obj, filename, protocolIDs)
                 % skip channels that aren't required for this protocol.
                 continue
             end
-            obj.PreviewChannels(end+1) = logical(line.Preview);
             tmp = strsplit(obj.ComponentID, '_');
             deviceID = tmp{1};
             portNum = line.('portNum'){1}; 
@@ -530,6 +539,7 @@ function obj = CreateChannels(obj, filename, protocolIDs)
                 range = str2num(range);
                 ch.Range = range;
             end
+            obj.PreviewChannels(end+1) = logical(line.Preview);
             [warnMsg, warnId] = lastwarn;
             if ~isempty(warnMsg)
                 message = ['Warning encountered loading DAQComponent channel information on line ' char(string(ii))];
@@ -543,7 +553,8 @@ function obj = CreateChannels(obj, filename, protocolIDs)
             obj.ChannelMap.(line.Device{:}).(line.Label{:}).idx = idx;
             obj.ChannelMap.(line.Device{:}).(line.Label{:}).ID = channelID;
             obj.ChannelMap.(line.Device{:}).(line.Label{:}).ioType = ioType;
-
+            progressdlg.Message = sprintf("Created channel %d of %d (%s)", ii, s(1), channelID);
+            progressdlg.Value = ii/s(1);
         catch exception
             message = ['Encountered an error reading channels config file on line ' ...
                     char(string(ii)) ': ' exception.message ' Line skipped.'];
@@ -557,6 +568,7 @@ function obj = CreateChannels(obj, filename, protocolIDs)
     %     obj.SessionHandle.Channels = channelList;
     % end
     obj.PreviewChannels = logical(obj.PreviewChannels);
+    delete(progressdlg);
 end
 
 function obj = ClearChannels(obj)

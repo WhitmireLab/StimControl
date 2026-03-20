@@ -110,6 +110,8 @@ try
 catch err
     LogError(err);
     keyboard % see what's going on
+    % if err is daq error, delete(daq.getDevices) then daqreset then
+    % reload.
 end
 
 %% HELPER FUNCTIONS
