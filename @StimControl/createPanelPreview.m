@@ -28,6 +28,7 @@ for i = 1:numRows
         %             'Row', [gi-1 gi], ...
         %             'Column', [gj-1 gj]);
         % else
+        %% TODO: WHEN RESETTING VIA UPDATECOMPONENTTABLE, DUPLICATES PLOTS
             gi = i*2;
             gj = j*2;
             panel = uipanel(obj.h.PreviewGrid, ...

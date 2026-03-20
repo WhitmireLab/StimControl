@@ -30,6 +30,7 @@ properties(Access = private)
     anHandles = {};
     previewIdxes = [];
     nScans = 0;
+    stopping = false;
 end
 
 methods (Access = public, Static)
@@ -154,6 +155,9 @@ end
 
 % Start device
 function StartTrial(obj)
+    while obj.stopping % if it's stopping, don't hit start.
+        pause(0.2)
+    end
     obj.idxData = 1;
     % Starts device with a preloaded session. 
     if ~isempty(obj.SavePath) || length(obj.SavePath) ~= 0
@@ -181,6 +185,11 @@ end
 
 % Stop device
 function Stop(obj)
+    if obj.stopping % attempt to solve the crashing issue.
+        return
+    end
+    obj.stopping = true;
+    pause(0.1); % wait for the buffers to flush.
     if ~isempty(obj.SessionHandle) && obj.SessionHandle.Running
         stop(obj.SessionHandle);
     end
@@ -194,6 +203,7 @@ function Stop(obj)
     catch
         %file already closed. Do nothing.
     end
+    obj.stopping = false;
 end
 
 function Close(obj)
