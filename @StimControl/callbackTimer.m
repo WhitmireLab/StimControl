@@ -175,7 +175,8 @@ function UpdateComponentSavePaths()
     for i = 1:obj.d.nActive
         % update save paths
         component = obj.d.activeComponents{i};
-        if isempty(obj.p(obj.trialNum).params.(component.ConfigStruct.ProtocolID))
+        if ~isfield(obj.p(obj.trialNum).params, component.ConfigStruct.ProtocolID) ...
+            || isempty(obj.p(obj.trialNum).params.(component.ConfigStruct.ProtocolID))
             % component not targeted
             continue
         end

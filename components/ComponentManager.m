@@ -10,6 +10,8 @@ properties
 
     ActiveIDs
     componentTargets
+    trialParams
+    trialNum
 end
 
 properties(Dependent)
@@ -18,6 +20,7 @@ properties(Dependent)
     nActive
     protocolIDs
     componentIDs
+    targetedComponents
 end
 
 methods
@@ -183,6 +186,13 @@ methods
 
     function out = get.nActive(obj)
         out = sum(obj.Active);
+    end
+
+    function out = get.targetedComponents(obj)
+        out = {};
+        if isempty(obj.trialParams) || isempty(obj.trialNum)
+            return
+        end
     end
 end
 end
