@@ -6,8 +6,8 @@ end
 
 if src == obj.h.SessionSelectDropDown
     basePath = obj.path.sessionBase;
-elseif src == obj.h.ComponentConfigDropDown
-    basePath = obj.path.paramBase;
+% elseif src == obj.h.ComponentConfigDropDown
+%     basePath = obj.path.paramBase;
 end
 
 if strcmpi(src.Value, 'Browse...')
@@ -30,6 +30,11 @@ function obj = LoadSessionConfig(obj, filepath)
     obj.indicateLoading("Loading Component Config...");
     if isfield(data, 'hardwareSettings')
         obj.d = obj.d.LoadConfig(data.hardwareSettings);
+    end
+    
+    if isfield(data, 'dirData') && ~isempty(data.dirData)
+        obj.path.dirData = {data.dirData};
+        obj.SavePathTextArea.Value = data.dirData;
     end
     
     obj.indicateLoading("Loading Display Settings...");

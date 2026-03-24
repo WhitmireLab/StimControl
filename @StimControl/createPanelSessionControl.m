@@ -3,7 +3,7 @@ function createPanelSessionControl(obj, hPanel, ~)
 grid = uigridlayout(hPanel);
 grid.RowHeight = {22, 22, 5, 22, 22, 5, 22, 22, 5, 80, 5, '1x'};
 grid.ColumnWidth = {22, '1x', '0.5x', '0.5x', '1x', 22};
-grid.RowSpacing = 2;
+grid.RowSpacing = 1;
 nCols = length(grid.ColumnWidth);
 nRows = length(grid.RowHeight);
 
