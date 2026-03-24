@@ -1,0 +1,3 @@
+- [] programmatic way to change savepath
+- [] Clara debugging
+- [] "Unknown field" with widefield - move TargetedHardware to ComponentManager
