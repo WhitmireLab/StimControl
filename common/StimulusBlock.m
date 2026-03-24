@@ -120,7 +120,7 @@ methods
         params = struct('sequence', [], 'delay', [], 'params', []);
         targets = obj.targets;
         helperStruct = [];
-        for ti = 1:length(targets)
+        for ti = 1:length(targets) % fair bit of duplication here but not a huge issue
             targetName = targets{ti};
             singleStimParams.(targetName).sequence = [];
             singleStimParams.(targetName).delay = [];
@@ -130,6 +130,7 @@ methods
             helperStruct.(targetName) = [];
             helperStruct.(targetName).idxOffset = 0;
             helperStruct.(targetName).totalDelay = 0;
+            helperStruct.(targetName).relativeSequence = [];
             % helperStruct.(targetName).totalStimuliInSequence = 0; %used for additional index offsets. Sorry about how unreadable this is.
         end
         trialParams = singleStimParams; % will be built out later.
@@ -189,9 +190,13 @@ methods
                     if iscell(f)
                         f = f{:};
                     end
-                    relativeSequence(ti) = length(helperStruct.(f).idxOffset);
+                    if length(helperStruct.(f).relativeSequence) == 1
+                        helperStruct.(f).relativeSequence = relativeSequence;
+                    end
+                    helperStruct.(f).relativeSequence(ti) = length(helperStruct.(f).idxOffset);
+                    % relativeSequence(ti) = length(helperStruct.(f).idxOffset); %I SUSPECT THIS IS THE PROBLEM
                     % helperStruct.(f).idxOffset(end) = helperStruct.(f).idxOffset(end) - (sequence(ti) - length(helperStruct.(f).idxOffset)); % account for sequence with multiple targets
-                    helperStruct.(f).idxOffset = [helperStruct.(f).idxOffset, helperStruct.(f).idxOffset+max(traversedParam.(f).sequence)];
+                    helperStruct.(f).idxOffset = [helperStruct.(f).idxOffset, traversedParam.(f).sequence+max(helperStruct.(f).idxOffset)];
                     try
                         singleStimParams.(f).params = ...
                             [singleStimParams.(f).params traversedParam.(f).params];
@@ -216,7 +221,7 @@ methods
                     end
                     % set sequence
                     singleStimParams.(f).sequence = ...
-                        [singleStimParams.(f).sequence traversedParam.(f).sequence+helperStruct.(f).idxOffset(relativeSequence(sequence(si)))]; 
+                        [singleStimParams.(f).sequence traversedParam.(f).sequence+helperStruct.(f).idxOffset(helperStruct.(f).relativeSequence(sequence(si)))]; 
 
                     % set delay
                     if strcmpi(obj.childRel, 'odd') && ~isempty(singleStimParams.(f).delay) % oddball, add repeat delay if not first runthrough.
@@ -255,7 +260,6 @@ methods
         for f = unique(targets)
             trialParams.(f).delay(1) = trialParams.(f).delay(1) + obj.startDelay;
         end
-
     end
 
     %% Attribute-like functions
@@ -357,6 +361,9 @@ methods(Access=private)
     function order = generateOddballOrder(obj)
         order = ones(1, obj.nStimRuns);
         nOdds = length(obj.childIdxes) - 1;
+        if length(obj.childIdxes) > obj.nStimRuns
+            error(sprintf("nStims in oddball sequence (%d) is insufficient to run all oddball trials (total %d including baseline).", obj.nStimRuns, nOdds+1));
+        end
         nSwaps = floor(obj.nStimRuns * obj.oddParams.swapRatio);
         oddIdxes = linspace(2, nOdds+1, nOdds);
 

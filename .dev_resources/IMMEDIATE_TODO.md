@@ -1,5 +1,6 @@
-- [] programmatic way to change savepath
-- [] Clara debugging
-- [] "Unknown field" with widefield - move TargetedHardware to ComponentManager
-- [] put general reading issues in the protocolchecker (errors not related to single trials)
-- [] fix the double file opening when opening ProtocolChecker via StimControl
+- [ ] programmatic way to change savepath
+- [ ] Clara debugging
+- [ ] make the generator re-randomise for every repetition of an oddball trial.
+- [ ] "Unknown field" with widefield - move TargetedHardware to ComponentManager
+- [ ] put general reading issues in the protocolchecker (errors not related to single trials)
+- [ ] fix the double file opening when opening ProtocolChecker via StimControl
