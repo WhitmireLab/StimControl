@@ -7,7 +7,7 @@ obj.indicateLoading('Loading protocol');
 
 if src == obj.h.menuCheckStimulus
     % start protocolchecker app
-    protocolchecker;
+    ProtocolCheckerGUI;
     return
 elseif src ~= obj.h.protocolSelectDropDown
     % not implemented.
