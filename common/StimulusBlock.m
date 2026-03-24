@@ -148,7 +148,55 @@ methods
             end
             return
         end
-        % Traverse children
+        
+        singleStimParams = BuildSingleStimParams();
+        if any(strcmpi([obj.children().childRel], "odd")) ...
+            && (obj.nStimRuns > 1 && (strcmpi(obj.childRel, 'sim') || strcmpi(obj.childRel, 'seq')))
+                trialParams = singleStimParams;
+                for nRep = 2:obj.nStimRuns
+                    singleStimParams = BuildSingleStimParams(); % re-shuffle every time
+                    for f = unique(targets)
+                        repeatDelays = singleStimParams.(f).delay;
+                        repeatDelays(1) = repeatDelays(1) + obj.repeatDelay;
+                        trialParams.(f).delay = [trialParams.(f).delay repeatDelays];
+                        trialParams.(f).sequence = [trialParams.(f).sequence singleStimParams.(f).sequence];
+                    end
+                end
+        else
+            % build trial params out of single stim params
+            trialParams = singleStimParams;
+            if obj.nStimRuns > 1 && (strcmpi(obj.childRel, 'sim') || strcmpi(obj.childRel, 'seq')) 
+                for f = unique(targets)
+                    for nRep = 2:obj.nStimRuns
+                        repeatDelays = singleStimParams.(f).delay;
+                        repeatDelays(1) = repeatDelays(1) + obj.repeatDelay;
+                        trialParams.(f).delay = [trialParams.(f).delay repeatDelays];
+                        trialParams.(f).sequence = [trialParams.(f).sequence singleStimParams.(f).sequence];
+                    end
+                end
+            end
+        end
+
+        % add start delay
+        for f = unique(targets)
+            trialParams.(f).delay(1) = trialParams.(f).delay(1) + obj.startDelay;
+        end
+
+        function singleStimParams = BuildSingleStimParams()
+            for ti = 1:length(targets) % fair bit of duplication here but not a huge issue
+                targetName = targets{ti};
+                singleStimParams.(targetName).sequence = [];
+                singleStimParams.(targetName).delay = [];
+                singleStimParams.(targetName).params = [];
+    
+                % initalise helperstruct
+                helperStruct.(targetName) = [];
+                helperStruct.(targetName).idxOffset = 0;
+                helperStruct.(targetName).totalDelay = 0;
+                helperStruct.(targetName).relativeSequence = [];
+                % helperStruct.(targetName).totalStimuliInSequence = 0; %used for additional index offsets. Sorry about how unreadable this is.
+            end
+            % Traverse children
         children = obj.children;
         traversedParams = cell([1, length(children)]);
         for ci = 1:length(children)
@@ -242,23 +290,6 @@ methods
                 end
             end
         end
-        
-        % build trial params out of single stim params
-        trialParams = singleStimParams;
-        if obj.nStimRuns > 1 && (strcmpi(obj.childRel, 'sim') || strcmpi(obj.childRel, 'seq')) 
-            for f = unique(targets)
-                for nRep = 2:obj.nStimRuns
-                    repeatDelays = singleStimParams.(f).delay;
-                    repeatDelays(1) = repeatDelays(1) + obj.repeatDelay;
-                    trialParams.(f).delay = [trialParams.(f).delay repeatDelays];
-                    trialParams.(f).sequence = [trialParams.(f).sequence singleStimParams.(f).sequence];
-                end
-            end
-        end
-
-        % add start delay
-        for f = unique(targets)
-            trialParams.(f).delay(1) = trialParams.(f).delay(1) + obj.startDelay;
         end
     end
 
