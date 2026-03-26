@@ -25,6 +25,13 @@ properties(Access = private)
     StackedPreview = [];
     triggerIdx = 1; % for on-demand DAQ write operations only.
     timeoutWait = 0;
+    axHandles = {};
+    pltHandles = {};
+    anHandles = {};
+    previewIdxes = [];
+    nScans = 0;
+    stopping = false;
+    timeoutTic = [];
 end
 
 methods (Access = public, Static)
@@ -41,7 +48,7 @@ methods (Access = public, Static)
         % RETURNS:
         %     components (cell array): cell array of all detected Components.
         p = inputParser();
-        addParameter(p, 'Initialise', true, @islogical);
+        addParameter(p, 'Initialise', false, @islogical);
         addParameter(p, 'Params', [], @(x) isstruct(x) || isempty(x));
         p.parse(varargin{:});
         components = {};
@@ -53,6 +60,8 @@ methods (Access = public, Static)
             %todo - temp while I get above working
             if contains(s.Model, 'Sim')
                 protocolID = 'SIM';
+            elseif ~strcmpi(s.DeviceID, "Dev1")
+                protocolID = char(s.DeviceID);
             else
                 protocolID = 'TriggerDAQ';
             end
@@ -127,10 +136,12 @@ function obj = InitialiseSession(obj, varargin)
         pcID = pcInfo{2}(end-8:end);
         filename = [pcID '_' obj.ComponentID '.csv'];
         if ~contains(obj.ConfigStruct.ChannelConfig, filename)
-            if ~strcmpi(obj.ConfigStruct.ChannelConfig(end), filesep)
-                obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filesep filename];
-            else
-                obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filename];
+            if ~isfile(obj.ConfigStruct.ChannelConfig)
+                if ~strcmpi(obj.ConfigStruct.ChannelConfig(end), filesep)
+                    obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filesep filename];
+                else
+                    obj.ConfigStruct.ChannelConfig = [obj.ConfigStruct.ChannelConfig filename];
+                end
             end
         end
         obj = obj.MapChannels(obj.ConfigStruct.ChannelConfig);
@@ -145,6 +156,10 @@ end
 
 % Start device
 function StartTrial(obj)
+    obj.timeoutTic = []; % reset timeout tracker
+    while obj.stopping % if it's stopping, don't hit start.
+        pause(0.2)
+    end
     obj.idxData = 1;
     % Starts device with a preloaded session. 
     if ~isempty(obj.SavePath) || length(obj.SavePath) ~= 0
@@ -172,7 +187,13 @@ end
 
 % Stop device
 function Stop(obj)
-    if obj.SessionHandle.Running
+    if obj.stopping % attempt to solve the crashing issue.
+        disp("WAITING ON PREVIOUS STOP");
+        return
+    end
+    obj.stopping = true;
+    pause(0.1); % wait for the buffers to flush.
+    if ~isempty(obj.SessionHandle) && obj.SessionHandle.Running
         stop(obj.SessionHandle);
     end
     if ~isempty(obj.TriggerTimer) && isvalid(obj.TriggerTimer) && strcmpi(obj.TriggerTimer.Running, 'on')
@@ -185,6 +206,7 @@ function Stop(obj)
     catch
         %file already closed. Do nothing.
     end
+    obj.stopping = false;
 end
 
 function Close(obj)
@@ -216,7 +238,9 @@ function SetParams(obj, paramsStruct)
                 if ~isnumeric(val)
                     val = str2double(val);
                 end
-                obj.SessionHandle.Rate = val;
+                if ~isempty(obj.SessionHandle) && isvalid(obj.SessionHandle)
+                    obj.SessionHandle.Rate = val;
+                end
                 obj.ConfigStruct.Rate = val;
         end
     end
@@ -248,40 +272,53 @@ function StartPreview(obj)
             'Color', 'black');
         return
     end
+    
+    % construct labels
     obj.Previewing = true;
     names = {obj.SessionHandle.Channels.Name};
+    names = cellfun(@(x) replace(x, '_', ' '), names, 'UniformOutput', false);
     ids = {obj.SessionHandle.Channels.ID};
-    comb = {names{:}; ids{:}}';
-    fmt = ['%s' newline '%s'];
+    comb = {ids{:}; names{:}}';
+    fmt = ['%s' ': ' '%s']; % prev newline
     displayLabels = compose(fmt, string(comb));
-    % obj.charts = gobjects(length(displayLabels), 1);
-    % for i = 1:length(names)
-    %     plt = plot(obj.PreviewTimeAxis, obj.PreviewData(:,i));
-    %     % set(plt, 'XDataSource', obj.PreviewTimeAxis);
-    %     % set(plt, 'YDataSource', obj.PreviewData(:,i));
-    %     % plt.XDataSource = obj.PreviewTimeAxis;
-    %     % plt.YDataSource = obj.PreviewData(:,i);
-    %     plt.title = displayLabels(i);
-    %     obj.charts{i} = plt;
-    % end
     displayLabels = displayLabels(obj.PreviewChannels);
-    obj.StackedPreview = stackedplot(obj.PreviewPlot.Parent, obj.PreviewTimeAxis, obj.PreviewData(:,obj.PreviewChannels), ...
-        'DisplayLabels', displayLabels, ...
-        'Layout', obj.PreviewPlot.Layout, ...
-        'Position', obj.PreviewPlot.Position);
-    if isfield(obj.ChannelMap, 'QST')
-        % manually scale y data for QST
-        % TODO un hardcode this? add channel scaling file somewhere.
-        idxFirstAxes = length(displayLabels) + 2;
-        thermodeIdxes = cellfun(@(c) contains(c, 'thermode'), displayLabels);
-        tmp = linspace(idxFirstAxes, idxFirstAxes+length(thermodeIdxes)-1, length(thermodeIdxes));
-        tmp = tmp(thermodeIdxes);
-        for i = tmp
-            obj.StackedPreview.NodeChildren(i).YLim = [10 60];
-        end
-    end
-    % obj.dataLink = linkdata(obj.StackedPreview); %todo deal with this when causes bugs later :)
+    
+    % set up plots
     obj.PreviewPlot.Visible = 'off';
+    nPlots = sum(obj.PreviewChannels);
+    obj.previewIdxes = find(obj.PreviewChannels);
+    obj.PreviewPlot.Parent.RowHeight = repmat({'1x'}, [1 nPlots]);
+    obj.PreviewPlot.Layout.Row = [1 nPlots];
+    xLims = [obj.PreviewTimeAxis(1) obj.PreviewTimeAxis(end)];
+    
+    % clear plots
+    if length(obj.PreviewPlot.Parent.Children) > 1
+        delete(obj.PreviewPlot.Parent.Children(2:end));
+        % obj.axHandles = gobjects([nPlots 1]); %this copies them :(((((
+        % obj.pltHandles = gobjects([nPlots 1]);
+        % obj.anHandles = gobjects([nPlots 1]);
+    end    
+    
+    % create axes and plots
+    for i = 1:nPlots
+        ax = axes(obj.PreviewPlot.Parent);
+        ax.Layout.Row = i;
+        ax.Layout.Column = 1;
+
+        plt = plot(ax, obj.PreviewTimeAxis, obj.PreviewData(:,obj.previewIdxes(i)));
+        plt.YDataSource = sprintf('obj.PreviewData(:,obj.previewIdxes(%d))', i);
+        % an = animatedline(ax, obj.PreviewTimeAxis, obj.PreviewData(:,obj.previewIdxes(i)));
+        % an.Color = 'red';
+        % datalink might be handy
+        ax.XLim = xLims; %why does this sometimes work and sometimes not?
+        ax.YLim = [-11 11];
+        ax.Title = text(ax, 'String', displayLabels{i}, ...
+            'HorizontalAlignment', 'left');
+        ax.TitleHorizontalAlignment = 'left';
+        % obj.axHandles(i) = ax;
+        % obj.pltHandles(i) = plt;
+        % obj.anHandles(i) = an;
+    end
 end
 
 function StopPreview(obj)
@@ -320,15 +357,14 @@ function LoadTrial(obj, out)
         % normal DAQ things hell yeah
         preload(obj.SessionHandle, out); 
     end
+    obj.nScans = length(obj.PreviewData);
 end
 
 function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadDevice)
-    % load trial from params. Does not preload data.
-    
+    % load trial from params. Does not preload data to session handle
     rate = obj.SessionHandle.Rate;
     if rate==0
-        % Software triggering required - only on-demand operations
-        % supported.
+        % Software triggering required - only on-demand operations supported.
         rate = obj.ConfigStruct.Rate;
     end
     tPre     = genericTrialData.tPre  / 1000;
@@ -371,7 +407,7 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
         end
         chIdxes(chIdxesToRemove) = [];
         if isempty(outIdxes)
-            warning("No output channels assigned for stimulus %s in DAQ %s. Check the channel config file.", fieldName, obj.ComponentID);
+            warning("[DAQCOMPONENT] No output channels assigned for stimulus %s in DAQ %s. Check the channel config file.", fieldName, obj.ComponentID);
             continue
         end
         % Generate Stimulus. Handle special cases.
@@ -386,7 +422,7 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
         stim = StimGenerator.GenerateStimTrain(componentTrialData.(fieldName), genericTrialData, rate);
         for idx = outIdxes
             if length(out) ~= length(stim)
-                %keyboard % not sure why this is here? PB 20260126
+                warning("[DAQCOMPONENT] Stim length mismatch for %s. Stim length was %d, but out length was %d. Output cropped.", fieldName, length(stim), length(out))
                 stim = stim(1:length(out)); 
             end
             out(:,idx) = stim;
@@ -430,6 +466,9 @@ function info = deviceInfo(obj)
     deviceID = obj.ConfigStruct.ID;
     daqs = daqlist;
     info = daqs(strcmpi(daqs.DeviceID, deviceID),:).DeviceInfo;
+
+    channelNames = info.Subsystems.ChannelNames;
+    % channelProperties = info.
 end
 
 function obj = CreateChannels(obj, filename, protocolIDs)
@@ -440,6 +479,13 @@ function obj = CreateChannels(obj, filename, protocolIDs)
     if isempty(filename)
         filename = obj.ConfigStruct.ChannelConfig;
     end
+    if isempty(obj.PreviewPlot)
+        progressfig = uifigure;
+    else
+        progressfig = obj.PreviewPlot.Parent.Parent.Parent.Parent.Parent.Parent.Parent.Parent.Parent; %cursed but it's late on a friday.
+    end
+    progressdlg = uiprogressdlg(progressfig,'Title','Creating Channels...',...
+        'Message','');
     % clear previous channels, if any
     % obj = obj.ClearChannels();
     % obj.SessionHandle.
@@ -458,7 +504,6 @@ function obj = CreateChannels(obj, filename, protocolIDs)
                 % skip channels that aren't required for this protocol.
                 continue
             end
-            obj.PreviewChannels(end+1) = logical(line.Preview);
             tmp = strsplit(obj.ComponentID, '_');
             deviceID = tmp{1};
             portNum = line.('portNum'){1}; 
@@ -497,6 +542,7 @@ function obj = CreateChannels(obj, filename, protocolIDs)
                 range = str2num(range);
                 ch.Range = range;
             end
+            obj.PreviewChannels(end+1) = logical(line.Preview);
             [warnMsg, warnId] = lastwarn;
             if ~isempty(warnMsg)
                 message = ['Warning encountered loading DAQComponent channel information on line ' char(string(ii))];
@@ -510,7 +556,8 @@ function obj = CreateChannels(obj, filename, protocolIDs)
             obj.ChannelMap.(line.Device{:}).(line.Label{:}).idx = idx;
             obj.ChannelMap.(line.Device{:}).(line.Label{:}).ID = channelID;
             obj.ChannelMap.(line.Device{:}).(line.Label{:}).ioType = ioType;
-
+            progressdlg.Message = sprintf("Created channel %d of %d (%s)", ii, s(1), channelID);
+            progressdlg.Value = ii/s(1);
         catch exception
             message = ['Encountered an error reading channels config file on line ' ...
                     char(string(ii)) ': ' exception.message ' Line skipped.'];
@@ -524,6 +571,21 @@ function obj = CreateChannels(obj, filename, protocolIDs)
     %     obj.SessionHandle.Channels = channelList;
     % end
     obj.PreviewChannels = logical(obj.PreviewChannels);
+    delete(progressdlg);
+end
+
+function TrialMaintain(obj)
+    % % manually stop the daq if it's finished
+    h = obj.SessionHandle;
+    if h.Running && h.NumScansAcquired == height(obj.PreviewData) && h.NumScansAvailable == 0 && isempty(obj.timeoutTic)
+        obj.timeoutTic = tic;
+    end
+    if ~isempty(obj.timeoutTic) && toc(obj.timeoutTic) > 5
+        % safeguard against premature stopping. Make sure the buffer is cleared.
+        disp("[DAQCOMPONENT] attempting manual stop")
+        obj.Stop();
+        obj.timeoutTic = [];
+    end
 end
 
 function obj = ClearChannels(obj)
@@ -614,7 +676,7 @@ function status = GetSessionStatus(obj)
     status = '';
     if isempty(obj.SessionHandle.Channels)
         status = 'uninitialised'; %no channels loaded
-    elseif obj.SessionHandle.Running
+    elseif obj.SessionHandle.Running 
         status = 'running'; % DAQ running
     elseif ~isempty(obj.TriggerTimer) && isvalid(obj.TriggerTimer) && strcmpi(obj.TriggerTimer.Running, 'on')
         status = 'running'; % Software triggered timer running
@@ -663,6 +725,9 @@ end
 
 function [idxes, labels] = getDeviceChannelIdxes(obj, targetName)
     % get indexes of all 'out' channels for the device.
+    if isempty(obj.ChannelMap)
+
+    end
     chans = fields(obj.ChannelMap.(targetName));
     idxes = [];
     labels = [];
@@ -679,7 +744,7 @@ function plotData(obj, ~,event)
     persistent emptyCount
     eventData = read(event.Source);
 
-    if obj.idxData > size(obj.StackedPreview.YData)
+    if obj.idxData > obj.nScans
         % cut off the end of the data? TODO CHECK THIS IS DESIRED BEHAVIOUR
         if ~isempty(eventData)
             disp("we have too much data??");
@@ -710,11 +775,13 @@ function plotData(obj, ~,event)
         % end
         % TODO DC TEMPERATURE CONTROLLER ALSO NEEDS CALIBRATION - FHC DC TEMPERATURE CONTROLLER
         obj.PreviewData(targetIdx, obj.InChanIdxes) = data;  
-        warning('off');
-        displayLabels = obj.StackedPreview.DisplayLabels;
-        obj.StackedPreview.YData = obj.PreviewData(:,obj.PreviewChannels); %todo fix this it's VERY SLOW but I'm going to have to fix it by changing the plot function
-        obj.StackedPreview.DisplayLabels = displayLabels;
-        warning('on');
+
+        % update plots
+        for i = 1:length(obj.previewIdxes)
+            % this is cursed but hey if it works. Still way quicker than StackedPlot.
+            obj.PreviewPlot.Parent.Children(i+1).Children(1).YData(targetIdx) = obj.PreviewData(targetIdx, obj.previewIdxes(i));
+        end
+
         try
             writematrix([eventData.Timestamps-obj.tPrePost(1),obj.PreviewData(targetIdx,:)], ...
             strcat(obj.SavePath, filesep, obj.SavePrefix, '.csv'), ...

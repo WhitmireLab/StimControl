@@ -3,17 +3,17 @@ if strcmpi(event.NewValue.Title, 'Experiment')
     % move components over
     for i = 1:length(obj.d.Available)
         component = obj.d.Available{i};
-        if obj.d.Active(i)
-            % make sure device is initialised
-            if isempty(component.SessionHandle)
-                component.InitialiseSession();
-            end
-        else
+        % if obj.d.Active(i)
+        %     % make sure device is initialised
+        %     if isempty(component.SessionHandle)
+        %         component.InitialiseSession();
+        %     end
+        if ~obj.d.Active(i)
             % de-initialise unnecessary devices
             try
                 component.Stop();
             catch exc
-                disp("[CALLBACKCHANGETAB] fix this when you have a second lmao")
+                disp("[CALLBACKCHANGETAB] fix this when you have a second")
             end
         end
     end
@@ -40,6 +40,6 @@ elseif strcmpi(event.NewValue.Title, 'Setup')
         end
     end
 end
-% warning: cursed
+% warning: cursed. Moves the preview panels to the new tab.
 obj.h.Preview.panel.params.Parent = event.NewValue.Children;
 end

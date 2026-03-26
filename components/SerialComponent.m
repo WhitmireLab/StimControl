@@ -711,9 +711,9 @@ methods(Static, Access=public)
     function out = FindPorts()
         % Find all a computer's available ports.
         if isMATLABReleaseOlderThan('R2020a')
-            % warning('off', 'instrument:seriallist:FunctionToBeRemoved');
+            warning('off', 'instrument:seriallist:FunctionToBeRemoved');
             out = seriallist; %#ok<*SERLL>
-            % warning('on', 'instrument:seriallist:FunctionToBeRemoved');
+            warning('on', 'instrument:seriallist:FunctionToBeRemoved');
         else
             out = serialportlist;
         end

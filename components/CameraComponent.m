@@ -295,14 +295,21 @@ function obj = SetParams(obj, paramsStruct)
         param = paramFields{i};
         val = paramsStruct.(param);
         if any(contains(fields(obj.ConfigStruct), param)) 
-            if obj.ComponentProperties.(param).isValid(val) 
-                obj.ConfigStruct = setfield(obj.ConfigStruct, param, val);
-            else
-                error("Invalid value provided for field %s: %s", param, val)
+            try
+                if obj.ComponentProperties.(param).isValid(val) 
+                    obj.ConfigStruct = setfield(obj.ConfigStruct, param, val);
+                else
+                    error("[CAMERACOMPONENT] Invalid value provided for field %s: %s. Value not set.", ...
+                        param, val);
+                end
+            catch err
+                warning(err.message);
+                continue
             end
         elseif ~strcmpi(param, 'SavePath')
             error("Could not set field %s. Valid fields are: %s, SavePath", param, getfields(obj.ConfigStruct));
         end
+        val = ParseParamValue(param, val);
         switch param
             case "SavePath"
                 obj.SavePath = val;
@@ -311,25 +318,10 @@ function obj = SetParams(obj, paramsStruct)
             case "BinningType"
                 continue
             case "Gain"
-                if ~isnumeric(val)
-                    % assume it's a number
-                    val = str2double(val);
-                end
                 src.Gain = val;
             case "ExposureTime"
-                if ~isnumeric(val)
-                    % assume it's a number
-                    val = str2double(val);
-                end
                 src.ExposureTime = val;
             case "ROIPosition"
-                if isempty(val)
-                    % reset ROI
-                    vidRes = get(obj.SessionHandle,'VideoResolution');
-                    val = [0 0 vidRes];
-                else
-                    val = str2num(val);
-                end
                     set(obj.SessionHandle, param, val);
             case "OutputLine"
                 src.LineSelector = val;
@@ -367,6 +359,38 @@ function obj = SetParams(obj, paramsStruct)
         obj.StartPreview();
     end
     obj.Status = "ok";
+    
+    % helper function
+    function val = ParseParamValue(param, val)
+        if isempty(val)
+            warning("[CAMERACOMPONENT] No value provided for field %s: %s. Value set to default (%s).", ...
+                param, val, obj.ComponentProperties.(param).default);
+           val = obj.ComponentProperties.(param).default;
+           return;
+        end
+        switch param
+            case "Gain"
+                if ~isnumeric(val)
+                    val = str2double(val);
+                end
+            case "ExposureTime"
+                if ~isnumeric(val)
+                    val = str2double(val);
+                end
+            case "ROIPosition"
+                if isempty(val)
+                    vidRes = get(obj.SessionHandle,'VideoResolution');
+                    val = [0 0 vidRes];
+                else
+                    val = str2num(val);
+                end
+            case "FramesPerTrigger"
+                if isstring(val) || ischar(val)
+                    val = str2num(val);
+                end
+            
+        end
+    end
 end
 
 % Print device information
@@ -481,12 +505,15 @@ end
 
 function ReceiveFrame(obj, src, vidObj)
     % try
+    %% debug
+    %% end debug
         if ~isfolder(obj.SavePath)
             mkdir(obj.SavePath)
         end
         filepath = strcat(obj.SavePath, filesep, obj.SavePrefix, '_', obj.ConfigStruct.ProtocolID);
         if ~isfolder(filepath)
             mkdir(filepath)
+            counter = 0; %debug
         end
         imgs = getdata(src,src.FramesAvailable); 
         if isempty(imgs)
