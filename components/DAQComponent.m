@@ -407,7 +407,7 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
         end
         chIdxes(chIdxesToRemove) = [];
         if isempty(outIdxes)
-            warning("No output channels assigned for stimulus %s in DAQ %s. Check the channel config file.", fieldName, obj.ComponentID);
+            warning("[DAQCOMPONENT] No output channels assigned for stimulus %s in DAQ %s. Check the channel config file.", fieldName, obj.ComponentID);
             continue
         end
         % Generate Stimulus. Handle special cases.
@@ -422,7 +422,7 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
         stim = StimGenerator.GenerateStimTrain(componentTrialData.(fieldName), genericTrialData, rate);
         for idx = outIdxes
             if length(out) ~= length(stim)
-                disp(sprintf("[DAQCOMPONENT] Stim length mismatch for %s. Stim length was %d, but out length was %d. Output cropped.", fieldName, length(stim), length(out)))
+                warning("[DAQCOMPONENT] Stim length mismatch for %s. Stim length was %d, but out length was %d. Output cropped.", fieldName, length(stim), length(out))
                 % keyboard
                 stim = stim(1:length(out)); 
             end
