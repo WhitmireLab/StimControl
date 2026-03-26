@@ -166,8 +166,8 @@ function obj = InitialiseSession(obj, varargin)
         end
         set(vidObj, 'TriggerRepeat', obj.ConfigStruct.TriggerRepeat); % special case bc it defaults to one trigger.
         set(vidObj,'FramesPerTrigger',str2double(obj.ConfigStruct.FramesPerTrigger));
-        % vidObj.FramesAcquiredFcnCount = 10; %TODO parametrise?
-        % vidObj.FramesAcquiredFcn = @obj.ReceiveFrame;
+        vidObj.FramesAcquiredFcnCount = 10; %TODO parametrise?
+        vidObj.FramesAcquiredFcn = @obj.ReceiveFrame;
         obj.SessionHandle = vidObj;
         obj.UpdateTriggerMode();
         obj.Status = "ok";
@@ -505,12 +505,15 @@ end
 
 function ReceiveFrame(obj, src, vidObj)
     % try
+    %% debug
+    %% end debug
         if ~isfolder(obj.SavePath)
             mkdir(obj.SavePath)
         end
         filepath = strcat(obj.SavePath, filesep, obj.SavePrefix, '_', obj.ConfigStruct.ProtocolID);
         if ~isfolder(filepath)
             mkdir(filepath)
+            counter = 0; %debug
         end
         imgs = getdata(src,src.FramesAvailable); 
         if isempty(imgs)

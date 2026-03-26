@@ -7,7 +7,7 @@ persistent previousStatus; %todo this may cause issues with multiple sessions of
 persistent pauseOffset;
 persistent timeoutReached;
 
-profile on
+% profile on
 
 if isempty(startTic)
     startTic = tic;
@@ -277,7 +277,7 @@ function MonitorTrial()
     if ~obj.f.passive && timeoutReached
         StopComponents()
         obj.f.trialFinished = true;
-    else
+    elseif obj.f.passive
         updatePassiveGuiTimer(startTic, false);
     end
     if ~any(cellfun(@(c) strcmpi(c.GetStatus(), 'running'), obj.d.activeComponents))
