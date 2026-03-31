@@ -1,6 +1,8 @@
-function [p,g] = readProtocol(filename,varargin)
+function [p,g,m] = readProtocol(filename,varargin)
 
 % TODO validate hardware is not targeted by two functions simultaneously
+
+m = [];
 
 %% parse function inputs
 ip = inputParser;
@@ -33,7 +35,11 @@ sepPlusQ = ['(' sepQuery '|\s|\(|\)|^|$' ')'];
 % if verboseMode, try/catch. Else error
 try
     [g, defaultTrial] = ParseGeneral(splitIdxes, lines, g, defaultTrial);
-    [stimuli, acquisitionTriggers, stimulusGroups] = ParseStimuli(stimDefinitions);
+    [stimuli, acquisitionTriggers, stimGroups] = ParseStimuli(stimDefinitions);
+    m.stimuli = stimuli;
+    m.stimGroups = stimGroups;
+    m.acquisitionTriggers = acquisitionTriggers;
+    m.trials = {};
 catch exception
     if verboseMode
         err = exception.message;
@@ -47,8 +53,8 @@ trials = {};
 for idxTrial = 1:length(trialParams)
     trialLine = trialParams{idxTrial};
     try
-        [trial, parameters] = InitialiseTrial(trialLine, stimulusGroups, defaultTrial, idxTrial);
-        trial = ParseTrial(trial, parameters, stimuli, validTrialParams, ...
+        [trial, parameters, stimGroups, bracketTags] = InitialiseTrial(trialLine, stimGroups, defaultTrial, idxTrial);
+        trial = ParseTrial(trial, parameters, stimGroups, bracketTags, stimuli, validTrialParams, ...
             validStimBlockParams);
         trial.valid = true;
     catch exception
@@ -256,7 +262,9 @@ p = [trials{:}];
             end
             generalParams = lines{1:splitIdxes(1)-1};
             [generalParams,~]  = strtok(generalParams,'%');
-            generalParams      = strtrim(generalParams);
+            [generalParams, generalTags] = strtok(generalParams, '#');
+            g.tags = ParseTags(generalTags);
+            generalParams = strtrim(generalParams);
             while ~isempty(generalParams)
                 [token,generalParams] = strtok(generalParams); %#ok<STTOK>
                 tmp = regexpi(token,'^([a-z]+)(-?\d+)$','once','tokens');
@@ -310,22 +318,25 @@ p = [trials{:}];
         end
     end
 
-    function [stimuli, acquisitionTriggers, stimulusGroups] = ParseStimuli(stimDefinitions)
+    function [stimuli, acquisitionTriggers, stimGroups] = ParseStimuli(stimDefinitions)
         % parse stimulus definitions
         stimuli = [];
         acquisitionTriggers = [];
-        stimulusGroups = [];
+        stimGroups = [];
         
         for idxStim = 1:length(stimDefinitions)
             line = stimDefinitions{idxStim};
             % todo support for targeting specific channels connected to the same device (e.g. Widefield1_Trigger)
             % note - this is way harder than it sounds. We're gonna name our channels individually for now.
-            tmp = regexpi(line, '([A-z])*\((\w)+\)\[((\w)(-\w)?,? ?)+\]: ?(.*)(%.*)?', 'tokens', 'once'); 
+            [line, comment] = strtok(line, '%');
+            [line, tags] = strtok(line, '#');
+            tags = ParseTags(tags);
+            tmp = regexpi(line, '([A-z])*\((\w)+\)\[((\w)(-\w)?,? ?)+\]: ?(.*)', 'tokens', 'once'); 
             % note to future devs: sorry about this ^. There are some regex testers out there that can help with reading this.
             % I've been using https://regexr.com/
-            [stimID, stimType, targets, params, comment] = tmp{:};
+            [stimID, stimType, targets, params] = tmp{:};
             stimType = lower(stimType);
-            if isfield(stimuli, stimID) || isfield(stimulusGroups, stimID)
+            if isfield(stimuli, stimID) || isfield(stimGroups, stimID)
                 error("Stimulus defined twice: %s", stimID);
             end
             if ~contains(fields(BaseStimStructs), stimType)
@@ -342,10 +353,14 @@ p = [trials{:}];
                     % check that all params within the stimulus group are defined.
                     % replace all tokens that map to another stimulus group with the text of that stimulus group
                     % check the stimulus group name doesn't cause logic problems (no other stimulusgroup contains this one's name in its entirety and vice versa)
-                    stimulusGroups.(stimID) = params;
+                    stimGroups.(stimID) = [];
+                    stimGroups.(stimID).params = params;
+                    stimGroups.(stimID).tags = tags;
                 otherwise
                     % standard cases
                     stimStruct = BaseStimStructs.(stimType);
+                    stimStruct.tags = tags;
+                    stimStruct.comment = comment;
                     while ~isempty(params)
                         [tok, remain] = strtok(params);
                         pv = regexpi(tok, '([A-z]*)(-?\d*.?\d*)', 'tokens', 'once');
@@ -386,34 +401,31 @@ p = [trials{:}];
         end
     end
 
-    function [trial, params] = InitialiseTrial(trialLine, stimulusGroups, defaultTrial, ...
+    function [trial, params, stimGroups, bracketTags] = InitialiseTrial(trialLine, stimGroups, defaultTrial, ...
             idxTrial)
         [params, comment] = strtok(trialLine, '%');
+        [params, tags] = strtok(params, '#');
+        tags = ParseTags(tags);
         params = strtrim(params);
         comment = strtrim(comment(2:end));
-        
-        % replace stimulus groups with definitions
-        % todo optimise this is worst case O(n^2) at LEAST
-        if ~isempty(stimulusGroups)
-            sfs = fields(stimulusGroups);
-            while any(contains(params, fields(stimulusGroups)))
-                for sfi = 1:length(sfs)
-                    sgFieldName = sfs{sfi};
-                    idx = regexpi(params, [sepPlusQ '(' sgFieldName ')' sepPlusQ]);
-                    if ~isempty(idx)
-                        for idxi = idx
-                            if idxi == 1 % am I stupid or is matlab's indexing system stupid. The world may never know.
-                                params = [params(1:idxi-1) ...
-                                '(' stimulusGroups.(sgFieldName) ')' ...
-                                params(length(sgFieldName)+idxi:end)];
-                            else
-                                params = [params(1:idxi) ...
-                                '(' stimulusGroups.(sgFieldName) ')' ...
-                                params(length(sgFieldName)+idxi+1:end)];
-                            end
-                        end
+
+        % add spaces around StimGroup params
+        if ~isempty(stimGroups) 
+            for f = fields(stimGroups)'
+                f = f{:};
+                groupText = stimGroups.(f).params;
+                [startIdxes, endIdxes] = regexpi(groupText, [sepQuery '|\)|\(']);
+                for i = length(startIdxes):-1:1
+                    startIdx = startIdxes(i);
+                    endIdx = endIdxes(i);
+                    if endIdx ~= length(groupText) && ~strcmpi(groupText(endIdx + 1), ' ')
+                        groupText = insertAfter(groupText, endIdx, ' ');
+                    end
+                    if startIdx ~= 1 && ~strcmpi(groupText(startIdx - 1), ' ')
+                        groupText = insertBefore(groupText, startIdx, ' ');
                     end
                 end
+                stimGroups.(f).params = strtrim(groupText);
             end
         end
     
@@ -429,18 +441,51 @@ p = [trials{:}];
                 params = insertBefore(params, startIdx, ' ');
             end
         end
-    
+        
+        [paramTokens, stimGroups, startIdx, bracketTags] = ParseStimGroups(params, stimGroups, 1, {});
+        params = join(paramTokens, ' ');
         % initialise stack vars
         trial = TrialData( ...
             'tPre', defaultTrial.tPre, ...
             'tPost', defaultTrial.tPost, ...
             'nRuns', defaultTrial.nRuns, ...
             'comment', comment, ...
-            'line', trialLine);
+            'line', trialLine, ...
+            'tags', tags);
         trial.trialIdx = idxTrial;
     end
 
-    function trial = ParseTrial(trial, params, stimuli, validTrialParams, ...
+    function [paramTokens, stimGroups, startIdx, bracketTags] = ...
+                ParseStimGroups(paramTokens, stimGroups, startIdx, bracketTags)
+        if ~iscell(paramTokens)
+            paramTokens = split(paramTokens, ' ')';
+        end
+        if length(stimGroups) < 1 || startIdx > length(paramTokens)
+            return
+        end
+
+        % search for a group or an open bracket, then replace with
+        % appropriate in-text stuff, rinse and repeat.
+        idx = startIdx;
+        while idx <= length(paramTokens)
+            tkn = paramTokens{idx};
+            if contains(fields(stimGroups), tkn)
+                i = idx-(idx==1);
+                j = idx+(idx~=1)+1;
+                paramTokens = [paramTokens(1:i) {'('} split(stimGroups.(tkn).params, ' ')' {')'} paramTokens(j:end)];
+                bracketTags{end+1} = tkn;
+                idx = idx+1;
+                break;
+            elseif strcmpi(tkn, '(')
+                bracketTags{end+1} = ''; % no need to break here, just keep going.
+            end
+            idx = idx+1;
+        end
+        
+        [paramTokens, stimGroups, startIdx, bracketTags] = ParseStimGroups(paramTokens, stimGroups, idx, bracketTags);
+    end
+
+    function trial = ParseTrial(trial, params, stimGroups, bracketTags, stimuli, validTrialParams, ...
             validStimBlockParams)
         % Parse a single line of a trial.
         trialParamsTracker = validTrialParams;
@@ -451,6 +496,7 @@ p = [trials{:}];
         acquisitionIdx = 2;
         stimNodeIdx = 3;
         stack.push(stimNodeIdx); % push stim node index to stack
+        bracketIdx = 1;
     
         paramTokens = split(params, ' ');
     
@@ -475,10 +521,15 @@ p = [trials{:}];
             if token == '('
                 % Start of a new block. Make a new parent node.
                 stack.push(currentParentIdx);
-                tree{end+1} = StimulusBlock('parentIdx', currentParentIdx);
+                sb = StimulusBlock('parentIdx', currentParentIdx);
+                if ~isempty(bracketTags(bracketIdx))
+                    sb.tokenName = bracketTags{bracketIdx};
+                end
+                tree{end+1} = sb;
                 currentParent.childIdxes(end+1) = length(tree);
                 tree{currentParentIdx} = currentParent;
                 stack.push(length(tree));
+                bracketIdx = bracketIdx + 1;
                 continue
             elseif token == ')'
                 % End of a block. Remove the parent's index from the stack and
@@ -524,7 +575,7 @@ p = [trials{:}];
                             trial.trialIdx, trial.comment);
                     end
                     newNode = StimulusBlock('stimParams', stimuli.(token), ...
-                        'parentIdx', acquisitionIdx);
+                        'parentIdx', acquisitionIdx, 'tokenName', token);
                     acqNode = tree{acquisitionIdx};
                     tree{end+1} = newNode;
                     acqNode.childIdxes(end+1) = length(tree);
@@ -707,7 +758,13 @@ function out = GetListFromArray(A)
 end
 end
 
-
+function tagCells = ParseTags(tagString)
+    tagCells = split(tagString, '#');
+    tagCells = cellfun(@(x) strip(x), tagCells, 'UniformOutput', false);
+    if isempty(tagCells{1})
+        tagCells = tagCells(2:end);
+    end
+end
 
 % function checkRange(value,range,token,idxStim)
 % if value<range(1) || value>range(2)

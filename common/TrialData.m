@@ -25,6 +25,7 @@ properties
     trialIdx
     RootNodeIdx
     stimuli
+    tags
 
     valid
     errorMsg
@@ -47,7 +48,8 @@ function obj = TrialData(varargin)
     addParameter(p, 'data', obj.data);
     addParameter(p, 'line', obj.line);
     addParameter(p, 'stimuli', obj.stimuli);
-    addParameter(p, 'comment', obj.stimuli);
+    addParameter(p, 'comment', obj.comment);
+    addParameter(p, 'tags', obj.tags);
     parse(p, varargin{:});
     for fn = fieldnames(p.Results)'
         obj.(fn{1}) = p.Results.(fn{1});
