@@ -48,7 +48,7 @@ if ~isempty(warnIDs)
             "%s", trialData.trialIdx, strjoin(warnIDs, ', ')));
 else
     % clear warning message
-    obj.status = obj.status;
+    obj.clearMessage;
 end
 
 if src ~= obj.h.StartStopBtn

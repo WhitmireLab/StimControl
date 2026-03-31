@@ -1,4 +1,4 @@
-function callbackTimer(obj,~,~)
+function timerFcnStateMachine(obj,~,~)
 % hardware status updates in a timer
 % persistent trialNums;
 persistent nTrials;
@@ -6,8 +6,6 @@ persistent startTic;
 persistent previousStatus; %todo this may cause issues with multiple sessions of different status? edge case
 persistent pauseOffset;
 persistent timeoutReached;
-
-profile on
 
 if isempty(startTic)
     startTic = tic;
@@ -110,8 +108,7 @@ try
 catch err
     LogError(err);
     keyboard % see what's going on
-    % if err is daq error, delete(daq.getDevices) then daqreset then
-    % reload.
+    % if err is daq error, delete(daq.getDevices) then daqreset then reload.
 end
 
 %% HELPER FUNCTIONS
@@ -135,6 +132,20 @@ function InitialiseExperiment()
     % copy protocol file to output directory
     [~,tmp1,tmp2] = fileparts(obj.path.SessionProtocolFile);
     copyfile(obj.path.SessionProtocolFile,fullfile(obj.dirExperiment,[tmp1 tmp2]))
+    
+    % save metadata to output directory
+    metapath = [obj.dirExperiment filesep tmp1 '_meta.json'];
+    metaStr = struct("metadata", {}, "hardwareConfig", []);
+    for i = 1:length(obj.meta)
+        m = obj.meta(i);
+        metaStr.metadata{end+1} = m.PrintableMetadata;
+    end
+    metaStr.hardwareConfig = GetComponentData(obj, metapath);
+
+    jsonData = jsonencode(metaStr);
+    file = fopen([pBase filesep filename], 'w+');
+    fprintf(file, '%s', jsonData);
+    fclose(file);
     
     % initialise tics, flags, etc.
     startTic = tic;
@@ -446,5 +457,18 @@ function LogError(err)
     obj.errorMsg(tmp);
     obj.status = 'stopping';
 end
+end
+
+function componentData = GetComponentData(obj, metaPath)
+    componentData = {};
+    for i = 1:length(obj.d.Available)
+        component = obj.d.Available{i};
+        params = component.GetParams;
+        params.type = class(component);
+        params.Active = logical(obj.d.Active(i));
+        params.Previewing = component.Previewing;
+        componentData{end+1} = params;
+        component.SaveAuxiliaryConfig(metaPath);
+    end
 end
 

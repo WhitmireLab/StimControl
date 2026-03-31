@@ -29,7 +29,7 @@ function callbackUpdateComponentTable(obj, src, event)
                 obj.callbackLoadConfig(obj.h.SessionSelectDropDown, []);
             end
             obj.MapConnectedHardware;
-            obj.status = obj.status;
+            obj.clearMessage;
             start(obj.t); % restart the timer
         else % cancel
             return;

@@ -11,9 +11,9 @@ properties (Access = private)
     g           = []            % general protocol parameters
     meta        = []            % protocol metadata
     idxStim     = []            % current stimulus index
-    stateMachineTimer = []      % State Machine Timer
-    guiTimer    = []            % GUI update timer
-    t           = []            % Generic Timer
+    timerStateMachine = []      % State Machine Timer
+    timerGui    = []            % GUI update timer
+    t           = []            % timer flags
     pids        = []            % protocol id map
     chAI
     chD
@@ -92,19 +92,33 @@ methods
         disp("Creating figure...")
         createFigure(obj)
         
+        %% timer flags
+        obj.t = struct("startTic",          [],     ...
+                        "paused",           false,  ...
+                        "pauseOffset",      0,      ...
+                        "intervalTarget",   0,      ...
+                        "protocolTarget",   0,      ...
+                        "runClocks",        false);
+
         %% state machine timer
-        obj.t = timer(...
+        obj.timerStateMachine = timer(...
             'StartDelay',       0, ...
-            'Period',           0.25, ...
+            'Period',           0.5, ...
             'ExecutionMode',    'fixedDelay', ...
-            'StartFcn',         @obj.callbackTimer, ...
-            'TimerFcn',         @obj.callbackTimer, ...
-            'Name',             'StateMachineTimer');
-        start(obj.t)
+            'StartFcn',         @obj.timerFcnStateMachine, ...
+            'TimerFcn',         @obj.timerFcnStateMachine, ...
+            'Name',             'timerStateMachine');
+        start(obj.timerStateMachine);
 
         %% GUI timer
-        obj.guiTimer = []; % TODO
-        obj.stateMachineTimer = []; % TODO
+        obj.timerGui = timer(...
+            'StartDelay',       0, ...
+            'Period',           0.5, ...
+            'ExecutionMode',    'fixedDelay', ...
+            'StartFcn',         @obj.timerFcnGui, ...
+            'TimerFcn',         @obj.timerFcnGui, ...
+            'Name',             'timerGui');
+        start(obj.timerGui)
         
         disp("loading previous session...");
         obj.loadDefaultSession;
@@ -231,15 +245,22 @@ methods
 
     function set.status(obj, val)
         % supported values: 
-        % NOT INITIALISED / READY / RUNNING / INTER-TRIAL / PAUSED / ERROR
-        % / STOPPING
+        % NOT INITIALISED / READY / RUNNING / INTER-TRIAL / PAUSED / ERROR / STOPPING
+
+        % obj.t = struct("startTic",          [],     ...
+        %                 "paused",           false,  ...
+        %                 "pauseOffset",      0,      ...
+        %                 "intervalTarget",   0,      ...
+        %                 "protocolTarget",   0,      ...
+        %                 "runClocks",        false);
+        
         obj.h.loadingLabel.Visible = 'off';
         obj.h.statusLabel.Visible = 'on';
         obj.tLastStatusChange = tic;
         val = lower(val);
         if strcmpi(val, 'not initialised')
             obj.h.statusLabel.Text = 'Not Initialised';
-            obj.h.statusLamp.Color = '#808080'; % dark grey
+            obj.h.statusLamp.Color = '#808080'; 
             obj.h.StartStopBtn.Enable = 'off';
             obj.h.StartStopBtn.Text = 'START';
             obj.h.pauseBtn.Enable = 'off';
@@ -333,6 +354,55 @@ methods
             obj.h.loadingLabel.Text = 'Loading...';
         end
         obj.h.statusLamp.Color = '#FFFF00';
+    end
+
+    function clearMessage(obj)
+        obj.h.statusLabel.Visible = 'on';
+        obj.h.statusLabel.FontColor = 'black';
+        obj.h.loadingLabel.Visible = 'off';
+        switch obj.status
+            case "no protocol loaded"
+                obj.h.statusLabel.Text = 'No Protocol Loaded';
+                obj.h.statusLamp.Color = '#008080';
+            case "awaiting trigger"
+                obj.h.statusLabel.Text = 'Awaiting Trigger';
+                obj.h.statusLamp.Color = '#008080';
+            case "paused"
+                obj.h.statusLabel.Text = 'Paused';
+                obj.h.statusLamp.Color = '#008080';
+            case "error"
+                obj.h.statusLabel.Text = 'Error';
+                obj.h.statusLamp.Color = '#A80000';
+            case "stopping"
+                obj.h.statusLabel.Text = 'Stopping';
+                obj.h.statusLamp.Color = '#A80000';
+            case "inter-trial"
+                obj.h.statusLabel.Text = 'Inter-Trial';
+                obj.h.statusLamp.Color = '#FFFFFF';
+            case "running"
+                obj.h.statusLabel.Text = 'Running';
+                obj.h.statusLamp.Color = '#FFA500';
+            case "ready"
+                obj.h.statusLabel.Text = 'Ready';
+                obj.h.statusLamp.Color = '#00FF00';
+            case "not initialised"
+                obj.h.statusLabel.Text = 'Not Initialised';
+                obj.h.statusLamp.Color = '#808080';
+        end
+        if obj.h.tabs.SelectedTab == obj.h.Setup.Tab
+            target = obj.h.Setup.Message;
+        elseif obj.h.tabs.SelectedTab == obj.h.Session.Tab
+            target = obj.h.Session.Message;
+        else
+            error("clearMsg not implemented for this tab.")
+        end
+        if isempty(obj.d.Available)
+            displayText = sprintf("Welcome to StimControl! \nNo devices found. Please check you have devices connected, then restart StimControl.");
+        else
+            displayText = "Welcome to StimControl!";
+        end
+        target.Text = displayText;
+        target.FontColor = '#000000';
     end
 
     function val = get.status(obj)
