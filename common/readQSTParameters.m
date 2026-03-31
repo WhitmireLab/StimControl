@@ -1,6 +1,4 @@
-function [p,g,m] = readQSTParameters(filename,varargin)
-
-m = [];
+function [p,g] = readQSTParameters(filename,varargin)
 
 %% parse inputs
 ip = inputParser;

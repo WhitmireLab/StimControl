@@ -9,8 +9,11 @@ properties (Access = private)
     d           = []            % HardwareComponent handles
     p           = []            % stimulation parameters/protocol
     g           = []            % general protocol parameters
+    meta        = []            % protocol metadata
     idxStim     = []            % current stimulus index
-    t                           % timer
+    stateMachineTimer = []      % State Machine Timer
+    guiTimer    = []            % GUI update timer
+    t           = []            % Generic Timer
     pids        = []            % protocol id map
     chAI
     chD
@@ -98,6 +101,10 @@ methods
             'TimerFcn',         @obj.callbackTimer, ...
             'Name',             'StateMachineTimer');
         start(obj.t)
+
+        %% GUI timer
+        obj.guiTimer = []; % TODO
+        obj.stateMachineTimer = []; % TODO
         
         disp("loading previous session...");
         obj.loadDefaultSession;
@@ -142,7 +149,11 @@ methods (Access = private)
 
     % misc
     callbackFileExit(obj,~,~)
+    
+    % timers
     callbackTimer(obj, ~, ~)
+    timerFcnStateMachine(obj, ~, ~)
+    timerFcnGuiUpdate(obj, ~, ~)
 end
 
 methods

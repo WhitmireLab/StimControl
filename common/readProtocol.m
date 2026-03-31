@@ -1,7 +1,6 @@
-function [p,g,m] = readProtocol(filename,varargin)
+function [p,g] = readProtocol(filename,varargin)
 
 % TODO validate hardware is not targeted by two functions simultaneously
-
 m = [];
 
 %% parse function inputs
@@ -470,8 +469,8 @@ p = [trials{:}];
         while idx <= length(paramTokens)
             tkn = paramTokens{idx};
             if contains(fields(stimGroups), tkn)
-                i = idx-(idx==1);
-                j = idx+(idx~=1)+1;
+                i = idx-1;
+                j = idx+1;
                 paramTokens = [paramTokens(1:i) {'('} split(stimGroups.(tkn).params, ' ')' {')'} paramTokens(j:end)];
                 bracketTags{end+1} = tkn;
                 idx = idx+1;
@@ -522,8 +521,9 @@ p = [trials{:}];
                 % Start of a new block. Make a new parent node.
                 stack.push(currentParentIdx);
                 sb = StimulusBlock('parentIdx', currentParentIdx);
-                if ~isempty(bracketTags(bracketIdx))
+                if ~isempty(bracketTags{bracketIdx})
                     sb.tokenName = bracketTags{bracketIdx};
+                    sb.tags = stimGroups.(sb.tokenName).tags;
                 end
                 tree{end+1} = sb;
                 currentParent.childIdxes(end+1) = length(tree);

@@ -49,10 +49,10 @@ end
 try
     if contains(obj.path.SessionProtocolFile, '.qst')
         % legacy considerations
-        [p, g, m] = readQSTParameters(obj.path.SessionProtocolFile);
+        [p, g] = readQSTParameters(obj.path.SessionProtocolFile);
     elseif contains(obj.path.SessionProtocolFile, '.stim')
         % current format
-        [p, g, m] = readProtocol(obj.path.SessionProtocolFile);
+        [p, g] = readProtocol(obj.path.SessionProtocolFile);
     else
         error("Unsupported file format. Supported formats: .qst, .stim");
     end
@@ -60,6 +60,7 @@ catch exception
     obj.errorMsg(exception.message);
     return;
 end
+obj.meta = p;
 
 createChans = isempty(obj.p);
 if createChans

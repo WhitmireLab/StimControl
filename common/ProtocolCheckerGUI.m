@@ -79,12 +79,27 @@ classdef ProtocolCheckerGUI < handle
             else
                 statusMsg = "INVALID";
             end
-            params = strsplit(trial.line, '%');
-            params = params{1};
-            params = strtrim(params);
-            obj.h.InformationLabel.Text = sprintf("Trial %d - %s \n(%s) \n\n" + ...
-                " %s \n\n" + ...
-                "%s ", index, statusMsg, trial.comment, params, trial.errorMsg);                
+            line = strsplit(trial.line, '%');
+            line = line{1};
+            line = strtrim(line);
+            text1 = sprintf("Trial %d - %s \n(%s) #%s", index, statusMsg, trial.comment, join(string([trial.tags{:}]), '# '));
+            text2 = line;
+            text3 = trial.errorMsg;
+            text4 = "";
+            if trial.valid
+                for f = fields(trial.params)'
+                    if iscell(f)
+                        f = f{:};
+                    end
+                    p = trial.params.(f);
+                    durs = cellfun(@(x) x.duration, p.params);
+                    % ids = cellfun(@(x) x.tags, p.params, 'UniformOutput', false);
+                    text4 = text4 + sprintf("%s\n\tsequence: %s\n\tdelay: %s\n\tduration: %s\n", ...
+                                        f, join(string(p.sequence), ' '), join(string(p.delay), ' '), join(string(durs), ' ')); % , join(string(ids), ' ')
+                end
+            end
+            
+            obj.h.InformationLabel.Text = join([text1 text2 text3 text4], sprintf('\n\n'));
         end
 
         % Button pushed function: BrowseButton
@@ -117,10 +132,12 @@ classdef ProtocolCheckerGUI < handle
                 trial = obj.p(i);
                 if trial.valid
                     statusMsg = "valid";
+                    stimLength = (trial.tPre + trial.tPost) / 1000;
                 else
                     statusMsg = sprintf("INVALID");
+                    stimLength = -1;
                 end
-                tData{end+1, :} = {i, statusMsg};
+                tData{end+1, :} = {i, statusMsg, stimLength};
             end
             obj.h.TrialTable.Data = tData;
         end
@@ -196,7 +213,7 @@ classdef ProtocolCheckerGUI < handle
 
             % Create TrialTable
             obj.h.TrialTable = uitable(obj.h.MainGrid);
-            obj.h.TrialTable.ColumnName = {'Trial No.'; 'Status'};
+            obj.h.TrialTable.ColumnName = {'Trial No.'; 'Status'; 'Length (s)'};
             obj.h.TrialTable.RowName = {};
             obj.h.TrialTable.SelectionType = 'row';
             obj.h.TrialTable.DoubleClickedFcn = @(src, event) obj.PlotTrial(src, event);

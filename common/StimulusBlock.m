@@ -25,12 +25,16 @@ properties
                             % odd (oddball, swap out child1 for child2 according to oddball params
                             % sim (simultaneous, children start at same time)
                             % seq (sequential, child1 starts after child2 finishes
+    tokenName   = '';   % [char], name of the token.
+    singleStimNodeLength = [];
+    tags = [];
 end
 
 properties (Access=private)
     allTargetsCached = [];
     oddballSequence = [];
     durCached = [];
+    containsOdd = false;
 end
 
 methods
@@ -54,6 +58,7 @@ methods
         addParameter(p, 'oddParams', obj.oddParams, @(x) isstruct(x));
         addParameter(p, 'childRel', obj.childRel, @(x) ischar(x) && ismember(x, {'odd', 'sim', 'seq'}));
         addParameter(p, 'treeHandle', []);
+        addParameter(p, 'tokenName', obj.tokenName);
         parse(p, varargin{:});
         for fn = fieldnames(p.Results)'
             obj.(fn{1}) = p.Results.(fn{1});
@@ -93,6 +98,19 @@ methods
         end
     end
 
+    function out = structencode(obj)
+        out = [];
+        for f = properties(obj)'
+            if iscell(f)
+                f = f{:};
+            end
+            if strcmpi(f, 'treeHandle')
+                continue
+            end
+            out.(f) = obj.(f);
+        end
+    end
+
     function out = FirstCommonParentIdx(obj, idx)
         out = [];
         objParents = obj.traverseParentIdxes;
@@ -116,63 +134,35 @@ methods
 
     function trialParams = buildParams(obj)
         % Builds a params sequence
-        singleStimParams = [];
-        params = struct('sequence', [], 'delay', [], 'params', []);
-        targets = obj.targets;
-        helperStruct = [];
-        for ti = 1:length(targets) % fair bit of duplication here but not a huge issue
-            targetName = targets{ti};
-            singleStimParams.(targetName).sequence = [];
-            singleStimParams.(targetName).delay = [];
-            singleStimParams.(targetName).params = [];
-
-            % initalise helperstruct
-            helperStruct.(targetName) = [];
-            helperStruct.(targetName).idxOffset = 0;
-            helperStruct.(targetName).totalDelay = 0;
-            helperStruct.(targetName).relativeSequence = [];
-            % helperStruct.(targetName).totalStimuliInSequence = 0; %used for additional index offsets. Sorry about how unreadable this is.
-        end
-        trialParams = singleStimParams; % will be built out later.
+        [params, targets, singleStimParams, helperStruct] = BuildEmptyStructs();
+        obj.containsOdd = obj.FindOddballChildren();
 
         if obj.isLeafNode
-            % only one stimulus. Easiest case.
-            tds = obj.stimParams.targetDevices;
-            for ti = 1:length(tds)
-                % TODO-OPTIMISATION: POSSIBILITY FOR A FAIR BIT OF REPLICATION HERE
-                targetName = tds(ti);
-                singleStimParams.(targetName).params = {obj.stimParams};
-                singleStimParams.(targetName).delay = [obj.startDelay repmat(obj.repeatDelay, [1 obj.nStimRuns-1])];
-                singleStimParams.(targetName).sequence = ones([1, obj.nStimRuns]);
-                trialParams = singleStimParams;
-            end
+            trialParams = BuildLeafParams(singleStimParams);
             return
         end
         
         singleStimParams = BuildSingleStimParams();
-        if any(strcmpi([obj.children().childRel], "odd")) ...
-            && (obj.nStimRuns > 1 && (strcmpi(obj.childRel, 'sim') || strcmpi(obj.childRel, 'seq')))
-                trialParams = singleStimParams;
-                for nRep = 2:obj.nStimRuns
-                    singleStimParams = BuildSingleStimParams(); % re-shuffle every time
-                    for f = unique(targets)
-                        repeatDelays = singleStimParams.(f).delay;
-                        repeatDelays(1) = repeatDelays(1) + obj.repeatDelay;
-                        trialParams.(f).delay = [trialParams.(f).delay repeatDelays];
-                        trialParams.(f).sequence = [trialParams.(f).sequence singleStimParams.(f).sequence];
-                    end
+
+        trialParams = singleStimParams;
+        buildTrialFromSequence = obj.nStimRuns > 1 && (strcmpi(obj.childRel, 'sim') || strcmpi(obj.childRel, 'seq'));
+        reshuffle = obj.containsOdd && buildTrialFromSequence; % reshuffle oddball sequence every repeat
+
+        % fill in metadata
+        for f = unique(targets)
+            obj.singleStimNodeLength.(f) = length(singleStimParams.(f).sequence);
+        end
+
+        if buildTrialFromSequence
+            for nRep = 2:obj.nStimRuns
+                if reshuffle
+                    singleStimParams = BuildSingleStimParams();
                 end
-        else
-            % build trial params out of single stim params
-            trialParams = singleStimParams;
-            if obj.nStimRuns > 1 && (strcmpi(obj.childRel, 'sim') || strcmpi(obj.childRel, 'seq')) 
                 for f = unique(targets)
-                    for nRep = 2:obj.nStimRuns
-                        repeatDelays = singleStimParams.(f).delay;
-                        repeatDelays(1) = repeatDelays(1) + obj.repeatDelay;
-                        trialParams.(f).delay = [trialParams.(f).delay repeatDelays];
-                        trialParams.(f).sequence = [trialParams.(f).sequence singleStimParams.(f).sequence];
-                    end
+                    repeatDelays = singleStimParams.(f).delay;
+                    repeatDelays(1) = repeatDelays(1) + obj.repeatDelay;
+                    trialParams.(f).delay = [trialParams.(f).delay repeatDelays];
+                    trialParams.(f).sequence = [trialParams.(f).sequence singleStimParams.(f).sequence];
                 end
             end
         end
@@ -181,30 +171,53 @@ methods
         for f = unique(targets)
             trialParams.(f).delay(1) = trialParams.(f).delay(1) + obj.startDelay;
         end
-
-        function singleStimParams = BuildSingleStimParams()
+        
+        %% param construction helper functions
+        function [params, targets, singleStimParams, helperStruct] = BuildEmptyStructs()
+            params = struct('sequence', [], 'delay', [], 'params', []);
+            targets = obj.targets;
+            singleStimParams = [];
+            helperStruct = [];
             for ti = 1:length(targets) % fair bit of duplication here but not a huge issue
                 targetName = targets{ti};
                 singleStimParams.(targetName).sequence = [];
                 singleStimParams.(targetName).delay = [];
                 singleStimParams.(targetName).params = [];
-    
+                singleStimParams.(targetName).sequenceStack = {};
+
                 % initalise helperstruct
                 helperStruct.(targetName) = [];
                 helperStruct.(targetName).idxOffset = 0;
                 helperStruct.(targetName).totalDelay = 0;
                 helperStruct.(targetName).relativeSequence = [];
-                % helperStruct.(targetName).totalStimuliInSequence = 0; %used for additional index offsets. Sorry about how unreadable this is.
             end
-            % Traverse children
-        children = obj.children;
-        traversedParams = cell([1, length(children)]);
-        for ci = 1:length(children)
-            child = children(ci);
-            traversedParams{ci} = child.buildParams;
         end
-        if strcmpi(obj.childRel, 'sim') 
-            % children occur simultaneously (the easiest case)
+
+        function trialParams = BuildLeafParams(singleStimParams)
+            tds = obj.stimParams.targetDevices;
+            for ti = 1:length(tds)
+                % TODO-OPTIMISATION: POSSIBILITY FOR A FAIR BIT OF REPLICATION HERE
+                targetName = tds(ti);
+                singleStimParams.(targetName).params = {obj.stimParams};
+                singleStimParams.(targetName).delay = [obj.startDelay repmat(obj.repeatDelay, [1 obj.nStimRuns-1])];
+                singleStimParams.(targetName).sequence = ones([1, obj.nStimRuns]);
+                singleStimParams.(targetName).sequenceStack = num2cell(ones([1, obj.nStimRuns]) * obj.idx);
+                obj.singleStimNodeLength.(targetName) = obj.nStimRuns;
+                trialParams = singleStimParams;
+            end
+        end
+
+        function traversedParams = TraverseChildParams()
+            % Traverse children
+            children = obj.children;
+            traversedParams = cell([1, length(children)]);
+            for ci = 1:length(children)
+                child = children(ci);
+                traversedParams{ci} = child.buildParams;
+            end
+        end
+
+        function singleStimParams = ConstructSimultaneousSequence(traversedParams)
             for ti = 1:length(traversedParams)
                 traversedParam = traversedParams{ti};
                 fds = fields(traversedParam); %todo check simultaneous execution on same line
@@ -213,49 +226,42 @@ methods
                     singleStimParams.(fieldName) = traversedParam.(fieldName);
                 end
             end
-        else
-            % sequential or oddball. Build sequence and go from there.
-            if strcmpi(obj.childRel, 'seq')
-                sequence = linspace(1, length(obj.childIdxes), length(obj.childIdxes));
-            elseif strcmpi(obj.childRel, 'odd')
-                sequence = obj.generateOddballOrder;
-                obj.oddballSequence = sequence;
-            end
-            totalDelay = 0;
-            
+        end
+
+        function [traversedParams, singleStimParams, helperStruct] = FillInHelperStruct( ...
+                    traversedParams, singleStimParams, helperStruct)
             % First pass. Fill in helper struct and generate:
             %   index offsets for sub-stimuli per param target (i.e. 1 from
             %       sub-stim that is second in a sequence for a target becomes
             %       2, etc.)
             %   parameter list - concatenated from sub-params
-            %   relativeSequence: the index of the sequence for the
-            %   specific parameter (e.g. if sequence has targets A B A C
-            %   then relativeSequence will be [1 1 2 1])
+            %   relativeSequence: the index of the sequence for the specific parameter 
             relativeSequence = ones(length(traversedParams), 1);
             for ti = 1:length(traversedParams)
                 traversedParam = traversedParams{ti};
-                for f = fields(traversedParam)'
-                    if iscell(f)
-                        f = f{:};
+                for fd = fields(traversedParam)'
+                    if iscell(fd)
+                        f = fd{:};
+                    else
+                        f = fd;
                     end
                     if length(helperStruct.(f).relativeSequence) == 1
                         helperStruct.(f).relativeSequence = relativeSequence;
                     end
                     helperStruct.(f).relativeSequence(ti) = length(helperStruct.(f).idxOffset);
-                    % relativeSequence(ti) = length(helperStruct.(f).idxOffset); %I SUSPECT THIS IS THE PROBLEM
-                    % helperStruct.(f).idxOffset(end) = helperStruct.(f).idxOffset(end) - (sequence(ti) - length(helperStruct.(f).idxOffset)); % account for sequence with multiple targets
-                    helperStruct.(f).idxOffset = [helperStruct.(f).idxOffset, traversedParam.(f).sequence+max(helperStruct.(f).idxOffset)];
-                    try
-                        singleStimParams.(f).params = ...
-                            [singleStimParams.(f).params traversedParam.(f).params];
-                    catch exception
-                        keyboard
-                        error(exception)
-                    end
+                    helperStruct.(f).idxOffset = [helperStruct.(f).idxOffset, ...
+                                    traversedParam.(f).sequence+max(helperStruct.(f).idxOffset)];
+                    singleStimParams.(f).params = ...
+                                    [singleStimParams.(f).params traversedParam.(f).params];
                 end
             end
-            
+        end
+
+        function [singleStimParams, helperStruct] = ConstructParamsFromSequence( ...
+                    singleStimParams, helperStruct, traversedParams, sequence)
             % construct from sequence (set new sequence and delay)
+            children = obj.children;
+            totalDelay = 0;
             for si = 1:length(sequence)
                 traversedParam = traversedParams{sequence(si)};
                 if ~isstruct(traversedParam)
@@ -270,6 +276,9 @@ methods
                     % set sequence
                     singleStimParams.(f).sequence = ...
                         [singleStimParams.(f).sequence traversedParam.(f).sequence+helperStruct.(f).idxOffset(helperStruct.(f).relativeSequence(sequence(si)))]; 
+                    
+                    singleStimParams.(f).sequenceStack = ...
+                        [singleStimParams.(f).sequenceStack traversedParam.(f).sequenceStack]; 
 
                     % set delay
                     if strcmpi(obj.childRel, 'odd') && ~isempty(singleStimParams.(f).delay) % oddball, add repeat delay if not first runthrough.
@@ -290,12 +299,51 @@ methods
                 end
             end
         end
+
+        function singleStimParams = BuildSingleStimParams()
+            [~, ~, singleStimParams, helperStruct] = BuildEmptyStructs();
+            traversedParams = TraverseChildParams();
+            if strcmpi(obj.childRel, 'sim') 
+                singleStimParams = ConstructSimultaneousSequence(traversedParams);
+            else
+                % sequential or oddball. Build sequence and go from there.
+                if strcmpi(obj.childRel, 'seq')
+                    sequence = linspace(1, length(obj.childIdxes), length(obj.childIdxes));
+                elseif strcmpi(obj.childRel, 'odd')
+                    sequence = obj.generateOddballOrder;
+                    obj.oddballSequence = sequence;
+                end
+                [traversedParams, singleStimParams, helperStruct] = FillInHelperStruct(traversedParams, singleStimParams, helperStruct);
+                [singleStimParams, helperStruct] = ConstructParamsFromSequence(singleStimParams, helperStruct, traversedParams, sequence);
+            end
+            for f = unique(targets)
+                for i = 1:length(singleStimParams.(f).sequenceStack)
+                    singleStimParams.(f).sequenceStack{i} = [obj.idx; singleStimParams.(f).sequenceStack{i}];
+                end
+            end
         end
     end
 
     %% Attribute-like functions
     function children = children(obj)
         children = [obj.treeHandle{obj.childIdxes}];
+    end
+
+    function out = FindOddballChildren(obj)
+        if strcmpi(obj.childRel, 'odd') || obj.containsOdd
+            out = true;
+        elseif obj.isLeafNode
+            out = false;
+        else
+            out = false;
+            children = obj.children();
+            for child = children
+                if child.FindOddballChildren
+                    out = true;
+                    return
+                end
+            end
+        end
     end
 
     function isRootNode = isRootNode(obj)
@@ -305,7 +353,7 @@ methods
     function isLeafNode = isLeafNode(obj)
         % returns whether the node is a **CONNECTED** leaf node. Ignores
         % empty nodes that were removed on cleanup.
-        isLeafNode = ~isempty(obj.stimParams);
+        isLeafNode = ~isempty(obj.stimParams) && isempty(obj.children);
     end
 
     function allTargets = targets(obj)

@@ -26,6 +26,7 @@ properties
     RootNodeIdx
     stimuli
     tags
+    metadata
 
     valid
     errorMsg
@@ -84,21 +85,42 @@ function targets = recalculateTargets(obj)
     obj.treeTargets = targets;
 end
 
-function trialParams = generateParamsSequence(obj)
+function [trialParams, metadata] = generateParamsSequence(obj)
     % generates full set of params for a trial in the format:
     %   targetID: 
     %       sequence [int]: the order in which to execute the stimuli
     %       delay [double]: ms delay to wait between each parameter 
     %       params: [struct] array of params for each struct. Order maps to sequence
     rootNode = obj.RootNode;
-    try
+    try 
         obj.params = rootNode.buildParams;
     catch exception
         dbstack
         error("Error in trial %d (%s): %s", obj.trialIdx, obj.comment, exception.message)
     end
     trialParams = obj.params;
+    obj.metadata = obj.BuildMetaData;
     % obj.data = {};
+end
+
+function metadata = BuildMetaData(obj)
+    metadata= [];
+    metadata = obj.data{1}.structencode;
+    for i = 2:length(obj.data)
+        node = obj.data{i};
+        metadata(i) = node.structencode;
+    end
+end
+
+function out = PrintableMetadata(obj)
+    out = [];
+    saveableProperties = {"tPre", "tPost", "nRuns", "comment", "params", "line", "trialIdx", "RootNodeIdx", "stimuli", "tags", "metadata"};
+    for f = saveableProperties
+        if iscell(f)
+            f = f{:};
+        end
+        out.(f) = obj.(f);
+    end
 end
 
 function set.data(obj, val)
