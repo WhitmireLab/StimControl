@@ -2,44 +2,41 @@ function timerFcnGui(obj,~,~)
 % state tracking and updating in a timer
 persistent pauseOffset;
 persistent intervalElapsed;
-persistent protocolElapsed;
+persistent experimentElapsed;
 persistent pauseStart;
 persistent previousStatus;
+persistent updateTimers;
+persistent startTic;
 
 if isempty(pauseOffset); pauseOffset = 0; end
-if isempty(previousStatus); previousStatus = obj.status; end
 if isempty(intervalElapsed); intervalElapsed = 0; end
-if isempty(protocolElapsed); protocolElapsed = 0; end
+if isempty(experimentElapsed); experimentElapsed = 0; end
+
+if ~isempty(startTic)
+    intervalElapsed = toc(startTic) + pauseOffset;
+end
 
 UpdateComponentStatus();
+UpdateFlags();
 
-if strcmpi(obj.h.tabs.SelectedTab.Title, 'Setup') || obj.t.paused
+if strcmpi(obj.timerStateMachine.Running, 'on')
+    obj.h.TimerLastUpdatedLabel.Text = string(datetime);
+else
+    obj.h.TimerLastUpdatedLabel.Text = 'STATE MACHINE ERROR';
+end
+
+if strcmpi(obj.h.tabs.SelectedTab.Title, 'Setup') || ~updateTimers
     return; % nothing else to update.
 end
 
-if obj.status ~= previousStatus
-    if strcmpi(previousStatus, 'paused')
-        pauseOffset = pauseOffset + toc(pauseStart);
-    else
-        StatusChangeReset();
-    end
-    if strcmpi(obj.status, 'paused')
-        pauseStart = tic;
-    end
-    previousStatus = obj.status;
-end
-
-obj.h.TimerLastUpdatedLabel.Text = string(datetime);
-if ~obj.t.runClocks
-    ProtocolChangeReset();
-    return;
-end
-
-if obj.t.intervalTarget == 0
+if obj.t.intervalTarget == Inf
     UpdatePassive();
 else
     UpdateActive();
 end
+
+obj.t.experimentElapsed = experimentElapsed;
+obj.t.intervalElapsed = intervalElapsed;
 
 %% Helper functions
 function UpdateComponentStatus()
@@ -56,30 +53,74 @@ function UpdateComponentStatus()
     end
 end
 
-function ProtocolChangeReset()
-    StatusChangeReset();
-    obj.h.protocolTimeEstimate.Text = "00:00 / 00:00";
-    protocolElapsed = 0;
-end
-
-function StatusChangeReset()
-    obj.h.StatusCountdownLabel.Text = "00:00";
-    obj.h.trialTimeEstimate.Text = "00:00 / 00:00";
-    protocolElapsed = protocolElapsed + intervalElapsed;
-    intervalElapsed = 0;
-    pauseOffset = 0;
+function UpdateFlags()
+    if ~strcmpi(obj.status, previousStatus) || isempty(previousStatus)
+        tmpPrev = previousStatus;
+        previousStatus = obj.status;
+        switch obj.status
+            case 'not initialised'
+                updateTimers = false;
+                pauseOffset = 0;
+                experimentElapsed = 0;
+                intervalElapsed = 0;
+            case 'ready'
+                updateTimers = false;
+                pauseOffset = 0;
+                experimentElapsed = 0;
+                intervalElapsed = 0;
+            case 'running'
+                pauseOffset = 0;
+                updateTimers = true;
+                startTic = tic;
+                experimentElapsed = round(experimentElapsed + intervalElapsed);
+                intervalElapsed = 0;
+            case 'inter-trial'
+                if strcmpi(tmpPrev, 'paused')
+                    pauseOffset = pauseOffset + toc(pauseStart);
+                end
+                experimentElapsed = round(experimentElapsed + intervalElapsed);
+                intervalElapsed = 0;
+                obj.t.intervalTarget = obj.g.dPause;
+                updateTimers = true;
+                startTic = tic;
+            case 'paused'
+                pauseStart = tic;
+                updateTimers = false;
+                experimentElapsed = round(experimentElapsed + intervalElapsed);
+                intervalElapsed = 0;
+                return
+            case 'error'
+                updateTimers = false;
+                pauseOffset = 0;
+                experimentElapsed = 0;
+                intervalElapsed = 0;
+            case 'stopping'
+                updateTimers = false;
+                pauseOffset = 0;
+                experimentElapsed = 0;
+                intervalElapsed = 0;
+            case 'awaiting trigger'
+                updateTimers = true;
+                startTic = tic;
+                experimentElapsed = round(experimentElapsed + intervalElapsed);
+                intervalElapsed = 0;
+            case 'no protocol loaded'
+                updateTimers = false;
+                experimentElapsed = 0;
+                intervalElapsed = 0;
+        end
+        previousStatus = obj.status;
+    end
 end
 
 function UpdatePassive()
-    intervalElapsed = toc(obj.t.startTic);
     obj.h.StatusCountdownLabel.Text = string(duration(seconds(intervalElapsed), 'Format', 'mm:ss'));
-    obj.h.protocolTimeEstimate.Text = string(duration(protocolElapsed + seconds(intervalElapsed), 'Format', 'mm:ss'));
+    obj.h.protocolTimeEstimate.Text = string(duration(experimentElapsed + seconds(intervalElapsed), 'Format', 'mm:ss'));
 end
 
 function UpdateActive()
-    intervalElapsed = toc(startTic);
     intervalTarget = obj.t.intervalTarget;
-    protocolTarget = obj.t.protocolTarget;
+    experimentTarget = obj.t.experimentTarget;
 
     obj.h.StatusCountdownLabel.Text = sprintf("-%s",  ...
         string(duration(seconds(intervalTarget-intervalElapsed), 'Format', 'mm:ss')));
@@ -89,10 +130,9 @@ function UpdateActive()
         string(duration(seconds(intervalTarget), 'Format', 'mm:ss')));
     
     obj.h.protocolTimeEstimate.Text = sprintf("%s / %s",  ...
-        string(duration(seconds(protocolElapsed+intervalElapsed), 'Format', 'mm:ss')), ...
-        string(duration(seconds(protocolTarget), 'Format', 'mm:ss')));
+        string(duration(seconds(experimentElapsed+intervalElapsed), 'Format', 'mm:ss')), ...
+        string(duration(seconds(experimentTarget), 'Format', 'mm:ss')));
 end
-
 end
 
 

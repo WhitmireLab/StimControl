@@ -93,12 +93,10 @@ methods
         createFigure(obj)
         
         %% timer flags
-        obj.t = struct("startTic",          [],     ...
-                        "paused",           false,  ...
-                        "pauseOffset",      0,      ...
+        obj.t = struct( "intervalElapsed",  0,      ...
                         "intervalTarget",   0,      ...
-                        "protocolTarget",   0,      ...
-                        "runClocks",        false);
+                        "experimentElapsed",   0,      ...
+                        "experimentTarget",   0);
 
         %% state machine timer
         obj.timerStateMachine = timer(...
@@ -171,11 +169,6 @@ methods (Access = private)
 end
 
 methods
-    function restartTimer(obj, ~, ~)
-        obj.t.stop;
-        obj.t.start;
-    end
-
     function filepath = get.dirAnimal(obj)
         filepath = fullfile(obj.path.dirData,obj.animalID);
         if ~exist(filepath,'dir')
@@ -244,20 +237,15 @@ methods
     end
 
     function set.status(obj, val)
-        % supported values: 
-        % NOT INITIALISED / READY / RUNNING / INTER-TRIAL / PAUSED / ERROR / STOPPING
+        % supported values: NOT INITIALISED / READY / RUNNING / INTER-TRIAL
+        % / PAUSED / STOPPING / ERROR / AWAITING TRIGGER / 
+        % NO PROTOCOL LOADED
 
-        % obj.t = struct("startTic",          [],     ...
-        %                 "paused",           false,  ...
-        %                 "pauseOffset",      0,      ...
-        %                 "intervalTarget",   0,      ...
-        %                 "protocolTarget",   0,      ...
-        %                 "runClocks",        false);
-        
         obj.h.loadingLabel.Visible = 'off';
         obj.h.statusLabel.Visible = 'on';
         obj.tLastStatusChange = tic;
         val = lower(val);
+        
         if strcmpi(val, 'not initialised')
             obj.h.statusLabel.Text = 'Not Initialised';
             obj.h.statusLamp.Color = '#808080'; 
@@ -431,6 +419,7 @@ methods
         obj.h.StatusCountdownLabel.Text = sprintf('-%d:%d', trialMins, trialSecs);
         obj.h.numTrialsElapsedLabel.Text = sprintf('Trial %d / %d', obj.trialIdx, totalNTrials);
         obj.h.trialTimeEstimate.Text = sprintf('00:00 / %d:%d', trialMins, trialSecs);
+        obj.t.intervalTarget = tTrial;
         obj.h.trialNumDisplay.Value = value;   
         obj.h.totalTrialsLabel.Text = sprintf('/ %d', nTrials);
     end
