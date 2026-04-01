@@ -418,8 +418,9 @@ methods
         trialSecs = ceil(tTrial - (trialMins * 60));
         obj.h.StatusCountdownLabel.Text = sprintf('-%d:%d', trialMins, trialSecs);
         obj.h.numTrialsElapsedLabel.Text = sprintf('Trial %d / %d', obj.trialIdx, totalNTrials);
-        obj.h.trialTimeEstimate.Text = sprintf('00:00 / %d:%d', trialMins, trialSecs);
-        obj.t.intervalTarget = tTrial;
+        if ~contains("running inter-trial paused awaiting trigger", obj.status)
+            obj.h.trialTimeEstimate.Text = sprintf('00:00 / %d:%d', trialMins, trialSecs);
+        end
         obj.h.trialNumDisplay.Value = value;   
         obj.h.totalTrialsLabel.Text = sprintf('/ %d', nTrials);
     end

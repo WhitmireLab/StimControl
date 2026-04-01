@@ -51,8 +51,9 @@ else
     obj.clearMessage;
 end
 
-% if src ~= obj.h.StartStopBtn
-%     obj.status = 'ready'; % prevent softlocks on error
-% end
+if ~isempty(src) && (src == obj.h.prevTrialBtn || src == obj.h.nextTrialBtn)
+    obj.status = 'ready';
+end
+
 obj.f.trialLoaded = true;
 end
