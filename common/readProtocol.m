@@ -468,7 +468,7 @@ p = [trials{:}];
         idx = startIdx;
         while idx <= length(paramTokens)
             tkn = paramTokens{idx};
-            if contains(fields(stimGroups), tkn)
+            if any(contains(fields(stimGroups), tkn))
                 i = idx-1;
                 j = idx+1;
                 paramTokens = [paramTokens(1:i) {'('} split(stimGroups.(tkn).params, ' ')' {')'} paramTokens(j:end)];

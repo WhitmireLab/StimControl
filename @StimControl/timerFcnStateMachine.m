@@ -104,16 +104,8 @@ function InitialiseExperiment()
     
     % save metadata to output directory
     metapath = [obj.dirExperiment filesep tmp1 '_meta.json'];
-    metaStr = struct("metadata", [], "hardwareConfig", []);
-    m = [obj.meta.PrintableMetadata];
-    for i = 1:length(obj.meta)
-        metaStr.metadata = {metaStr.metadata obj.meta(i).PrintableMetadata};
-    end
-    if isempty(metaStr.metadata{1})
-        metaStr.metadata = metaStr.metadata(2:end);
-    end
-    metaStr.hardwareConfig = GetComponentData(obj, metapath);
-
+    metaStr = struct("experiment", obj.meta, "hardware", GetComponentData(obj, metapath));
+    
     jsonData = jsonencode(metaStr);
     file = fopen(metapath, 'w+');
     fprintf(file, '%s', jsonData);

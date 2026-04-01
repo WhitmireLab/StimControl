@@ -60,7 +60,7 @@ catch exception
     obj.errorMsg(exception.message);
     return;
 end
-obj.meta = p;
+obj.meta = GenerateMetadata(p);
 
 createChans = isempty(obj.p);
 if createChans
@@ -208,5 +208,15 @@ function checkStimulus(obj)
         [p, g] = readProtocol(fpath, true);
     else
         error("Unsupported file format. Supported formats: .qst, .stim");
+    end
+end
+
+function metadata = GenerateMetadata(p)
+    m = {p(1).PrintableMetadata}; %TODO THIS
+    for i = 2:length(p)
+        m = [m {p(i).PrintableMetadata}];
+    end
+    if isempty(metaStr.metadata{1})
+        metaStr.metadata = metaStr.metadata(2:end);
     end
 end
