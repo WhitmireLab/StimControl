@@ -64,8 +64,7 @@ methods
         end
         
         %% Initialise Path
-        % obj.path.dirData = fullfile(getenv('UserProfile'),'Desktop','logs');
-        obj.path.dirData = ['D:' filesep 'logs'];
+        obj.path.dirData = fullfile(getenv('UserProfile'),'Desktop','logs');
         configBase = [obj.path.base filesep 'config'];
         obj.path.paramBase = [configBase filesep 'component_params'];
         obj.path.protocolBase  = [configBase filesep 'experiment_protocols'];
@@ -140,6 +139,7 @@ methods (Access = private)
     % file control callbacks
     callbackLoadConfig(obj, src, event)
     callbackSaveConfig(obj, src, event)
+    callbackChangeSavePath(obj, src, event)
 
     % hardware control callbacks
     callbackEditComponentConfig(obj, ~, ~)

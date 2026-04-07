@@ -136,6 +136,8 @@ end
 
 % Change device parameters
 function SetParams(obj, varargin)
+    warning("SetParams not implemented for SerialComponent"); %TODO
+    return
     error("SetParams not implemented for SerialComponent");
 end
 

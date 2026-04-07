@@ -24,6 +24,9 @@ function callbackSaveConfig(obj, src, event)
     else
         saveData = [];
     end
+    
+    saveData.dirData = obj.path.dirData{:};
+
     if ~isfield(saveData, 'hardwareTableData')
         saveData.hardwareTableData = [];
     end

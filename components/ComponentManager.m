@@ -193,6 +193,7 @@ methods
         if isempty(obj.trialParams) || isempty(obj.trialNum)
             return
         end
+        out = cellfun(@(x) isfield(obj.trialParams(obj.trialNum) && x.Active, x.ProtocolID), obj.Available);
     end
 end
 end
