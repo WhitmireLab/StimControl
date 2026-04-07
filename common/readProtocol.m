@@ -538,7 +538,9 @@ p = [trials{:}];
                 % update the next parent's child indices.
                 newParentIdx = stack.pop();
                 currentParent = tree{newParentIdx};
-                currentParent.childIdxes(end+1) = currentParentIdx;
+                if ~any(currentParent.childIdxes == currentParentIdx)
+                    currentParent.childIdxes(end+1) = currentParentIdx;
+                end
                 currentParentIdx = newParentIdx;
             elseif regexpi(token, sepQuery)
                 % Separator. Set parent's child relationship
