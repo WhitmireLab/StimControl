@@ -212,11 +212,12 @@ function checkStimulus(obj)
 end
 
 function metadata = GenerateMetadata(p)
-    m = {p(1).PrintableMetadata}; %TODO THIS
+    m = {p(1).metadata};
     for i = 2:length(p)
-        m = [m {p(i).PrintableMetadata}];
+        m = [m {p(i).metadata}];
     end
-    if isempty(metaStr.metadata{1})
-        metaStr.metadata = metaStr.metadata(2:end);
-    end
+    metadata = m;
+    % if isempty(metaStr.metadata{1})
+    %     metaStr.metadata = metaStr.metadata(2:end);
+    % end
 end

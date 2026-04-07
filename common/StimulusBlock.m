@@ -1,4 +1,4 @@
-classdef StimulusBlock
+classdef StimulusBlock < handle
 properties
     treeHandle  = [];   % TrialData, for indexing into children.
     idx         = 1;    % int, if == 1, this is a root node.
@@ -29,6 +29,8 @@ properties
     singleStimNodeLength = [];
     tags = [];
     comment = [];
+    debugText = '';
+    childExecutionSequence = [];
 end
 
 properties (Access=private)
@@ -111,6 +113,34 @@ methods
             end
             out.(f) = obj.(f);
         end
+       % add attribute-like function info
+       out.activeDuration = obj.durationMs;
+       out.fullDuration = obj.fullDuration;
+       out.startTimes = obj.GetNodeStartTimes;
+    end
+    
+    function out = debugprint(obj, varargin)
+        tmp = sprintf("NODE_%d", obj.idx);
+        if ~isempty(obj.tokenName)
+            tmp = tmp + sprintf(" (%s)", obj.tokenName);
+        end
+        if isempty(obj.childIdxes)
+            childTxt = 'N/A';
+        elseif length(obj.childIdxes) == 1
+            childTxt = string(obj.childIdxes);
+        else
+            childTxt = strjoin(string(obj.childIdxes), ' ');
+        end
+        out = sprintf("%s: \n\t" + ...
+            "Children (%s): %s\n\t" + ...
+            "Parent: %d", ...
+            tmp, ...
+            obj.childRel, childTxt, ...
+            obj.parentIdx);
+        for i = 1:length(varargin)
+            tmp = sprintf("\n%s", formattedDisplayText(varargin{i}));
+            out = out + tmp;
+        end
     end
 
     function out = FirstCommonParentIdx(obj, idx)
@@ -143,9 +173,7 @@ methods
             trialParams = BuildLeafParams(singleStimParams);
             return
         end
-        
         singleStimParams = BuildSingleStimParams();
-
         trialParams = singleStimParams;
         buildTrialFromSequence = obj.nStimRuns > 1 && (strcmpi(obj.childRel, 'sim') || strcmpi(obj.childRel, 'seq'));
         reshuffle = obj.containsOdd && buildTrialFromSequence; % reshuffle oddball sequence every repeat
@@ -154,9 +182,6 @@ methods
         for f = unique(targets)
             obj.singleStimNodeLength.(f) = length(singleStimParams.(f).sequence);
         end
-
-        keyboard;
-        %% TODO GetNodeStartTimes given singleStim.startTimes and singleStim.somethingStack
 
         if buildTrialFromSequence
             for nRep = 2:obj.nStimRuns
@@ -183,11 +208,6 @@ methods
             targets = obj.targets;
             singleStimParams = [];
             helperStruct = [];
-            if any(strcmpi(targets, "sequenceStack")) || any(strcmpi(targets, "startTimes"))
-                error("Cannot use protected names sequenceStack or startTimes for hardware naming.")
-            end
-            singleStimParams.sequenceStack = [];
-            singleStimParams.startTimes = [];
             for ti = 1:length(targets) % fair bit of duplication here but not a huge issue
                 targetName = targets{ti};
                 singleStimParams.(targetName).sequence = [];
@@ -205,8 +225,6 @@ methods
 
         function trialParams = BuildLeafParams(singleStimParams)
             tds = obj.stimParams.targetDevices;
-            singleStimParams.sequenceStack = {obj.tokenName};
-            singleStimParams.startTimes = GetNodeStartTimes();
             for ti = 1:length(tds)
                 % TODO-OPTIMISATION: POSSIBILITY FOR A FAIR BIT OF REPLICATION HERE
                 targetName = tds(ti);
@@ -219,31 +237,9 @@ methods
             end
         end
 
-        function out = GetNodeStartTimes()
-            if strcmpi(obj.childRel, 'odd')
-                out = [obj.startDelay];
-            else
-                out = linspace(obj.startDelay, obj.fullDuration, obj.nStimRuns); 
-            end
-            keyboard; % TODO TEST
-            % repmat(obj.repeatDelay, [1 obj.nStimRuns-1]) + linspace(obj.startDelay, obj.)
-        end
-
-        function traversedParams = TraverseChildParams()
-            % Traverse children
-            children = obj.children;
-            traversedParams = cell([1, length(children)]);
-            for ci = 1:length(children)
-                child = children(ci);
-                traversedParams{ci} = child.buildParams;
-            end
-        end
-
         function singleStimParams = ConstructSimultaneousSequence(traversedParams)
-            singleStimParams.startTimes = [];
             for ti = 1:length(traversedParams)
                 traversedParam = traversedParams{ti};
-                singleStimParams.startTimes = [singleStimParams.startTimes traversedParam.startTimes];
                 fds = fields(traversedParam); %todo check simultaneous execution on same line
                 for fi = 1:length(fds)
                     fieldName = fds{fi};
@@ -286,16 +282,12 @@ methods
             % construct from sequence (set new sequence and delay)
             children = obj.children;
             totalDelay = 0;
-            singleStimParams.startTimes = [];
-            singleStimParams.sequenceStack = [];
             for si = 1:length(sequence)
                 traversedParam = traversedParams{sequence(si)};
                 if ~isstruct(traversedParam)
                     traversedParam = traversedParam{:};
                 end
                 child = children(sequence(si));
-                singleStimParams.sequenceStack = [singleStimParams.sequenceStack traversedParam.sequenceStack];
-                singleStimParams.startTimes = [singleStimParams.startTimes traversedParam.startTimes];
                 for f = fields(traversedParam)'
                     % set params
                     if iscell(f)
@@ -333,21 +325,19 @@ methods
             traversedParams = TraverseChildParams();
             if strcmpi(obj.childRel, 'sim') 
                 singleStimParams = ConstructSimultaneousSequence(traversedParams);
+                obj.childExecutionSequence = [obj.childExecutionSequence Inf];
             else
                 % sequential or oddball. Build sequence and go from there.
                 if strcmpi(obj.childRel, 'seq')
                     sequence = linspace(1, length(obj.childIdxes), length(obj.childIdxes));
+                    obj.childExecutionSequence = [obj.childExecutionSequence {sequence}];
                 elseif strcmpi(obj.childRel, 'odd')
                     sequence = generateOddballOrder;
+                    obj.childExecutionSequence = [obj.childExecutionSequence {sequence}];
                     obj.oddballSequence = sequence;
                 end
                 [traversedParams, singleStimParams, helperStruct] = FillInHelperStruct(traversedParams, singleStimParams, helperStruct);
                 [singleStimParams, helperStruct] = ConstructParamsFromSequence(singleStimParams, helperStruct, traversedParams, sequence);
-            end
-            if ~isempty(obj.tokenName)
-                for i = 1:length(singleStimParams.sequenceStack)
-                    singleStimParams.sequenceStack{i} = [{obj.tokenName}; singleStimParams.(f).sequenceStack(i)];
-                end
             end
             for f = unique(targets)
                 for i = 1:length(singleStimParams.(f).sequenceStack)
@@ -358,8 +348,10 @@ methods
 
         function order = generateOddballOrder()
             order = ones(1, obj.nStimRuns);
+            obj.childIdxes = unique(obj.childIdxes);
             nOdds = length(obj.childIdxes) - 1;
             if length(obj.childIdxes) > obj.nStimRuns
+                keyboard
                 error(sprintf("nStims in oddball sequence (%d) is insufficient to run all oddball trials (total %d including baseline).", obj.nStimRuns, nOdds+1));
             end
             nSwaps = floor(obj.nStimRuns * obj.oddParams.swapRatio);
@@ -404,10 +396,59 @@ methods
                 order(swapIdxes(i)) = odds(i);
             end
             c = obj.children;
-            cO = c{order};
-            obj.durCached = sum(cO.fullDuration) + (obj.repeatDelay*(obj.nStimRuns-1));
+            childOrder = c(order);
+            sum = 0;
+            for child = childOrder
+                sum = sum + child.fullDuration;
+            end
+            obj.durCached = sum + (obj.repeatDelay*(obj.nStimRuns-1));
         end
+
+        function traversedParams = TraverseChildParams()
+            % Traverse children
+            children = obj.children;
+            traversedParams = cell([1, length(children)]);
+            for ci = 1:length(children)
+                child = children(ci);
+                traversedParams{ci} = child.buildParams;
+            end
+        end
+        %% end buildParams
     end
+
+    function out = GetNodeStartTimes(obj)
+        if strcmpi(obj.childRel, 'odd') ...
+                || obj.nStimRuns == 1 ...
+                || obj.fullDuration == -1
+            out = [obj.startDelay];
+        else
+            out = linspace(obj.startDelay, obj.fullDuration, obj.nStimRuns); 
+        end
+        % keyboard; % TODO TEST
+        % repmat(obj.repeatDelay, [1 obj.nStimRuns-1]) + linspace(obj.startDelay, obj.)
+    end
+    % 
+    % function out = GetChildStartTimes(obj)
+    %     children = obj.children;
+    %     if obj.isLeafNode
+    %         out = [];
+    %     elseif strcmpi(obj.childRel, 'sim')
+    %         out = obj.GetNodeStartTimes - obj.startDelay;
+    %     elseif any(regexpi(obj.childRel, 'odd'))
+    %         out = [];
+    %         for i = 1:length(obj.childExecutionSequence)
+    %             for j = 1:length(subsequence)
+    % 
+    %             end
+    %         end
+    %     else
+    %         for i = 1:length(obj.childExecutionSequence)
+    %             for j = 1:length(subsequence)
+    % 
+    %             end
+    %         end
+    %     end
+    % end
 
     %% Attribute-like functions
     function children = children(obj)
@@ -497,9 +538,20 @@ methods
                     stimDur = stimDur + children(i).fullDuration;
                 end
                 duration = obj.nStimRuns*(stimDur + obj.repeatDelay) - obj.repeatDelay;
-            elseif strcmpi(obj.childRel, 'odd')
-                % we should never hit this, should be cached.
-                error("not implemented.");
+            elseif any(regexpi(obj.childRel, 'odd'))
+                children = obj.children;
+                total = 0;
+                for i = 1:length(obj.childExecutionSequence)
+                    subsequence = obj.childExecutionSequence{i};
+                    for j = 1:length(subsequence)
+                        child = children(subsequence(j));
+                        total = total + child.fullDuration;
+                        if j ~= length(subsequence)
+                            total = total + obj.repeatDelay;
+                        end
+                    end
+                end
+                duration = total;
             end
         else
             % leaf node.
@@ -514,10 +566,15 @@ methods
             end
             duration = stimDur;
         end
+        obj.durCached = duration;
     end
 
     function duration = fullDuration(obj)
-        duration = obj.durationMs + obj.startDelay;
+        if ~any(regexpi(obj.childRel, 'odd'))
+            duration = (obj.durationMs + obj.repeatDelay)*obj.nStimRuns + obj.startDelay - obj.repeatDelay;
+        else
+            duration = obj.durationMs + obj.startDelay;
+        end
     end
 end
 
@@ -533,4 +590,10 @@ methods(Access=private)
         end
     end
 end
+
+% methods(Static,Access=private)
+%     function out = protectedField(fieldName)
+%         out = strcmpi(fieldName, 'sequenceStack') || strcmpi(fieldName, 'startTimes');
+%     end
+% end
 end

@@ -108,11 +108,9 @@ function metadata = BuildMetadata(obj)
     metadata.stimuli = [];
     namedIdxes = [];
     for i = 1:length(obj.data)
-        d = obj.data{i};
-        if ~isempty(d.tokenName)
-            metadata.stimuli.(d.tokenName) = structencode(d);
-            namedIdxes = [namedIdxes d.idx];
-        end
+        node = obj.data{i};
+        encoded = node.structencode;
+        metadata.stimuli = [metadata.stimuli encoded];
     end
     metadata.trialInfo = obj.PrintableMetadata;
 end

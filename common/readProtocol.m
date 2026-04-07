@@ -345,8 +345,10 @@ p = [trials{:}];
             switch lower(stimType)
                 case 'qst'
                     stimStruct = ParseQST(params, BaseStimStructs.(stimType), stimID);
+                    stimStruct.tags = tags;
                 case 'serial'
                     stimStruct = ParseSerial(params, BaseStimStructs.(stimType), stimID);
+                    stimStruct.tags = tags;
                 case 'stimulusgroup'
                     %TODO VALIDATION: 
                     % check that all params within the stimulus group are defined.
@@ -582,7 +584,7 @@ p = [trials{:}];
                     tree{acquisitionIdx} = acqNode;
                 else
                     newNode = StimulusBlock('stimParams', stimuli.(token), ...
-                        'parentIdx', currentParentIdx);
+                        'parentIdx', currentParentIdx, 'tokenName', token);
                     tree{end+1} = newNode;
                     currentParent.childIdxes(end+1) = length(tree);
                     tree{currentParentIdx} = currentParent;
@@ -667,7 +669,7 @@ p = [trials{:}];
         trial.RootNodeIdx = 1;
         trial = trial.Clean;
         trial.generateParamsSequence;
-        trial.ValidateTree;
+        % trial.ValidateTree;
     end
 
 function stimStruct = ParseQST(params, stimStruct, stimName)
