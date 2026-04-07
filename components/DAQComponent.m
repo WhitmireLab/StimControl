@@ -31,6 +31,7 @@ properties(Access = private)
     previewIdxes = [];
     nScans = 0;
     stopping = false;
+    timeoutTic = [];
 end
 
 methods (Access = public, Static)
@@ -155,6 +156,7 @@ end
 
 % Start device
 function StartTrial(obj)
+    obj.timeoutTic = []; % reset timeout tracker
     while obj.stopping % if it's stopping, don't hit start.
         pause(0.2)
     end
@@ -186,6 +188,7 @@ end
 % Stop device
 function Stop(obj)
     if obj.stopping % attempt to solve the crashing issue.
+        disp("WAITING ON PREVIOUS STOP");
         return
     end
     obj.stopping = true;
@@ -404,7 +407,7 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
         end
         chIdxes(chIdxesToRemove) = [];
         if isempty(outIdxes)
-            warning("No output channels assigned for stimulus %s in DAQ %s. Check the channel config file.", fieldName, obj.ComponentID);
+            warning("[DAQCOMPONENT] No output channels assigned for stimulus %s in DAQ %s. Check the channel config file.", fieldName, obj.ComponentID);
             continue
         end
         % Generate Stimulus. Handle special cases.
@@ -419,7 +422,8 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
         stim = StimGenerator.GenerateStimTrain(componentTrialData.(fieldName), genericTrialData, rate);
         for idx = outIdxes
             if length(out) ~= length(stim)
-                keyboard
+                warning("[DAQCOMPONENT] Stim length mismatch for %s. Stim length was %d, but out length was %d. Output cropped.", fieldName, length(stim), length(out))
+                % keyboard
                 stim = stim(1:length(out)); 
             end
             out(:,idx) = stim;
@@ -571,6 +575,20 @@ function obj = CreateChannels(obj, filename, protocolIDs)
     delete(progressdlg);
 end
 
+function TrialMaintain(obj)
+    % % manually stop the daq if it's finished
+    h = obj.SessionHandle;
+    if h.Running && h.NumScansAcquired == height(obj.PreviewData) && h.NumScansAvailable == 0 && isempty(obj.timeoutTic)
+        obj.timeoutTic = tic;
+    end
+    if ~isempty(obj.timeoutTic) && toc(obj.timeoutTic) > 5
+        % safeguard against premature stopping. Make sure the buffer is cleared.
+        disp("[DAQCOMPONENT] attempting manual stop")
+        obj.Stop();
+        obj.timeoutTic = [];
+    end
+end
+
 function obj = ClearChannels(obj)
         disp(message);
         % disp(exception.message)
@@ -659,7 +677,7 @@ function status = GetSessionStatus(obj)
     status = '';
     if isempty(obj.SessionHandle.Channels)
         status = 'uninitialised'; %no channels loaded
-    elseif obj.SessionHandle.Running
+    elseif obj.SessionHandle.Running 
         status = 'running'; % DAQ running
     elseif ~isempty(obj.TriggerTimer) && isvalid(obj.TriggerTimer) && strcmpi(obj.TriggerTimer.Running, 'on')
         status = 'running'; % Software triggered timer running
