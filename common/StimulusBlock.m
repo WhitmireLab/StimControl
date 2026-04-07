@@ -1,4 +1,4 @@
-classdef StimulusBlock
+classdef StimulusBlock < handle
 properties
     treeHandle  = [];   % TrialData, for indexing into children.
     idx         = 1;    % int, if == 1, this is a root node.
@@ -28,6 +28,9 @@ properties
     tokenName   = '';   % [char], name of the token.
     singleStimNodeLength = [];
     tags = [];
+    comment = [];
+    debugText = '';
+    childExecutionSequence = [];
 end
 
 properties (Access=private)
@@ -59,6 +62,7 @@ methods
         addParameter(p, 'childRel', obj.childRel, @(x) ischar(x) && ismember(x, {'odd', 'sim', 'seq'}));
         addParameter(p, 'treeHandle', []);
         addParameter(p, 'tokenName', obj.tokenName);
+        addParameter(p, 'comment', obj.comment);
         parse(p, varargin{:});
         for fn = fieldnames(p.Results)'
             obj.(fn{1}) = p.Results.(fn{1});
@@ -109,6 +113,34 @@ methods
             end
             out.(f) = obj.(f);
         end
+       % add attribute-like function info
+       out.activeDuration = obj.durationMs;
+       out.fullDuration = obj.fullDuration;
+       out.startTimes = obj.GetNodeStartTimes;
+    end
+    
+    function out = debugprint(obj, varargin)
+        tmp = sprintf("NODE_%d", obj.idx);
+        if ~isempty(obj.tokenName)
+            tmp = tmp + sprintf(" (%s)", obj.tokenName);
+        end
+        if isempty(obj.childIdxes)
+            childTxt = 'N/A';
+        elseif length(obj.childIdxes) == 1
+            childTxt = string(obj.childIdxes);
+        else
+            childTxt = strjoin(string(obj.childIdxes), ' ');
+        end
+        out = sprintf("%s: \n\t" + ...
+            "Children (%s): %s\n\t" + ...
+            "Parent: %d", ...
+            tmp, ...
+            obj.childRel, childTxt, ...
+            obj.parentIdx);
+        for i = 1:length(varargin)
+            tmp = sprintf("\n%s", formattedDisplayText(varargin{i}));
+            out = out + tmp;
+        end
     end
 
     function out = FirstCommonParentIdx(obj, idx)
@@ -141,9 +173,7 @@ methods
             trialParams = BuildLeafParams(singleStimParams);
             return
         end
-        
         singleStimParams = BuildSingleStimParams();
-
         trialParams = singleStimParams;
         buildTrialFromSequence = obj.nStimRuns > 1 && (strcmpi(obj.childRel, 'sim') || strcmpi(obj.childRel, 'seq'));
         reshuffle = obj.containsOdd && buildTrialFromSequence; % reshuffle oddball sequence every repeat
@@ -204,16 +234,6 @@ methods
                 singleStimParams.(targetName).sequenceStack = num2cell(ones([1, obj.nStimRuns]) * obj.idx);
                 obj.singleStimNodeLength.(targetName) = obj.nStimRuns;
                 trialParams = singleStimParams;
-            end
-        end
-
-        function traversedParams = TraverseChildParams()
-            % Traverse children
-            children = obj.children;
-            traversedParams = cell([1, length(children)]);
-            for ci = 1:length(children)
-                child = children(ci);
-                traversedParams{ci} = child.buildParams;
             end
         end
 
@@ -288,12 +308,12 @@ methods
                         [singleStimParams.(f).delay traversedParam.(f).delay+(totalDelay-helperStruct.(f).totalDelay)];
 
                     % update helperstruct
-                    helperStruct.(f).totalDelay = totalDelay + child.durationMs;
+                    helperStruct.(f).totalDelay = totalDelay + child.fullDuration;
                     if strcmpi(obj.childRel, 'odd') 
                         helperStruct.(f).totalDelay = helperStruct.(f).totalDelay + obj.repeatDelay;
                     end
                 end
-                totalDelay = totalDelay + child.durationMs;
+                totalDelay = totalDelay + child.fullDuration;
                 if strcmpi(obj.childRel, 'odd') % oddball, include repeat delay
                     totalDelay = totalDelay + obj.repeatDelay;
                 end
@@ -305,12 +325,15 @@ methods
             traversedParams = TraverseChildParams();
             if strcmpi(obj.childRel, 'sim') 
                 singleStimParams = ConstructSimultaneousSequence(traversedParams);
+                obj.childExecutionSequence = [obj.childExecutionSequence Inf];
             else
                 % sequential or oddball. Build sequence and go from there.
                 if strcmpi(obj.childRel, 'seq')
                     sequence = linspace(1, length(obj.childIdxes), length(obj.childIdxes));
+                    obj.childExecutionSequence = [obj.childExecutionSequence {sequence}];
                 elseif strcmpi(obj.childRel, 'odd')
-                    sequence = obj.generateOddballOrder;
+                    sequence = generateOddballOrder;
+                    obj.childExecutionSequence = [obj.childExecutionSequence {sequence}];
                     obj.oddballSequence = sequence;
                 end
                 [traversedParams, singleStimParams, helperStruct] = FillInHelperStruct(traversedParams, singleStimParams, helperStruct);
@@ -322,7 +345,110 @@ methods
                 end
             end
         end
+
+        function order = generateOddballOrder()
+            order = ones(1, obj.nStimRuns);
+            obj.childIdxes = unique(obj.childIdxes);
+            nOdds = length(obj.childIdxes) - 1;
+            if length(obj.childIdxes) > obj.nStimRuns
+                keyboard
+                error(sprintf("nStims in oddball sequence (%d) is insufficient to run all oddball trials (total %d including baseline).", obj.nStimRuns, nOdds+1));
+            end
+            nSwaps = floor(obj.nStimRuns * obj.oddParams.swapRatio);
+            oddIdxes = linspace(2, nOdds+1, nOdds);
+    
+            odds = [repmat(oddIdxes, [1 floor(nSwaps / nOdds)]) oddIdxes(1:rem(nSwaps, nOdds))];
+            if isfield(obj.oddParams, 'oddballRel') && strcmpi(obj.oddParams.oddballRel, 'rand')
+                odds = odds(randperm(length(odds)));
+            end
+    
+            % swap in oddballs
+            if strcmpi(obj.oddParams.distributionMethod, 'even') %evenly distributed
+                swapIdxes = round(linspace(1, length(order), nSwaps)); % (ish)
+            elseif strcmpi(obj.oddParams.distributionMethod, 'random') %randomly distributed
+                swapIdxes = randperm(obj.nStimRuns, nSwaps);
+            else
+                if ~contains(obj.oddParams.distributionMethod, 'semirandom') %randomly distributed with minimum swap distance
+                    error("Invalid distribution method: %s", obj.oddParams.distributionMethod);
+                end
+                minPostOddDefaults = str2double(obj.oddParams.distributionMethod(11:end)); % warning: cursed
+                if minPostOddDefaults > (obj.nStimRuns/nSwaps) - 1
+                    error("Unable to set %d default stimuli between oddballs " + ...
+                        "for %d total instances at %.3f oddball rate. \n" + ...
+                        "Maximum allowable value for OddMinDistX = %d", ...
+                        minPostOddDefaults, obj.nStimRuns, obj.oddParams.swapRatio, ...
+                        obj.nStimRuns/nSwaps - 1);
+                end
+                % semirandom: assign buckets of size nRuns/nSwaps & randomly place within
+                % those buckets
+                bucketIdxes = round(linspace(minPostOddDefaults+1, obj.nStimRuns, nSwaps+1));
+                swapIdxes = repmat([], [1 nSwaps]);
+                prevSwap = 0;
+                for i = 1:length(bucketIdxes) - 1
+                    startIdx = max([bucketIdxes(i), prevSwap+minPostOddDefaults]);
+                    endIdx = bucketIdxes(i+1);
+                    swapIdx = startIdx + round((endIdx - startIdx)*rand(1,1));
+                    swapIdxes(i) = swapIdx;
+                    prevSwap = swapIdx;
+                end
+            end
+            for i = 1:nSwaps
+                order(swapIdxes(i)) = odds(i);
+            end
+            c = obj.children;
+            childOrder = c(order);
+            sum = 0;
+            for child = childOrder
+                sum = sum + child.fullDuration;
+            end
+            obj.durCached = sum + (obj.repeatDelay*(obj.nStimRuns-1));
+        end
+
+        function traversedParams = TraverseChildParams()
+            % Traverse children
+            children = obj.children;
+            traversedParams = cell([1, length(children)]);
+            for ci = 1:length(children)
+                child = children(ci);
+                traversedParams{ci} = child.buildParams;
+            end
+        end
+        %% end buildParams
     end
+
+    function out = GetNodeStartTimes(obj)
+        if strcmpi(obj.childRel, 'odd') ...
+                || obj.nStimRuns == 1 ...
+                || obj.fullDuration == -1
+            out = [obj.startDelay];
+        else
+            out = linspace(obj.startDelay, obj.fullDuration, obj.nStimRuns); 
+        end
+        % keyboard; % TODO TEST
+        % repmat(obj.repeatDelay, [1 obj.nStimRuns-1]) + linspace(obj.startDelay, obj.)
+    end
+    % 
+    % function out = GetChildStartTimes(obj)
+    %     children = obj.children;
+    %     if obj.isLeafNode
+    %         out = [];
+    %     elseif strcmpi(obj.childRel, 'sim')
+    %         out = obj.GetNodeStartTimes - obj.startDelay;
+    %     elseif any(regexpi(obj.childRel, 'odd'))
+    %         out = [];
+    %         for i = 1:length(obj.childExecutionSequence)
+    %             for j = 1:length(subsequence)
+    % 
+    %             end
+    %         end
+    %     else
+    %         for i = 1:length(obj.childExecutionSequence)
+    %             for j = 1:length(subsequence)
+    % 
+    %             end
+    %         end
+    %     end
+    % end
 
     %% Attribute-like functions
     function children = children(obj)
@@ -402,22 +528,30 @@ methods
                 % children occur simultaneously - only count longest duration
                 stimDur = 0;
                 for i = 1:length(children)
-                    stimDur = max(stimDur, children(i).durationMs);
+                    stimDur = max(stimDur, children(i).fullDuration);
                 end
-                duration = obj.startDelay + obj.nStimRuns*(stimDur + obj.repeatDelay) - obj.repeatDelay;
+                duration = obj.nStimRuns*(stimDur + obj.repeatDelay) - obj.repeatDelay;
             elseif strcmpi(obj.childRel, 'seq')
                 % children occur sequentially. consider a single stim
                 stimDur = 0;
                 for i = 1:length(children)
-                    stimDur = stimDur + children(i).durationMs;
+                    stimDur = stimDur + children(i).fullDuration;
                 end
-                duration = obj.startDelay + obj.nStimRuns*(stimDur + obj.repeatDelay) - obj.repeatDelay;
-            elseif strcmpi(obj.childRel, 'odd')
-                duration = obj.startDelay;
-                %TODO - we're never hitting this at the moment but would be good to have if we do.
-                dbstack
-                keyboard
-                error("not implemented.");
+                duration = obj.nStimRuns*(stimDur + obj.repeatDelay) - obj.repeatDelay;
+            elseif any(regexpi(obj.childRel, 'odd'))
+                children = obj.children;
+                total = 0;
+                for i = 1:length(obj.childExecutionSequence)
+                    subsequence = obj.childExecutionSequence{i};
+                    for j = 1:length(subsequence)
+                        child = children(subsequence(j));
+                        total = total + child.fullDuration;
+                        if j ~= length(subsequence)
+                            total = total + obj.repeatDelay;
+                        end
+                    end
+                end
+                duration = total;
             end
         else
             % leaf node.
@@ -432,59 +566,21 @@ methods
             end
             duration = stimDur;
         end
+        obj.durCached = duration;
+    end
+
+    function duration = fullDuration(obj)
+        if ~any(regexpi(obj.childRel, 'odd'))
+            duration = (obj.durationMs + obj.repeatDelay)*obj.nStimRuns + obj.startDelay - obj.repeatDelay;
+        else
+            duration = obj.durationMs + obj.startDelay;
+        end
     end
 end
 
 methods(Access=private)
     %% PRIVATE FUNCTIONS
-    function order = generateOddballOrder(obj)
-        order = ones(1, obj.nStimRuns);
-        nOdds = length(obj.childIdxes) - 1;
-        if length(obj.childIdxes) > obj.nStimRuns
-            error(sprintf("nStims in oddball sequence (%d) is insufficient to run all oddball trials (total %d including baseline).", obj.nStimRuns, nOdds+1));
-        end
-        nSwaps = floor(obj.nStimRuns * obj.oddParams.swapRatio);
-        oddIdxes = linspace(2, nOdds+1, nOdds);
-
-        odds = [repmat(oddIdxes, [1 floor(nSwaps / nOdds)]) oddIdxes(1:rem(nSwaps, nOdds))];
-        if isfield(obj.oddParams, 'oddballRel') && strcmpi(obj.oddParams.oddballRel, 'rand')
-            odds = odds(randperm(length(odds)));
-        end
-
-        % swap in oddballs
-        if strcmpi(obj.oddParams.distributionMethod, 'even') %evenly distributed
-            swapIdxes = round(linspace(1, length(order), nSwaps)); % (ish)
-        elseif strcmpi(obj.oddParams.distributionMethod, 'random') %randomly distributed
-            swapIdxes = randperm(obj.nStimRuns, nSwaps);
-        else
-            if ~contains(obj.oddParams.distributionMethod, 'semirandom') %randomly distributed with minimum swap distance
-                error("Invalid distribution method: %s", obj.oddParams.distributionMethod);
-            end
-            minPostOddDefaults = str2double(obj.oddParams.distributionMethod(11:end)); % warning: cursed
-            if minPostOddDefaults > (obj.nStimRuns/nSwaps) - 1
-                error("Unable to set %d default stimuli between oddballs " + ...
-                    "for %d total instances at %.3f oddball rate. \n" + ...
-                    "Maximum allowable value for OddMinDistX = %d", ...
-                    minPostOddDefaults, obj.nStimRuns, obj.oddParams.swapRatio, ...
-                    obj.nStimRuns/nSwaps - 1);
-            end
-            % semirandom: assign buckets of size nRuns/nSwaps & randomly place within
-            % those buckets
-            bucketIdxes = round(linspace(minPostOddDefaults+1, obj.nStimRuns, nSwaps+1));
-            swapIdxes = repmat([], [1 nSwaps]);
-            prevSwap = 0;
-            for i = 1:length(bucketIdxes) - 1
-                startIdx = max([bucketIdxes(i), prevSwap+minPostOddDefaults]);
-                endIdx = bucketIdxes(i+1);
-                swapIdx = startIdx + round((endIdx - startIdx)*rand(1,1));
-                swapIdxes(i) = swapIdx;
-                prevSwap = swapIdx;
-            end
-        end
-        for i = 1:nSwaps
-            order(swapIdxes(i)) = odds(i);
-        end
-    end
+    
 
     function out = childfcn(obj, fcnHandle)
         out = [];
@@ -494,4 +590,10 @@ methods(Access=private)
         end
     end
 end
+
+% methods(Static,Access=private)
+%     function out = protectedField(fieldName)
+%         out = strcmpi(fieldName, 'sequenceStack') || strcmpi(fieldName, 'startTimes');
+%     end
+% end
 end

@@ -3,7 +3,7 @@ classdef StimGenerator
 properties (Constant)
     % Constants for use in calculations. May change depending on specific
     % lab hardware.
-    Aurorasf = 52;
+    Aurorasf = 1/52;
 end
 
 % NOTE: for information on how the passed parameters are expected to be set

@@ -423,7 +423,6 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
         for idx = outIdxes
             if length(out) ~= length(stim)
                 warning("[DAQCOMPONENT] Stim length mismatch for %s. Stim length was %d, but out length was %d. Output cropped.", fieldName, length(stim), length(out))
-                % keyboard
                 stim = stim(1:length(out)); 
             end
             out(:,idx) = stim;

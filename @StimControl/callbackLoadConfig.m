@@ -70,6 +70,6 @@ function obj = LoadSessionConfig(obj, filepath)
             end
         end
     end
-    obj.status = obj.status;
+    obj.clearMessage;
 end
 

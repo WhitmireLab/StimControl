@@ -60,7 +60,7 @@ catch exception
     obj.errorMsg(exception.message);
     return;
 end
-obj.meta = p;
+obj.meta = GenerateMetadata(p);
 
 createChans = isempty(obj.p);
 if createChans
@@ -154,6 +154,7 @@ protocolTotalTimeSecs = (obj.g.dPause(1)*(obj.g.nProtRuns-1) + ((sum(([obj.p.tPr
 protocolTimeMins = floor(protocolTotalTimeSecs/60);
 protocolTimeSecs = ceil(protocolTotalTimeSecs - (60*protocolTimeMins));
 obj.h.protocolTimeEstimate.Text = sprintf('0:00 / %d:%d', protocolTimeMins, protocolTimeSecs);
+obj.t.protocolTarget = protocolTotalTimeSecs;
 obj.h.trialInformationScroller.Value = '';
 obj.h.trialInformationScroller.FontColor = 'black';
 
@@ -208,4 +209,15 @@ function checkStimulus(obj)
     else
         error("Unsupported file format. Supported formats: .qst, .stim");
     end
+end
+
+function metadata = GenerateMetadata(p)
+    m = {p(1).metadata};
+    for i = 2:length(p)
+        m = [m {p(i).metadata}];
+    end
+    metadata = m;
+    % if isempty(metaStr.metadata{1})
+    %     metaStr.metadata = metaStr.metadata(2:end);
+    % end
 end

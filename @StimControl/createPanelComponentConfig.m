@@ -89,7 +89,7 @@ if isfield(obj.h.ComponentConfig, 'ValsToUpdate')
     component.SetParams(obj.h.ComponentConfig.ValsToUpdate);
 end
 % Then clear everything
-obj.status = obj.status; % clear warning messages
+obj.clearMessage; 
 removeStyle(obj.h.ComponentConfig.Table);
 cancelComponentConfig(obj, src, event);
 end

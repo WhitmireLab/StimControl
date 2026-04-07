@@ -99,12 +99,23 @@ function [trialParams, metadata] = generateParamsSequence(obj)
         error("Error in trial %d (%s): %s", obj.trialIdx, obj.comment, exception.message)
     end
     trialParams = obj.params;
-    obj.metadata = obj.BuildMetaData;
+    obj.metadata = obj.BuildMetadata;
     % obj.data = {};
 end
 
-function metadata = BuildMetaData(obj)
-    metadata= [];
+function metadata = BuildMetadata(obj)
+    metadata = [];
+    metadata.stimuli = [];
+    namedIdxes = [];
+    for i = 1:length(obj.data)
+        node = obj.data{i};
+        encoded = node.structencode;
+        metadata.stimuli = [metadata.stimuli encoded];
+    end
+    metadata.trialInfo = obj.PrintableMetadata;
+end
+
+function metadata = AllNodeMetadata(obj)
     metadata = obj.data{1}.structencode;
     for i = 2:length(obj.data)
         node = obj.data{i};

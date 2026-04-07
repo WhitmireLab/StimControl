@@ -1,4 +1,0 @@
-- implement logger for all warnings, errors, etc.
-- save hardware config, metadata in stim folders
-- implement tagging
-- GUI for creating files?

@@ -48,11 +48,12 @@ if ~isempty(warnIDs)
             "%s", trialData.trialIdx, strjoin(warnIDs, ', ')));
 else
     % clear warning message
-    obj.status = obj.status;
+    obj.clearMessage;
 end
 
-if src ~= obj.h.StartStopBtn
-    obj.status = 'ready'; % prevent softlocks
+if ~isempty(src) && (src == obj.h.prevTrialBtn || src == obj.h.nextTrialBtn)
+    obj.status = 'ready';
 end
+
 obj.f.trialLoaded = true;
 end

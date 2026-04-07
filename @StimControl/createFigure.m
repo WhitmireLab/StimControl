@@ -116,7 +116,9 @@ end
 
 %% helper functions
 function varargout = RestartTimer(obj, src, event)
-    stop(obj.t);
-    start(obj.t);
+        obj.timerStateMachine.stop;
+        obj.timerStateMachine.start;
+        obj.timerGui.stop;
+        obj.timerGui.start;
 end
 end

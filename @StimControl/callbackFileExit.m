@@ -2,8 +2,10 @@ function callbackFileExit(obj,~,~)
 
 % stop and delete timer
 try
-    stop(obj.t)
-    delete(obj.t)
+    stop(obj.timerStateMachine);
+    delete(obj.timerStateMachine);
+    stop(obj.timerGui);
+    delete(obj.timerGui);
 catch err
     disp(err)
 end
