@@ -311,7 +311,15 @@ function StartPreview(obj)
         % an.Color = 'red';
         % datalink might be handy
         ax.XLim = xLims; %why does this sometimes work and sometimes not?
-        ax.YLim = [-11 11];
+        axisTitle = displayLabels{i};
+        if any(regexpi(axisTitle, "thermode"))
+            ax.YLim = [-1 61];
+        elseif any(regexpi(obj.SessionHandle.Channels(obj.previewIdxes(i)).Type, "digital"))
+            ax.YLim = [-2 2];
+        else
+            ax.YLim = [-11 11];
+        end
+        ch = obj.SessionHandle.Channels(obj.previewIdxes(i));
         ax.Title = text(ax, 'String', displayLabels{i}, ...
             'HorizontalAlignment', 'left');
         ax.TitleHorizontalAlignment = 'left';
@@ -580,7 +588,7 @@ function TrialMaintain(obj)
     if h.Running && h.NumScansAcquired == height(obj.PreviewData) && h.NumScansAvailable == 0 && isempty(obj.timeoutTic)
         obj.timeoutTic = tic;
     end
-    if ~isempty(obj.timeoutTic) && toc(obj.timeoutTic) > 5
+    if ~isempty(obj.timeoutTic) && toc(obj.timeoutTic) > 2
         % safeguard against premature stopping. Make sure the buffer is cleared.
         disp("[DAQCOMPONENT] attempting manual stop")
         obj.Stop();
