@@ -104,7 +104,7 @@ function InitialiseExperiment()
     
     % save metadata to output directory
     metapath = [obj.dirExperiment filesep tmp1 '_meta.json'];
-    metaStr = struct("trials", obj.meta, "hardware", GetComponentData(obj, metapath));
+    metaStr = struct("trials", {obj.meta}, "hardware", {GetComponentData(obj, metapath)});
     
     jsonData = jsonencode(metaStr);
     file = fopen(metapath, 'w+');
@@ -307,7 +307,7 @@ end
 function LogError(err)
     fid = fopen(fullfile(obj.path.dirData, filesep,'error.log'),'a+');
     tmp = regexprep(err.getReport('extended','hyperlinks','off'),'\n','\r\n');
-    fprintf(fid,'%s \n %s', string(datetime), tmp);
+    fprintf(fid,'\n\n**********\n%s \n %s', string(datetime), tmp);
     fclose(fid);
     % reset flags.
     obj.f.passive = false;
