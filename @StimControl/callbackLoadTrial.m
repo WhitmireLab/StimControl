@@ -13,7 +13,7 @@ elseif src == obj.h.nextTrialBtn
     else
         obj.trialNum = obj.trialNum + 1;
     end
-elseif isfield(obj.g, 'sequence')
+elseif isfield(obj.g, 'sequence') && obj.f.runningExperiment
     obj.trialNum = obj.g.sequence(obj.trialIdx);
 end
 
