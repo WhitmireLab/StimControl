@@ -3,7 +3,12 @@ function callbackChangeSavePath(obj, src, event)
         filepath = obj.h.SavePathTextArea.Value;
     elseif src == obj.h.BrowseSavePathBtn
         % let the user select a file
-        filepath = uigetdir(obj.path.dirData{:});
+        if iscell(obj.path.dirData)
+            dir = obj.path.dirData{:};
+        else
+            dir = obj.path.dirData;
+        end
+        filepath = uigetdir(dir);
         if isempty(filepath) || ~any(filepath)
             return
         end
@@ -16,6 +21,6 @@ function callbackChangeSavePath(obj, src, event)
             rethrow(exception);
         end
     end
-    obj.path.dirData = {filepath};
-    obj.h.SavePathTextArea.Value = filepath;
+    obj.path.dirData = filepath;
+    obj.h.SavePathTextArea.Value = {filepath};
 end
