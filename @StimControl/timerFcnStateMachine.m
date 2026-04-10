@@ -3,6 +3,15 @@ function timerFcnStateMachine(obj,~,~)
 % persistent trialNums;
 persistent nTrials;
 if isempty(nTrials); nTrials = Inf; end
+persistent prevStatus;
+
+if isempty(prevStatus)
+    prevStatus = obj.status;
+end
+if ~strcmpi(obj.status, prevStatus)
+    disp(obj.status);
+    prevStatus = obj.status;
+end
 
 if strcmpi(obj.h.tabs.SelectedTab.Title, 'Setup')
     return
@@ -118,8 +127,16 @@ function InitialiseExperiment()
     
     if obj.f.runningExperiment
         nTrials = length(obj.g.sequence);
-        if obj.g.sequence(1) ~= obj.trialNum
-            obj.trialNum = obj.g.sequence(1);
+        if obj.g.sequence(1) ~= obj.trialNum % always start with the trial currently being previewed
+            swapIdx = find(obj.g.sequence == obj.trialNum);
+            if ~isempty(swapIdx)
+                swapNum = obj.g.sequence(1);
+                obj.g.sequence(1) = obj.trialNum;
+                obj.g.sequence(swapIdx) = swapNum;
+            else
+                % frankly you should never hit this.
+                obj.trialNum = obj.g.sequence(1);
+            end
         end
     else
         nTrials = 1;
@@ -135,7 +152,6 @@ function InitialiseExperiment()
     UpdateComponentSavePaths();
     LoadTrialToDisplay();
     LoadTrialToComponents();
-
 end
 
 function UpdateComponentSavePaths()
