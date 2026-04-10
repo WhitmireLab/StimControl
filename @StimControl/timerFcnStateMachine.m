@@ -21,7 +21,12 @@ try
         case 'ready'
             if obj.f.startTrial
                 InitialiseExperiment();
-                StartTrial();
+                if isfield(obj.g, 'prePause') && obj.g.prePause
+                    % don't start the trial, start inter-trial
+                    obj.f.trialLoaded = true;
+                else
+                    StartTrial();
+                end
             elseif obj.f.passive
                 InitialisePassiveExperiment();
             end
