@@ -89,8 +89,8 @@ try
             obj.status = 'stopping';
     end
 catch err
+    keyboard %see what's going on
     LogError(err);
-    keyboard % see what's going on
     % if err is daq error, delete(daq.getDevices) then daqreset then reload.
 end
 
@@ -128,7 +128,7 @@ function InitialiseExperiment()
     if obj.f.runningExperiment
         nTrials = length(obj.g.sequence);
         if obj.g.sequence(1) ~= obj.trialNum % always start with the trial currently being previewed
-            swapIdx = find(obj.g.sequence == obj.trialNum);
+            swapIdx = find(obj.g.sequence == obj.trialNum, 1);
             if ~isempty(swapIdx)
                 swapNum = obj.g.sequence(1);
                 obj.g.sequence(1) = obj.trialNum;

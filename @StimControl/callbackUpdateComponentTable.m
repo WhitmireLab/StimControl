@@ -6,7 +6,8 @@ function callbackUpdateComponentTable(obj, src, event)
             obj.errorMsg("Please switch to the setup tab before reloading hardware.");
             return
         end
-        stop(obj.t); % pause the timer to prevent errors in iterating over devices
+        stop(obj.timerStateMachine); % pause the timers to prevent errors in iterating over devices
+        stop(obj.timerGui);
         selection = uiconfirm(obj.h.fig, ...
             "WARNING: This will reset any unsaved changes made to existing hardware configurations. Continue?","Confirm Reload", ...
             "Icon","warning", ...
@@ -30,7 +31,8 @@ function callbackUpdateComponentTable(obj, src, event)
             end
             obj.MapConnectedHardware;
             obj.clearMessage;
-            start(obj.t); % restart the timer
+            start(obj.timerStatemachine); % restart the timers
+            start(obj.timerGui)
         else % cancel
             return;
         end

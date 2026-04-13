@@ -34,7 +34,7 @@ function obj = LoadSessionConfig(obj, filepath)
     
     if isfield(data, 'dirData') && ~isempty(data.dirData)
         obj.path.dirData = {data.dirData};
-        obj.SavePathTextArea.Value = data.dirData;
+        obj.h.SavePathTextArea.Value = data.dirData;
     end
     
     obj.indicateLoading("Loading Display Settings...");
