@@ -175,6 +175,9 @@ end
 methods
     function filepath = get.dirAnimal(obj)
         filepath = fullfile(obj.path.dirData,obj.animalID);
+        if iscell(filepath)
+            filepath = filepath{:};
+        end
         if ~exist(filepath,'dir')
             mkdir(filepath)
         end
