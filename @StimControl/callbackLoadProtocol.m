@@ -62,8 +62,7 @@ catch exception
 end
 obj.meta = GenerateMetadata(p);
 
-createChans = isempty(obj.p);
-if createChans
+if obj.createChans
     obj.MapConnectedHardware; % just in case it hasn't been hit yet.
 end
 allTargets = getAllTargets(p);
@@ -122,7 +121,7 @@ for i = 1:length(p)
     p(i).params = trialComponentData;
 end
 
-if createChans
+if obj.createChans
     % first time loading a trial. Initialise.
     for i = 1:length(obj.d.Available)
         if ~obj.d.Active(i) || ~isa(obj.d.Available{i}, 'DAQComponent')
@@ -136,6 +135,7 @@ if createChans
             obj.d.Available{i} = comp.InitialiseSession('ActiveDeviceIDs', 'all');
         end
     end
+    obj.createChans = false;
 end
 
 % load to device

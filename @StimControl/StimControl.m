@@ -32,6 +32,7 @@ properties (Access = private)
     tOffset     = 0;            % for pausing
     taskPool    = [];
     f           = [];           % state machine flags
+    createChans = true;         % whether to create DAQ channels when loading a protocol (set on channel creation, reset on in-program reload)
 
 end
 

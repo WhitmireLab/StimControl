@@ -31,6 +31,7 @@ function callbackUpdateComponentTable(obj, src, event)
             end
             obj.MapConnectedHardware;
             obj.clearMessage;
+            obj.createChans = true;
             start(obj.timerStatemachine); % restart the timers
             start(obj.timerGui)
         else % cancel
