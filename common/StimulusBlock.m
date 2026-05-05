@@ -552,6 +552,10 @@ methods
                     end
                 end
                 duration = total;
+            else
+                % this is an empty node, but we'll keep it in for indexing
+                % purposes.
+                duration = 0;
             end
         else
             % leaf node.
@@ -566,7 +570,11 @@ methods
             end
             duration = stimDur;
         end
-        obj.durCached = duration;
+        try
+            obj.durCached = duration;
+        catch e
+            keyboard;
+        end
     end
 
     function duration = fullDuration(obj)
