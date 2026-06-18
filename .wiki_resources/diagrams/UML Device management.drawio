@@ -1,0 +1,61 @@
+<mxfile host="Electron">
+  <diagram name="Page-1" id="DMBqFV5f7ysOAZc9OuNd">
+    <mxGraphModel dx="1296" dy="1186" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-14" parent="1" style="rounded=0;whiteSpace=wrap;html=1;labelPosition=center;verticalLabelPosition=top;align=left;verticalAlign=bottom;" value="Device Management" vertex="1">
+          <mxGeometry height="650" width="910" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-15" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="ComponentManager: handle" vertex="1">
+          <mxGeometry height="260" width="280" x="40" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-16" parent="x-jhrpbHgCKaNKp4eBxc-15" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="- Available: {HardwareComponent}&lt;div&gt;- Active: [bool]&lt;/div&gt;&lt;div&gt;- ProtocolIDMap: struct&lt;/div&gt;&lt;div&gt;- IDComponentMap: struct&lt;/div&gt;&lt;div&gt;- ActiveIDs: [string]&lt;/div&gt;&lt;div&gt;- ComponentTarget: struct&lt;/div&gt;" vertex="1">
+          <mxGeometry height="94" width="280" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-17" parent="x-jhrpbHgCKaNKp4eBxc-15" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="40" width="280" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-18" parent="x-jhrpbHgCKaNKp4eBxc-15" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="- findAvailableHardware(self): self&lt;div&gt;- loadConfig(obj, jsonStruct): obj&lt;/div&gt;&lt;div&gt;- initialise(obj): none&lt;/div&gt;&lt;div&gt;- startPreviews(obj): none&lt;/div&gt;&lt;div&gt;- closeAll(obj): none&lt;/div&gt;&lt;div&gt;- clearAll(obj): none&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="280" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-19" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="HardwareComponent: handle" vertex="1">
+          <mxGeometry height="610" width="330" x="340" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-20" parent="x-jhrpbHgCKaNKp4eBxc-19" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="- (constant) ComponentProperties: ComponentProperties&lt;div&gt;- Name: string&lt;div&gt;- SessionHandle: handle&lt;/div&gt;&lt;div&gt;- SavePath: string&lt;/div&gt;&lt;div&gt;- TrialPrefix: string&lt;/div&gt;&lt;div&gt;- Abstract: bool&lt;/div&gt;&lt;div&gt;- ConfigStruct: struct&lt;/div&gt;&lt;div&gt;- PreviewPlot: handle&lt;/div&gt;&lt;div&gt;- Previewing: bool&lt;/div&gt;&lt;div&gt;- StatusPanel: handle&lt;/div&gt;&lt;div&gt;- ComponentID: string&lt;/div&gt;&lt;div&gt;- TriggerTimer: handle&lt;/div&gt;&lt;div&gt;- ConnectedDevices: [string]&lt;/div&gt;&lt;div&gt;- SavePrefix: string&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="214" width="330" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-21" parent="x-jhrpbHgCKaNKp4eBxc-19" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="40" width="330" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-22" parent="x-jhrpbHgCKaNKp4eBxc-19" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="- FindAll(none): {HardwareComponent}&lt;div&gt;- Initialise(obj, params): obj&lt;div&gt;- GetDefaultConfigStruct(obj): struct&lt;/div&gt;&lt;div&gt;- GetConfigStruct(obj): struct&lt;/div&gt;&lt;div&gt;- GetStatus(obj): string&lt;/div&gt;&lt;div&gt;- CreateStatusDisplay(obj): none&lt;/div&gt;&lt;div&gt;- UpdateStatusDisplay(obj): none&lt;/div&gt;&lt;div&gt;- UpdatePreview(obj, varargin): none&lt;/div&gt;&lt;div&gt;- setParam(obj, param, val): obj&lt;/div&gt;&lt;div&gt;- SaveAuxiliaryConfig(obj, filepath):none&lt;/div&gt;&lt;div&gt;- TrialMaintain(obj): none&lt;/div&gt;&lt;div&gt;- EndTrial(obj): none&lt;/div&gt;&lt;div&gt;- GetParams(obj): struct&lt;/div&gt;&lt;div&gt;- InitialiseSession(obj, varargin): none&lt;/div&gt;&lt;div&gt;- StartTrial(obj): none&lt;/div&gt;&lt;div&gt;- Stop(obj): none&lt;/div&gt;&lt;div&gt;- SetParams(obj, varargin): none&lt;/div&gt;&lt;div&gt;- StartPreview(obj): none&lt;/div&gt;&lt;div&gt;- LoadTrialFromParams(obj, struct, struct, bool): none&lt;/div&gt;&lt;div&gt;- Close(obj): none&lt;/div&gt;&lt;div&gt;- SoftwareTrigger(obj, ~, ~): none&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="330" width="330" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-23" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="ComponentProperties: handle" vertex="1">
+          <mxGeometry height="140" width="220" x="690" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-24" parent="x-jhrpbHgCKaNKp4eBxc-23" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="- ID: string&lt;div&gt;- Properties: [ComponentProperty]&lt;/div&gt;" vertex="1">
+          <mxGeometry height="30" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-25" parent="x-jhrpbHgCKaNKp4eBxc-23" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="40" width="220" y="56" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-26" parent="x-jhrpbHgCKaNKp4eBxc-23" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="- fields(obj): [string]&lt;div&gt;- isfield(obj, val): bool&lt;/div&gt;" vertex="1">
+          <mxGeometry height="44" width="220" y="96" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-27" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="ComponentProperty" vertex="1">
+          <mxGeometry height="290" width="220" x="690" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-28" parent="x-jhrpbHgCKaNKp4eBxc-27" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="- default: any&lt;div&gt;- allowable: [any]&lt;/div&gt;&lt;div&gt;- validateFcn: functionHandle&lt;/div&gt;&lt;div&gt;- dependencies: {string}&lt;/div&gt;&lt;div&gt;- dependents: {string}&lt;/div&gt;&lt;div&gt;- dynamic: bool&lt;/div&gt;&lt;div&gt;- required: bool&lt;/div&gt;&lt;div&gt;- note: string&lt;/div&gt;&lt;div&gt;- editable: bool&lt;/div&gt;&lt;div&gt;- cat: categorical&lt;/div&gt;" vertex="1">
+          <mxGeometry height="154" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-29" parent="x-jhrpbHgCKaNKp4eBxc-27" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="40" width="220" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="x-jhrpbHgCKaNKp4eBxc-30" parent="x-jhrpbHgCKaNKp4eBxc-27" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="- isValid(obj, val): bool&lt;div&gt;- getCategorical(obj): categorical&lt;/div&gt;&lt;div&gt;- dependenciesMet(obj, vals): bool&lt;/div&gt;&lt;div&gt;- categoricalCompatible(obj, val): bool&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="220" y="220" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
