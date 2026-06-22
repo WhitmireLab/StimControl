@@ -47,8 +47,7 @@ end
 
 methods
     function obj = StimControl(varargin)
-        % close all
-        % obj.path.base = pwd;
+        %% add necessary program paths.
         obj.path.base = mfilename('fullpath');
         endIdx = strfind(obj.path.base, [filesep '@StimControl']) - 1;
         obj.path.base = obj.path.base(1:endIdx);
@@ -63,7 +62,8 @@ methods
         obj.d = ComponentManager();
         hFigs = findall(0,'type','figure');        
         if isempty(hFigs)
-            % this is the only app running, resets can be safely run
+            % this is the only app running, resets can be safely run 
+            % without messing with other apps.
             obj.d.ClearAll();
         end
         
@@ -92,7 +92,7 @@ methods
 
         %% Find available hardware
         disp("Initialising Available Hardware...")
-        obj.d = obj.d.FindAvailableHardware(); %TODO CHANGE THIS SO IT ONLY FINDS HARDWARE WITHOUT AN ACTVIE SESSION ELSEWHERE. Or at least doesn't initialise
+        obj.d = obj.d.FindAvailableHardware();
         %% Create figure and get things going
         disp("Creating figure...")
         createFigure(obj)
@@ -175,6 +175,8 @@ end
 
 methods
     function filepath = get.dirAnimal(obj)
+        % GET.DIRANIMAL returns the directory (string) of the current
+        % animal, creating it if it does not exist.
         filepath = fullfile(obj.path.dirData,obj.animalID);
         if iscell(filepath)
             filepath = filepath{:};
@@ -185,6 +187,8 @@ methods
     end
 
     function filepath = get.dirExperiment(obj)
+        % GET.DIREXPERIMENT returns the directory (string) of the current
+        % experiment, creating it if it does not exist.
         if ~isfield(obj.path, 'date')
             obj.updateDateTime
         end
@@ -200,31 +204,38 @@ methods
     end
 
     function updateDateTime(obj)
+        % UPDATEDATETIME updates the datetime prefix for saving outputs
         obj.updateDate;
         obj.updateTime;
     end
 
     function updateDate(obj)
+        % UPDATEDATE updates the date prefix for saving outputs
         dt = datetime("now");
         dt.Format = "yyMMdd";
         obj.path.date = char(dt);
     end
 
     function updateTime(obj)
+        % UPDATETIME updates the time prefix for saving outputs
         dt = datetime("now");
         dt.Format  = "HHmmss";
         obj.path.time = char(dt);
     end
 
     function set.experimentID(obj, val)
+        % SET.EXPERIMENTID sets the identifier for the current experiment,
+        % adding it to the protocol select dropdown and setting it as the
+        % selected value if necessary.
         if ~contains(obj.h.protocolSelectDropDown.Items, val)
             obj.h.protocolSelectDropDown.Items{end+1} = val;
         end
         obj.h.protocolSelectDropDown.Value = val;
-        % TODO UPDATE GUI HERE - trialnum, estimated time, etc.
     end
 
     function out = get.experimentID(obj)
+        % GET.EXPERIMENTID returns the ID of the current experiment (string, 
+        % the filename minus the file extension)
         tmp = strsplit(obj.h.protocolSelectDropDown.Value, '.');
         if length(tmp) < 2
             out = tmp{:};
@@ -234,6 +245,9 @@ methods
     end
 
     function set.animalID(obj, val)
+        % SET.ANIMALID sets the current animal ID, adding it to the animal
+        % select dropdown and setting it as the selected value if
+        % necessary.
         if ~ismember(obj.h.animalSelectDropDown.Items, val)
             obj.h.animalSelectDropDown.Items{end+1} = val;
         end
@@ -241,13 +255,25 @@ methods
     end
 
     function out = get.animalID(obj)
+        % GET.ANIMALID returns (string) the ID of the currently selected
+        % animal, as defined in the animal select dropdown.
         out = obj.h.animalSelectDropDown.Value;
     end
 
     function set.status(obj, val)
-        % supported values: NOT INITIALISED / READY / RUNNING / INTER-TRIAL
-        % / PAUSED / STOPPING / ERROR / AWAITING TRIGGER / 
-        % NO PROTOCOL LOADED
+        % SET.STATUS sets the current status of StimControl, updating
+        % appropriate labels, button functions, and active status of
+        % relevant GUI elements. 
+        % supported values: 
+        % - NOT INITIALISED
+        % - READY 
+        % - RUNNING 
+        % - INTER-TRIAL
+        % - PAUSED 
+        % - STOPPING 
+        % - ERROR 
+        % - AWAITING TRIGGER
+        % - NO PROTOCOL LOADED
 
         obj.h.loadingLabel.Visible = 'off';
         obj.h.statusLabel.Visible = 'on';
@@ -336,12 +362,13 @@ methods
             obj.h.StartSingleTrialBtn.Enable = 'off';
 
         else
-            error("Invalid status. Implement status here or it won't work.")
+            error("Invalid status. New statuses must be imlemented in set.status and stateMachineTimerFcn")
         end
     end
 
     function indicateLoading(obj, text)
-
+        % INDICATELOADING updates GUI elements to indicate loading and
+        % prevent invalid state input combinations. 
         obj.h.statusLabel.Visible = 'off';
         obj.h.loadingLabel.Visible = 'on';
         if ~isempty(text)
@@ -353,6 +380,8 @@ methods
     end
 
     function clearMessage(obj)
+        % CLEARMESSAGE clears the message and warning colour on the text
+        % next to the mouse.
         obj.h.statusLabel.Visible = 'on';
         obj.h.statusLabel.FontColor = 'black';
         obj.h.loadingLabel.Visible = 'off';
@@ -402,10 +431,15 @@ methods
     end
 
     function val = get.status(obj)
+        % GET.STATUS return (string, lower) the current status of
+        % StimControl. Possible values outlined in the get.status function.
         val = lower(obj.h.statusLabel.Text);
     end
     
     function set.trialNum(obj, value)
+        % SET.TRIALNUM sets the current trial number (defined by the line
+        % number of the trial definition in the stimulus file), updating
+        % relevant GUI elements. Setting val=0 resets all timer estimates, etc.
         nTrials = length(obj.p);
         totalNTrials = sum([obj.p.nRuns]) * obj.g.nProtRuns;
         validateattributes(value,{'numeric'},...
@@ -434,11 +468,14 @@ methods
     end
 
     function val = get.trialNum(obj)
+        % GET.TRIALNUM returns the current trial number, determined by the
+        % line on which the currently selected trial is defined in the
+        % stimulus file.
         val = obj.h.trialNumDisplay.Value;
     end
 
     function errorMsg(obj, message)
-        % displays an error message in the bottom right of the program.
+        % ERRORMSG displays an error message in the bottom right of the program.
         if obj.h.tabs.SelectedTab == obj.h.Setup.Tab
             target = obj.h.Setup.Message;
         elseif obj.h.tabs.SelectedTab == obj.h.Session.Tab
@@ -460,7 +497,7 @@ methods
     end
 
     function warnMsg(obj, message)
-        % displays a warning in the bottom right of the program.
+        % WARNMSG displays a warning in the bottom right of the program.
         if obj.h.tabs.SelectedTab == obj.h.Setup.Tab
             target = obj.h.Setup.Message;
         elseif obj.h.tabs.SelectedTab == obj.h.Session.Tab
@@ -478,6 +515,8 @@ methods
     end
 
     function clearMsg(obj, src, event)
+        % CLEARMSG clears the current warning/error message, setting text
+        % colour back to black.
         if obj.h.tabs.SelectedTab == obj.h.Setup.Tab
             target = obj.h.Setup.Message;
         elseif obj.h.tabs.SelectedTab == obj.h.Session.Tab
@@ -495,6 +534,8 @@ methods
     end
 
     function obj = loadDefaultSession(obj)
+        % LOADDEFAULTSESSION loads the default session file, including
+        % hardware and display settings. 
         [s, pcInfo] = system('vol');
         pcInfo = strsplit(pcInfo, '\n');
         pcID = pcInfo{2}(end-8:end);
@@ -508,8 +549,10 @@ methods
     end
 
     function obj = MapConnectedHardware(obj)
-        %todo what if two daqs have the same channel?
-        obj.pids = []; % clear previous
+       % MAPCONNECTEDHARDWARE maps connected hardware to its sub-systems.
+       % returns a dict with subsystems as keys and device protocol IDs as
+       % values.
+        obj.pids = [];
         for i = 1:length(obj.d.Available)
             comp = obj.d.Available{i};
             cid = comp.ConfigStruct.ProtocolID;

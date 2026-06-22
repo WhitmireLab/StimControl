@@ -448,6 +448,11 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
     end
 end
 
+function fig = CreateConfigFigure(obj)
+    fig = uifigure();
+    
+end
+
 %% DEVICE-SPECIFIC FUNCTIONS
 function obj = MapChannels(obj, filename)
     % fills out DAQ's connected devices

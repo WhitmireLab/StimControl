@@ -21,6 +21,7 @@ end
 
 properties(Access=public, Dependent)
     SavePrefix
+    HasAdditionalConfig
 end
 
 properties(Access=protected)
@@ -266,15 +267,20 @@ function objStruct = GetParams(obj)
 end
 
 function UpdateSavePath(obj)
-    % Updates the component's savepath. Does nothing 
-    % unless the component saves to a sub-folder within the experiment;
+    % Updates the component's savepath. Does nothing unless the component 
+    % saves to a sub-folder within the experiment;
     % in that case make the subfolder. See CameraComponent
 end
 
+function fig = CreateConfigFigure(obj)
+% CREATECONFIGFIGURE returns the handle to a figure providing
+% additional config information. If no additional configuration is
+% required, returns an empty handle.
+fig = [];
+end
 end
 
 methods
-
 function set.SavePrefix(obj, val)
     obj.TrialPrefix = val;
     obj.UpdateSavePath;
@@ -282,6 +288,18 @@ end
 
 function out = get.SavePrefix(obj)
     out = obj.TrialPrefix;
+end
+
+function out = get.HasAdditionalConfig(obj)
+    % HASADDITIONALCONFIG returns whether the object has additional config
+    % data to display in a separate figure.
+    mObj = metaclass(obj);
+    methodMeta = mObj.MethodList(strcmp({mObj.MethodList.Name}, 'CreateConfigFigure'));
+    if strcmp(methodMeta.DefiningClass.Name, class(childObj))
+        out = true;
+    else
+        out = false;
+    end
 end
 end
 
@@ -304,7 +322,7 @@ methods (Abstract, Access=public)
 %                                   settings
 InitialiseSession(obj, varargin)
 
-% Start device. Start the trigger device last.
+% Start device. WHEN CALLING: start the trigger device last
 StartTrial(obj)
 
 % Stop device during trial and flush any remaining data.
