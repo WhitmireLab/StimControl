@@ -99,7 +99,7 @@ function obj = DAQComponent(varargin)
 end
 
 function Debug(obj)
-    keyboard
+    obj.CreateConfigFigure()
 end
 
 function obj = InitialiseSession(obj, varargin)
@@ -448,9 +448,216 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
     end
 end
 
-function fig = CreateConfigFigure(obj)
-    fig = uifigure();
+function handles = CreateConfigFigure(obj)
+    info = obj.deviceInfo;
+    handles = [];
+    windowTitle = sprintf("Configure channels: %s (%s)", obj.ComponentID, obj.ConfigStruct.ProtocolID);
+    prevFig = findall(groot, 'Type', 'uifigure', 'Name', windowTitle);
+    if ~isempty(prevFig) && isvalid(prevFig)
+        delete(prevFig);
+    end
+    handles.fig = uifigure('Name', windowTitle, ...
+            'KeyPressFcn', @(src,event)KeyPress(src, event));
+    ss = {info.Subsystems};
+    subsystems = {};
+    allVars = {};
+    ssCat = categorical({info.Subsystems.SubsystemType}');
+    % extract subsystem information
+    for i = 1:length(info.Subsystems)
+        subsystem = ss{:}(i);
+        % initialise more common values
+        subsystemType = subsystem.SubsystemType;
+        ioType = categorical(cellstr(["input"; "output"]));
+        rangesAvailable = categorical(cellstr(" "));
+        terminalConfig = rangesAvailable;
+        % handle exceptions to rule
+        if contains(subsystemType, "Analog")
+            ioType = categorical(cellstr(lower(subsystem.SubsystemType(7:end))));
+            terminalConfig = categorical(cellstr(subsystem.TerminalConfigsAvailable))';
+            rangesAvailable = arrayfun(@(mn, mx) sprintf("[%d %d]", mn, mx), [subsystem.RangesAvailable.Min], [subsystem.RangesAvailable.Max], "UniformOutput", false);
+            rangesAvailable = categorical(cellstr([rangesAvailable{:}]))';
+        end
+        % add to subsystems table
+        subsystemDetails = {...
+            subsystemType, ...
+            ssCat(i), ...
+            categorical(subsystem.ChannelNames), ...
+            "", ...
+            ioType, ...
+            categorical(subsystem.MeasurementTypesAvailable)', ...
+            terminalConfig, ...
+            rangesAvailable, ...
+            "", ...
+            "", ...
+            categorical({'0'; '1'}), ...
+            subsystem.NumberOfChannelsAvailable ...
+        };
+        if isempty(allVars)
+            allVars = subsystemDetails;
+        else
+            allVars = cellfun(@(x, y) union(x, y), allVars, subsystemDetails, 'UniformOutput', false);
+        end
+        subsystems = [subsystems; subsystemDetails];
+    end
+    % create figure
+    vNames = ["typeString", "type", "portNum", "channelName", "ioType", "signalType", "TerminalConfig", "Range", "Device", "Label", "Preview", "nChans"];
+    fmtTbl = cell2table(subsystems);
+    fmtTbl.Properties.VariableNames = vNames;
+    fmtTbl.Properties.RowNames = fmtTbl.typeString;
+    handles.baseGrid = uigridlayout(handles.fig, ...
+        'RowHeight', [repmat({'1x'}, 1, height(subsystems)) {25}], ...
+        'ColumnWidth', {'1x', 100});
+    handles.validityLabel = uilabel(handles.baseGrid, 'Text', 'Add row: Ctrl+Enter. Remove row: Ctrl+Backspace.', ...
+        'Layout', matlab.ui.layout.GridLayoutOptions( ...
+            'Row', height(subsystems)+1, ...
+            'Column',1));
+    handles.saveBtn = uibutton(handles.baseGrid, 'Text', 'Save', ...
+        'ButtonPushedFcn',  @(src, event)SaveConfig(src, event), ...
+        'Layout', matlab.ui.layout.GridLayoutOptions( ...
+            'Row', height(subsystems)+1, ...
+            'Column',2));
+    variableNames = vNames(2:end-1);
+    handles.configTable = uitable(handles.baseGrid, ...
+        'CellEditCallback', @(src, event)EditCell(src, event), ...
+        'ColumnName', variableNames, ...
+        'ColumnEditable', true, ...
+        'Layout', matlab.ui.layout.GridLayoutOptions( ...
+            'Row', [1 height(subsystems)], ...
+            'Column', [1 2]));
+    tData = {};
+    for variableName = variableNames
+        tmp = fmtTbl{:, variableName};
+        if iscell(tmp)
+            tmp = unique(vertcat(tmp{:}));
+        else
+            tmp = unique(vertcat(tmp));
+        end
+        tData = [tData {tmp}];
+    end
+    tData = cellfun(@(x) x(1), tData, 'UniformOutput', false);
+    tData = cell2table(tData);
+    tData.Properties.VariableNames = variableNames;
+    handles.configTable.Data = tData;
+    if isfile(obj.ConfigStruct.ChannelConfig)
+        keyboard;
+        options = detectImportOptions(obj.ConfigStruct.ChannelConfig);
+        options.setvartype({"iotype", 'Device', 'signalType', 'TerminalConfig'}, "categorical");
+        options.setvartype({'Preview'}, "uint8")
+        tData = readtable(obj.ConfigStruct.ChannelConfig, options);
+        % todo how to handle legacy channel config? just make new configs?
+        % might be easiest.
+        
+        % cat = prop.getCategorical;
+        % configVal = component.ConfigStruct.(rowNames{fnum});
+        % if ischar(configVal)
+        %     configCat = categorical(cellstr(configVal));
+        %     idx = find(cat == configCat);
+        %     values{fnum} = cat(idx);
+        % elseif isstring(configVal)
+        %     configCat = categorical(cellstr(configVal));
+        %     idx = find(cat == configCat);
+        %     values(fnum) = {cat(idx)};
+        % elseif isnumeric(configVal)
+        %     configCat = categorical(configVal);
+        %     idx = find(cat == configCat);
+        %     values(fnum) = {cat(idx)};
+        % end
+    end
+    handles.fig.Visible = "on";
     
+    function MarkValidity(src, indices, validity, message)
+
+    end
+
+    function CheckValidity(src, event)
+        % check no channels are used twice
+        % check all values line up with type in fmtTbl
+        % check all channels have a name
+    end
+
+    function KeyPress(src, event)
+        keyboard;
+        % todo add ctrl+s, ctrl+shift+s, some check shortcut
+        % maybe also menu buttons for this.
+        % Adds a new row to selected configTable when Ctrl+Enter is pressed
+        if strcmpi([event.Modifier{:}], 'control')
+            if strcmpi(event.Key, 'return')
+                % if height(src.Data) < sum(fmtTbl.("nChans"))
+                handles.configTable.Data = resize(src.Data, height(handles.configTable.Data)+1);
+            elseif strcmpi(event.Key, 'backspace')
+                handles.configTable.Data(handles.configTable.Selection(1), :) = [];
+            end
+        end
+    end
+
+    function EditCell(src, event)
+        % extract event data
+        idxRow = event.Indices(1);
+        property = src.Data.Properties.VariableNames(event.Indices(2));
+        if strcmpi(property, 'type')
+            % needs to reset everything else.
+            for attr = vNames
+                if contains("channelName, Device, Label, Preview, type, typeString", attr)
+                    continue
+                end
+                val = fmtTbl{string(event.NewData), attr};
+                if iscell(val)
+                    val = val{:};
+                end
+                if iscategorical(val)
+                    src.Data(idxRow, attr) = {""};
+                    src.Data(idxRow, attr) = {val(1)};
+                else
+                    src.Data(idxRow, attr) = {val};
+                end
+            end
+        elseif strcmpi(property, "portnum")
+            % change type to match port
+            % nice to have todo: reset type if this is a change.
+            dString = string(event.NewData);
+            if regexpi(dString, "^a(.)\d+$")
+                % analog channel
+                if contains(dString, 'ai')
+                    src.Data(idxRow, 'type') = {categorical(cellstr('AnalogInput'))};
+                else
+                    src.Data(idxRow, 'type') = {categorical(cellstr('AnalogOutput'))};
+                end
+            elseif regexpi(dString, "^ctr\d+$")
+                % counter channel. Only change if not already selected.
+                if ~contains(string(src.Data(idxRow, 'type')), 'Counter')
+                    src.Data(idxRow, 'type') = {categorical(cellstr('CounterInput'))};
+                end
+            else
+                % digital I/O channel.
+                if ~contains(string(src.Data(idxRow, 'type')), 'Digital')
+                    src.Data(idxRow, 'type') = {categorical(cellstr('DigitalIO'))};
+                end
+            end
+        elseif strcmpi(class(event.NewData), 'categorical')
+            % check categorical belongs to correct group
+            selectedType = string(src.Data{idxRow, 'type'});
+            allowableCategories = fmtTbl{selectedType, property};
+            if iscell(allowableCategories)
+                allowableCategories = allowableCategories{:};
+            end
+            if isempty(categories(allowableCategories))
+                valid = false;
+                validMessage = sprintf("Invalid value for %s %s: %s. Property should not be defined.", ...
+                    selectedType, property, string(event.NewData));
+                src.Data{event.Indices} = "";
+            elseif ~any(contains(categories(allowableCategories), string(event.NewData)))
+                valid = false;
+                validMessage = sprintf("Invalid value for %s %s: %s. Valid values: %s", ...
+                    selectedType, property, string(event.NewData), strjoin(categories(allowableCategories), ', '));
+                src.Data{event.Indices} = allowableCategories(1);
+            end
+        end
+    end
+    function SaveConfig(src, event)
+        % SAVECONFIG saves the set table to a csv to be used when loading channel config. 
+        writetable(configTable.Data, obj.ConfigStruct.ChannelConfig)
+        delete(handles)
+    end
 end
 
 %% DEVICE-SPECIFIC FUNCTIONS
@@ -603,7 +810,6 @@ end
 
 function obj = ClearChannels(obj)
         disp(message);
-        % disp(exception.message)
         dbstack
         keyboard
         % if length(obj.SessionHandle.Channels) ~= 0
