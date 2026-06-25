@@ -99,7 +99,7 @@ function obj = DAQComponent(varargin)
 end
 
 function Debug(obj)
-    obj.CreateConfigFigure()
+    keyboard;
 end
 
 function obj = InitialiseSession(obj, varargin)
@@ -212,7 +212,11 @@ end
 function Close(obj)
     % safely close the session
     Stop(obj);
-    %todo disconnect?
+
+    % close any config figures (clean up GUI)
+    if ~isempty(obj.FigHandles) && isvalid(obj.FigHandles)
+        delete(obj.FigHandles);
+    end
 end
 
 % Change device parameters TODO ALL OF THESE REQUIRE A RESTART I THINK
@@ -448,150 +452,215 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
     end
 end
 
-function handles = CreateConfigFigure(obj)
-    info = obj.deviceInfo;
-    handles = [];
-    windowTitle = sprintf("Configure channels: %s (%s)", obj.ComponentID, obj.ConfigStruct.ProtocolID);
-    prevFig = findall(groot, 'Type', 'uifigure', 'Name', windowTitle);
-    if ~isempty(prevFig) && isvalid(prevFig)
-        delete(prevFig);
+function CreateConfigFigure(obj, src, event)
+    % CREATECONFIGFIGURE creates a figure for further device configuration
+    
+    % delete previous figures
+    if ~isempty(obj.FigHandles)
+        try
+            delete(obj.FigHandles);
+        end
     end
-    handles.fig = uifigure('Name', windowTitle, ...
-            'KeyPressFcn', @(src,event)KeyPress(src, event));
-    ss = {info.Subsystems};
-    subsystems = {};
-    allVars = {};
-    ssCat = categorical({info.Subsystems.SubsystemType}');
-    % extract subsystem information
-    for i = 1:length(info.Subsystems)
-        subsystem = ss{:}(i);
-        % initialise more common values
-        subsystemType = subsystem.SubsystemType;
-        ioType = categorical(cellstr(["input"; "output"]));
-        rangesAvailable = categorical(cellstr(" "));
-        terminalConfig = rangesAvailable;
-        % handle exceptions to rule
-        if contains(subsystemType, "Analog")
-            ioType = categorical(cellstr(lower(subsystem.SubsystemType(7:end))));
-            terminalConfig = categorical(cellstr(subsystem.TerminalConfigsAvailable))';
-            rangesAvailable = arrayfun(@(mn, mx) sprintf("[%d %d]", mn, mx), [subsystem.RangesAvailable.Min], [subsystem.RangesAvailable.Max], "UniformOutput", false);
-            rangesAvailable = categorical(cellstr([rangesAvailable{:}]))';
+    obj.FigHandles = [];
+    vNames = ["typeString", "type", "portNum", "channelName", "ioType", "signalType", "TerminalConfig", "Range", "Device", "Label", "Preview", "nChans"];
+    variableNames = vNames(2:end-1);
+    nVerticalGridCells = 2;
+    % initialise format information
+    if ~isempty(obj.SessionHandle) && isvalid(obj.SessionHandle)
+        info = obj.deviceInfo;
+        ss = {info.Subsystems};
+        subsystems = {};
+        allVars = {};
+        ssCat = categorical({info.Subsystems.SubsystemType}');
+        % extract subsystem information
+        for i = 1:length(info.Subsystems)
+            subsystem = ss{:}(i);
+            % initialise more common values
+            subsystemType = subsystem.SubsystemType;
+            ioType = categorical(cellstr(["input"; "output"]));
+            rangesAvailable = categorical(cellstr(" "));
+            terminalConfig = rangesAvailable;
+            % handle exceptions to rule
+            if contains(subsystemType, "Analog")
+                ioType = categorical(cellstr(lower(subsystem.SubsystemType(7:end))));
+                terminalConfig = categorical(cellstr(subsystem.TerminalConfigsAvailable))';
+                rangesAvailable = arrayfun(@(mn, mx) sprintf("[%d %d]", mn, mx), [subsystem.RangesAvailable.Min], [subsystem.RangesAvailable.Max], "UniformOutput", false);
+                rangesAvailable = categorical(cellstr([rangesAvailable{:}]))';
+            end
+            % add to subsystems table
+            subsystemDetails = {...
+                subsystemType, ...
+                ssCat(i), ...
+                categorical(subsystem.ChannelNames), ...
+                "", ...
+                ioType, ...
+                categorical(subsystem.MeasurementTypesAvailable)', ...
+                terminalConfig, ...
+                rangesAvailable, ...
+                "", ...
+                "", ...
+                categorical({'0'; '1'}), ...
+                subsystem.NumberOfChannelsAvailable ...
+            };
+            if isempty(allVars)
+                allVars = subsystemDetails;
+            else
+                allVars = cellfun(@(x, y) union(x, y), allVars, subsystemDetails, 'UniformOutput', false);
+            end
+            subsystems = [subsystems; subsystemDetails];
         end
-        % add to subsystems table
-        subsystemDetails = {...
-            subsystemType, ...
-            ssCat(i), ...
-            categorical(subsystem.ChannelNames), ...
-            "", ...
-            ioType, ...
-            categorical(subsystem.MeasurementTypesAvailable)', ...
-            terminalConfig, ...
-            rangesAvailable, ...
-            "", ...
-            "", ...
-            categorical({'0'; '1'}), ...
-            subsystem.NumberOfChannelsAvailable ...
-        };
-        if isempty(allVars)
-            allVars = subsystemDetails;
-        else
-            allVars = cellfun(@(x, y) union(x, y), allVars, subsystemDetails, 'UniformOutput', false);
+        fmtTbl = cell2table(subsystems);
+        fmtTbl.Properties.VariableNames = vNames;
+        fmtTbl.Properties.RowNames = fmtTbl.typeString;
+        tData = {};
+        for variableName = variableNames
+            tmp = fmtTbl{:, variableName};
+            if iscell(tmp)
+                tmp = unique(vertcat(tmp{:}));
+            else
+                tmp = unique(vertcat(tmp));
+            end
+            tData = [tData {tmp}];
         end
-        subsystems = [subsystems; subsystemDetails];
+        tData = cellfun(@(x) x(1), tData, 'UniformOutput', false);
+        tData = cell2table(tData);
+        tData.Properties.VariableNames = variableNames;
+        labelNote = 'If DAQ has been initialised, changes will not take effect until program restart.';
+    else
+        tData = cell2table(repmat({""}, 2, length(variableNames)));
+        tData.Properties.VariableNames = variableNames;
+        labelNote = 'Value suggestions and validity checking inaccessible while DAQ is disabled.';
     end
     % create figure
-    vNames = ["typeString", "type", "portNum", "channelName", "ioType", "signalType", "TerminalConfig", "Range", "Device", "Label", "Preview", "nChans"];
-    fmtTbl = cell2table(subsystems);
-    fmtTbl.Properties.VariableNames = vNames;
-    fmtTbl.Properties.RowNames = fmtTbl.typeString;
-    handles.baseGrid = uigridlayout(handles.fig, ...
-        'RowHeight', [repmat({'1x'}, 1, height(subsystems)) {25}], ...
+    obj.FigHandles = [];
+    windowTitle = sprintf("Configure channels: %s (%s)", obj.ComponentID, obj.ConfigStruct.ProtocolID);
+    obj.FigHandles.fig = uifigure('Name', windowTitle, ...
+        'KeyPressFcn', @(src,event)KeyPress(src, event));
+    obj.FigHandles.baseGrid = uigridlayout(obj.FigHandles.fig, ...
+        'RowHeight', [repmat({'1x'}, 1, nVerticalGridCells) {25}], ...
         'ColumnWidth', {'1x', 100});
-    handles.validityLabel = uilabel(handles.baseGrid, 'Text', 'Add row: Ctrl+Enter. Remove row: Ctrl+Backspace.', ...
+    obj.FigHandles.validityLabel = uilabel(obj.FigHandles.baseGrid, ...
+        'Text', sprintf('%s', labelNote), ... %Add row: Ctrl+Enter. Remove row: Ctrl+Backspace.\n
+        'WordWrap', true, ...
         'Layout', matlab.ui.layout.GridLayoutOptions( ...
-            'Row', height(subsystems)+1, ...
+            'Row', nVerticalGridCells+1, ...
             'Column',1));
-    handles.saveBtn = uibutton(handles.baseGrid, 'Text', 'Save', ...
+    obj.FigHandles.saveBtn = uibutton(obj.FigHandles.baseGrid, 'Text', 'Save', ...
         'ButtonPushedFcn',  @(src, event)SaveConfig(src, event), ...
         'Layout', matlab.ui.layout.GridLayoutOptions( ...
-            'Row', height(subsystems)+1, ...
+            'Row', nVerticalGridCells+1, ...
             'Column',2));
-    variableNames = vNames(2:end-1);
-    handles.configTable = uitable(handles.baseGrid, ...
+    obj.FigHandles.configTable = uitable(obj.FigHandles.baseGrid, ...
         'CellEditCallback', @(src, event)EditCell(src, event), ...
         'ColumnName', variableNames, ...
         'ColumnEditable', true, ...
         'Layout', matlab.ui.layout.GridLayoutOptions( ...
-            'Row', [1 height(subsystems)], ...
-            'Column', [1 2]));
-    tData = {};
-    for variableName = variableNames
-        tmp = fmtTbl{:, variableName};
-        if iscell(tmp)
-            tmp = unique(vertcat(tmp{:}));
-        else
-            tmp = unique(vertcat(tmp));
-        end
-        tData = [tData {tmp}];
-    end
-    tData = cellfun(@(x) x(1), tData, 'UniformOutput', false);
-    tData = cell2table(tData);
-    tData.Properties.VariableNames = variableNames;
-    handles.configTable.Data = tData;
-    if isfile(obj.ConfigStruct.ChannelConfig)
-        keyboard;
-        options = detectImportOptions(obj.ConfigStruct.ChannelConfig);
-        options.setvartype({"iotype", 'Device', 'signalType', 'TerminalConfig'}, "categorical");
-        options.setvartype({'Preview'}, "uint8")
-        tData = readtable(obj.ConfigStruct.ChannelConfig, options);
-        % todo how to handle legacy channel config? just make new configs?
-        % might be easiest.
-        
-        % cat = prop.getCategorical;
-        % configVal = component.ConfigStruct.(rowNames{fnum});
-        % if ischar(configVal)
-        %     configCat = categorical(cellstr(configVal));
-        %     idx = find(cat == configCat);
-        %     values{fnum} = cat(idx);
-        % elseif isstring(configVal)
-        %     configCat = categorical(cellstr(configVal));
-        %     idx = find(cat == configCat);
-        %     values(fnum) = {cat(idx)};
-        % elseif isnumeric(configVal)
-        %     configCat = categorical(configVal);
-        %     idx = find(cat == configCat);
-        %     values(fnum) = {cat(idx)};
-        % end
-    end
-    handles.fig.Visible = "on";
+            'Row', [1 nVerticalGridCells], ...
+            'Column', [1 2]), ...
+        'KeyPressFcn', @(src,event)KeyPress(src, event));
+    obj.FigHandles.menuMain = uimenu(obj.FigHandles.fig, 'Label', 'Options');
+    obj.FigHandles.menuSave = uimenu(obj.FigHandles.menuMain, 'Label', 'Save', ...
+        'Callback', @(src, event)SaveConfig(src, event), ...
+        'Accelerator', 's');
+    obj.FigHandles.menuSaveAs = uimenu(obj.FigHandles.menuMain, 'Label', 'Save As', ...
+        'Callback', @(src, event)SaveConfigAs(src, event), ...
+        'Accelerator', 'n');
+    % obj.FigHandles.menuCheck = uimenu(obj.FigHandles.menuMain, 'Label', 'Check Validity', ...
+    %     'Callback', @(src, event)CheckValid(src, event), ...
+    %     'Accelerator', 'k');
+    obj.FigHandles.menuAddRow = uimenu(obj.FigHandles.menuMain, 'Label', 'Add Row', ...
+        'Callback', @(src, event)AddRow(src, event), ...
+        'Accelerator', 'r');
+    obj.FigHandles.menuRemoveRow = uimenu(obj.FigHandles.menuMain, 'Label', 'Delete Selected Row', ...
+        'Callback', @(src, event)RemoveRow(src, event), ...
+        'Accelerator', 'd');
     
-    function MarkValidity(src, indices, validity, message)
+    if isfile(obj.ConfigStruct.ChannelConfig)
+        options = detectImportOptions(obj.ConfigStruct.ChannelConfig);
+        if any(contains(options.VariableNames, 'type'))
+            options = setvartype(options, {'type', 'ioType', 'Range', 'signalType', 'TerminalConfig', 'Preview', 'portNum'}, "categorical");
+        else
+            % legacy consideration
+            options = setvartype(options, {'ioType', 'Range', 'signalType', 'TerminalConfig', 'Preview', 'portNum'}, "categorical");
+        end
+        tempData = readtable(obj.ConfigStruct.ChannelConfig, options);
+        tData = outerjoin(tData, tempData, 'Type', 'right', 'MergeKeys', true);
+        typeMap = struct( ...
+            'ai', "AnalogInput", ...
+            'ao', "AnalogOutput", ...
+            'po', "DigitalIO", ...
+            'ct', "CounterOutput");
+        % tmp = cellfun(@(c, t) )
+        for i = 1:height(tData)
+            tData(i,["type","portNum"])
+            if isundefined(tData{i,"type"})
+                c = char(tData{i, "portNum"});
+                tData{i,"type"} = categorical(typeMap.(c(1:2)));
+            end
+        end
+    end
+    obj.FigHandles.configTable.Data = tData;
+    obj.FigHandles.fig.Visible = "on";
+    unsavedChanges = false;
+    filePath = [];
+    
+    function MarkValidity(indices, validity, message)
 
     end
 
-    function CheckValidity(src, event)
+    function CheckValid(src, event)
         % check no channels are used twice
-        % check all values line up with type in fmtTbl
-        % check all channels have a name
+        % [uniqueTableRows,indexToUniqueRows,indexBackFromUnique] = unique(obj.FigHandles.configTable.Data.portNum);
+        % if isempty(obj.SessionHandle) || isvalid(obj.SessionHandle)
+        %     % not implemented.
+        %     return;
+        % end
+        % d = obj.FigHandles.configTable.Data;
+        % % check no channels are used twice
+        % % check all values line up with type in fmtTbl
+        % % check all channels have a name
+        % keyboard;
     end
-
+    
+    function AddRow(src, event)
+        obj.FigHandles.configTable.Data = ...
+            resize(obj.FigHandles.configTable.Data, ...
+                height(obj.FigHandles.configTable.Data)+1);
+        unsavedChanges = true;
+    end
+    function RemoveRow(src, event)
+        obj.FigHandles.configTable.Data(obj.FigHandles.configTable.Selection(1), :) = [];
+        unsavedChanges = true;
+    end
     function KeyPress(src, event)
-        keyboard;
-        % todo add ctrl+s, ctrl+shift+s, some check shortcut
-        % maybe also menu buttons for this.
-        % Adds a new row to selected configTable when Ctrl+Enter is pressed
+        % handle ctrl+enter and ctrl+backspace as add and remove rows,
+        % ctrl+w as close window
         if strcmpi([event.Modifier{:}], 'control')
             if strcmpi(event.Key, 'return')
-                % if height(src.Data) < sum(fmtTbl.("nChans"))
-                handles.configTable.Data = resize(src.Data, height(handles.configTable.Data)+1);
+               AddRow(src, event);
             elseif strcmpi(event.Key, 'backspace')
-                handles.configTable.Data(handles.configTable.Selection(1), :) = [];
+                RemoveRow(src, event);
             end
+        elseif strcmpi([event.Modifier{:}], 'shiftcontrol')
+            if strcmpi(event.Key, 's')
+                SaveConfigAs(src, event);
+            end
+            % elseif strcmpi(event.Key, 'w')
+            %     delete(obj.FigHandles.fig);
+            %     delete(obj.FigHandles);
+            %     obj.FigHandles = [];
         end
     end
 
     function EditCell(src, event)
-        % extract event data
+        % EDITCELL automatically update relevant row contents in response
+        % to certain changes in cell value
+        unsavedChanges = true;
+        if (isempty(obj.SessionHandle) || ~isvalid(obj.SessionHandle)) || ...
+                event.NewData == event.PreviousData
+            % no checking or auto updates - just leave it as is.
+            return
+        end
         idxRow = event.Indices(1);
         property = src.Data.Properties.VariableNames(event.Indices(2));
         if strcmpi(property, 'type')
@@ -653,10 +722,44 @@ function handles = CreateConfigFigure(obj)
             end
         end
     end
+    function SaveConfigAs(src, event)
+        % SAVECONFIGAS save config as a new file. 
+        fname = inputdlg( ...
+                sprintf("Enter the filename \n(you will need to change your target in the base DAQ settings too)"), ...
+                "Save config as");
+        if isempty(fname)
+            return
+        end
+        fname = matlab.lang.makeValidName(fname{:});
+        if iscell(fname)
+            fname = fname{:};
+        end
+        if ~contains(fname, '.csv')
+            fname = append(fname, '.csv');
+        end
+        pname = strsplit(obj.ConfigStruct.ChannelConfig, filesep);
+        pname = strcat(pname, filesep);
+        pname{end} = fname;
+        pname = [pname{:}];
+        filePath = pname;
+        writetable(obj.FigHandles.configTable.Data, pname);
+        unsavedChanges = false;
+    end
     function SaveConfig(src, event)
         % SAVECONFIG saves the set table to a csv to be used when loading channel config. 
-        writetable(configTable.Data, obj.ConfigStruct.ChannelConfig)
-        delete(handles)
+        if ~isempty(filePath)
+            p = filePath;
+        else
+            p = obj.ConfigStruct.ChannelConfig;
+        end
+        writetable(obj.FigHandles.configTable.Data, p);
+        unsavedChanges = false;
+    end
+    function ConfirmClose(src, event)
+        keyboard;
+        if unsavedChanges
+            
+        end
     end
 end
 

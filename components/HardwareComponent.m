@@ -26,6 +26,7 @@ end
 
 properties(Access=protected)
     statusHandles = [];
+    FigHandles = [];
 end
 
 properties(Constant, Access=protected)
@@ -272,11 +273,9 @@ function UpdateSavePath(obj)
     % in that case make the subfolder. See CameraComponent
 end
 
-function fig = CreateConfigFigure(obj)
-% CREATECONFIGFIGURE returns the handle to a figure providing
-% additional config information. If no additional configuration is
-% required, returns an empty handle.
-fig = [];
+function CreateConfigFigure(obj, src, event)
+% CREATECONFIGFIGURE creates a figure that can be used to configure
+% additional hardware settings (e.g. DAQ channels)
 end
 end
 
@@ -295,7 +294,7 @@ function out = get.HasAdditionalConfig(obj)
     % data to display in a separate figure.
     mObj = metaclass(obj);
     methodMeta = mObj.MethodList(strcmp({mObj.MethodList.Name}, 'CreateConfigFigure'));
-    if strcmp(methodMeta.DefiningClass.Name, class(childObj))
+    if strcmp(methodMeta.DefiningClass.Name, class(obj))
         out = true;
     else
         out = false;

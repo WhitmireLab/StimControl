@@ -32,6 +32,16 @@ else
     obj.h.ComponentConfig.Label.Text = class(component);
 end
 
+if component.HasAdditionalConfig
+    obj.h.ComponentConfig.AdditionalConfigBtn.Enable = true;
+    obj.h.ComponentConfig.AdditionalConfigBtn.Visible = true;
+    obj.h.ComponentConfig.AdditionalConfigBtn.ButtonPushedFcn = ...
+            @(src, event)component.CreateConfigFigure(src, event);
+else
+    obj.h.ComponentConfig.AdditionalConfigBtn.Enable = false;
+    obj.h.ComponentConfig.AdditionalConfigBtn.Visible = false;
+end
+
 tData = rows2vars(struct2table(component.ConfigStruct, 'AsArray', true));
 rowNames = tData{:, 1};
 values = tData{:, 2};
