@@ -155,33 +155,55 @@
 %     * DCX       - signal duty cycle (percent)
 
 % General Parameters
-nProtRuns2 rand1 dPause30 tPre2000 tPost5000
+nProtRuns2 rand1 dPause30 tPre200 tPost3000
 
 ~ % Start Trial Definitions 
-Triggers & TwoSecCool % 2 second cool
-RampingDigitalPWM > ArbitraryAnalog > TwoSecondNoise > RampingAnalogPulse tPost7000
-Triggers & (TwoSecWarm > (TwoSecCool StartDel10) nStims3 RepDel10) tPost13000   % sequential warm cool with 10ms delay x3
-Triggers & (TwoSecWarm ^.2 TwoSecCool OddDistr2 OddMinDist1 nStims10 RepDel10) tPost20090 % oddball swap 20% of warm stims for cool stims
-Triggers & (TwoSecWarm ^.5 (TwoSecondNoise |> OneSecondSquareWave) OddDistr2 OddMinDist1 nStims10 RepDel10) tPost20090 % oddball swap 50% of warm stims for either warm or cool, alternating 
-% Triggers & (TwoSecWarm ^.5 (TwoSecondNoise | OneSecondSquareWave) OddDistr1 nStims10 RepDel10) tPost20090 % oddball swap 50% of warm stims for either warm or cool, randomly chosen
+
+% simple stim demo
+RampingAnalogPulse
+Triggers & SquareWave
+SineWave > OneSecondOmission > SineWavePhased
+RampingDigitalPWM tPre500 tPost2000
+Noise tPre1000 tPost3000
+ArbitraryAnalog
+OneSecondWarm > DigitalOmission > OneSecondCool tPost5500
+
+% relationships demo
+DigitalPulseOne > DigitalPulseTwo                           % basic sequential
+DigitalPulseOne & DigitalPulseTwo                           % basic simultaneous
+DigitalPulseOne & (DigitalPulseTwo StartDel500)             % simultaneous with start delay
+DigitalPulseOne > (StartDel500 DigitalPulseOne)             % sequential with start delay
+DigitalPulseOne nStims5 RepDel100 tPost6000                          % basic nStims RepDel
+DigitalPulseOne ^.2 DigitalPulseTwo nStims10 RepDel100 OddDistr1 tPost12000   % basic oddball, random
+DigitalPulseOne ^.5 DigitalPulseTwo nStims10 RepDel100 OddDistr1 tPost12000    % basic oddball 50pct swap, random
+DigitalPulseOne ^.2 DigitalPulseTwo nStims10 RepDel100 OddDistr2 OddMinDist2 tPost12000 % basic oddball 50pct swap, semirandom, two guaranteed
+DigitalPulseOne ^.5 DigitalPulseTwo nStims10 RepDel100 OddDistr0 tPost12000    % basic oddball 50pct swap, even
+DigitalPulseOne ^.5 (DigitalPulseTwo | BasicAnalogPulse) OddDistr0 nStims10 RepDel100 tPost12000
+DigitalPulseOne ^.5 (DigitalPulseTwo |> BasicAnalogPulse) OddDistr0 nStims10 RepDel100 tPost12000
 
 ~ % Start Stimulus Definitions
 
 % stimuli
-TwoSecWarm(QST)[QST]: N320 S11000 C0420 V03000 R03000 D002000 T001 I1
-TwoSecCool(QST)[QST]: N320 S11000 C0220 V03000 R03000 D002000 T001 I1
-OneSecondSquareWave(SquareWave)[ao0]: Dur1000 Freq5 MaxAmp5 MinAmp-5 PW3
-OneSecondSineWave(SineWave)[ao0]: Dur1000 Freq1 Amp5 Phase90 VerticalShift0.5
-RampingDigitalPWM(PWM)[GPIO7]: DC90 Freq20 Dur2000 RampOnDur700 RampOffDur700
-TwoSecondNoise(AnalogNoise)[ao1]: Dur2000 Distr1 MinAmp-5 MaxAmp5
-RampingAnalogPulse(AnalogPulse)[ao1]: Dur1000 RampOnDur100 RampOffDur500 PulseAmp5
-ArbitraryAnalog(Arbitrary)[ao0]: ArbitraryExample_20Hz_200ms.csv Interp1 Dur2000
-OneSecondOmission(Omission)[GPIO7]: Dur1000
+
+OneSecondWarm(QST)[DigitalDeviceOne]: N320 S11000 C0420 V03000 R03000 D001000 T001 I1
+OneSecondCool(QST)[DigitalDeviceOne]: N320 S11000 C0220 V03000 R03000 D001000 T001 I1
+SquareWave(SquareWave)[AnalogDeviceOne]: Dur1000 Freq5 MaxAmp5 MinAmp-5 PW3
+SineWavePhased(SineWave)[AnalogDeviceOne]: Dur1000 Freq1 Amp5 Phase90 VerticalShift0.5
+SineWave(SineWave)[AnalogDeviceOne]: Dur1000 Freq1 Amp5
+DigitalPulseOne(DigitalPulse)[DigitalDeviceOne]: Dur1000
+DigitalPulseTwo(DigitalPulse)[DigitalDeviceTwo]: Dur1000
+RampingDigitalPWM(PWM)[DigitalDeviceOne]: DC90 Freq20 Dur2000 RampOnDur700 RampOffDur700
+Noise(AnalogNoise)[AnalogDeviceOne]: Dur2000 Distr1 MinAmp-5 MaxAmp5
+RampingAnalogPulse(AnalogPulse)[AnalogDeviceOne]: Dur2000 RampOnDur500 RampOffDur500 PulseAmp5
+ArbitraryAnalog(Arbitrary)[AnalogDeviceOne]: ArbitraryExample_20Hz_200ms.csv Interp1 Dur2000
+OneSecondOmission(Omission)[AnalogDeviceOne]: Dur1000
+DigitalOmission(Omission)[DigitalDeviceOne]: Dur1000
+BasicAnalogPulse(AnalogPulse)[AnalogDeviceOne]: Dur1000 RampOnDur0 RampOffDur0 PulseAmp5
 
 % acquisition triggers
-CameraTrigger(DigitalTrigger)[Widefield1, Widefield2]: AcquisitionTrigger Freq20 Dur-1
-TwoPhotonStartNext(digitalPulse)[TwoPhotonStart, TwoPhotonNext]: Dur1 AcquisitionTrigger
-TwoPhotonStop(digitalPulse)[TwoPhotonStop]: Dur1 AcquisitionTrigger FromEnd1
+CameraTrigger(DigitalTrigger)[DigitalDeviceTwo]: AcquisitionTrigger Freq20 Dur-1
+StartTTL(digitalPulse)[DigitalDeviceTwo]: Dur1 AcquisitionTrigger
+StopTTL(digitalPulse)[DigitalDeviceTwo]: Dur1 AcquisitionTrigger FromEnd1
 
 % grouped blocks
-Triggers(StimulusGroup)[none]: CameraTrigger & TwoPhotonStartNext & TwoPhotonStop
+Triggers(StimulusGroup)[none]: CameraTrigger & StartTTL & StopTTL

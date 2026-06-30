@@ -355,7 +355,7 @@ function LoadTrial(obj, out)
     end
     % release session (in case the previous run was incomplete)
     if obj.SessionHandle.Running
-        obj.SessionHandle.stop
+        obj.SessionHandle.stop;
     end
     flush(obj.SessionHandle);
     if obj.SessionHandle.Rate == 0 && any(contains({obj.SessionHandle.Channels.Type}, 'Output')) 
@@ -448,7 +448,7 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
         obj.LoadTrial(out);
     end
     if ~isempty(obj.PreviewPlot) % show preview data
-        obj.StartPreview
+        obj.StartPreview;
     end
 end
 
@@ -698,7 +698,7 @@ function CreateConfigFigure(obj, src, event)
                 end
             else
                 % digital I/O channel.
-                if ~contains(string(src.Data(idxRow, 'type')), 'Digital')
+                if ~contains(string(src.Data{idxRow, 'type'}), 'Digital')
                     src.Data(idxRow, 'type') = {categorical(cellstr('DigitalIO'))};
                 end
             end
@@ -712,13 +712,13 @@ function CreateConfigFigure(obj, src, event)
             if isempty(categories(allowableCategories))
                 valid = false;
                 validMessage = sprintf("Invalid value for %s %s: %s. Property should not be defined.", ...
-                    selectedType, property, string(event.NewData));
-                src.Data{event.Indices} = "";
+                    selectedType, property{:}, string(event.NewData));
+                src.Data(event.Indices(1), event.Indices(2)) = {""};
             elseif ~any(contains(categories(allowableCategories), string(event.NewData)))
                 valid = false;
                 validMessage = sprintf("Invalid value for %s %s: %s. Valid values: %s", ...
-                    selectedType, property, string(event.NewData), strjoin(categories(allowableCategories), ', '));
-                src.Data{event.Indices} = allowableCategories(1);
+                    selectedType, property{:}, string(event.NewData), strjoin(categories(allowableCategories), ', '));
+                src.Data(event.Indices(1), event.Indices(2)) = {""};
             end
         end
     end

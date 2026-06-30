@@ -10,7 +10,7 @@ function callbackSaveConfig(obj, src, event)
     else
         defaultInput = {[pcID '_default']};
     end
-    filename = inputdlg('Enter filename:','Save config',[1 45],{defaultInput});
+    filename = inputdlg('Enter filename:','Save config',[1 45],cellstr(defaultInput));
     if isempty(filename)
         return
     end

@@ -351,9 +351,9 @@ methods
             obj.childIdxes = unique(obj.childIdxes);
             nOdds = length(obj.childIdxes) - 1;
             if length(obj.childIdxes) > obj.nStimRuns
-                keyboard
                 error(sprintf("nStims in oddball sequence (%d) is insufficient to run all oddball trials (total %d including baseline).", obj.nStimRuns, nOdds+1));
             end
+            % first, shuffle the oddballs
             nSwaps = floor(obj.nStimRuns * obj.oddParams.swapRatio);
             oddIdxes = linspace(2, nOdds+1, nOdds);
     
@@ -362,9 +362,9 @@ methods
                 odds = odds(randperm(length(odds)));
             end
     
-            % swap in oddballs
+            % Swap oddballs into baseline execution order
             if strcmpi(obj.oddParams.distributionMethod, 'even') %evenly distributed
-                swapIdxes = round(linspace(1, length(order), nSwaps)); % (ish)
+                swapIdxes = ceil(linspace(2, length(order), nSwaps)); % (ish)
             elseif strcmpi(obj.oddParams.distributionMethod, 'random') %randomly distributed
                 swapIdxes = randperm(obj.nStimRuns, nSwaps);
             else
