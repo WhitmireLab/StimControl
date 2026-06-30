@@ -182,7 +182,6 @@ DigitalPulseOne ^.5 (DigitalPulseTwo | BasicAnalogPulse) OddDistr0 nStims10 RepD
 DigitalPulseOne ^.5 (DigitalPulseTwo |> BasicAnalogPulse) OddDistr0 nStims10 RepDel100 tPost12000
 
 ~ % Start Stimulus Definitions
-
 % stimuli
 
 OneSecondWarm(QST)[DigitalDeviceOne]: N320 S11000 C0420 V03000 R03000 D001000 T001 I1
