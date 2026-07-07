@@ -155,7 +155,7 @@
 %     * DCX       - signal duty cycle (percent)
 
 % General Parameters
-nProtRuns2 rand1 dPause30 tPre200 tPost3000
+nProtRuns2 rand1 dPause30 tPre50 tPost10000
 
 ~ % Start Trial Definitions 
 
@@ -186,11 +186,11 @@ DigitalPulseOne ^.5 (DigitalPulseTwo |> BasicAnalogPulse) OddDistr0 nStims10 Rep
 
 OneSecondWarm(QST)[DigitalDeviceOne]: N320 S11000 C0420 V03000 R03000 D001000 T001 I1
 OneSecondCool(QST)[DigitalDeviceOne]: N320 S11000 C0220 V03000 R03000 D001000 T001 I1
-SquareWave(SquareWave)[AnalogDeviceOne]: Dur1000 Freq5 MaxAmp5 MinAmp-5 PW3
-SineWavePhased(SineWave)[AnalogDeviceOne]: Dur1000 Freq1 Amp5 Phase90 VerticalShift0.5
-SineWave(SineWave)[AnalogDeviceOne]: Dur1000 Freq1 Amp5
-DigitalPulseOne(DigitalPulse)[DigitalDeviceOne]: Dur1000
-DigitalPulseTwo(DigitalPulse)[DigitalDeviceTwo]: Dur1000
+SquareWave(SquareWave)[AnalogDeviceOne]: Dur200 Freq5 MaxAmp5 MinAmp-5 PW3
+SineWavePhased(SineWave)[AnalogDeviceOne]: Dur200 Freq1 Amp5 Phase90 VerticalShift0.5
+SineWave(SineWave)[AnalogDeviceOne]: Dur200 Freq1 Amp5
+DigitalPulseOne(DigitalPulse)[DigitalDeviceOne]: Dur200
+DigitalPulseTwo(DigitalPulse)[DigitalDeviceTwo]: Dur200
 RampingDigitalPWM(PWM)[DigitalDeviceOne]: DC90 Freq20 Dur2000 RampOnDur700 RampOffDur700
 Noise(AnalogNoise)[AnalogDeviceOne]: Dur2000 Distr1 MinAmp-5 MaxAmp5
 RampingAnalogPulse(AnalogPulse)[AnalogDeviceOne]: Dur2000 RampOnDur500 RampOffDur500 PulseAmp5

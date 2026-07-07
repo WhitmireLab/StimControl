@@ -708,6 +708,14 @@ function stimStruct = ParseQST(params, stimStruct, stimName)
     end
 end
 
+function stimStruct = ParseSerial(params, stimStruct, stimName)
+    while ~isempty(params)
+        [tok, remain] = strtok(params);
+        stimStruct.commands = [stimStruct.commands value];
+        params = remain;
+    end
+end
+
 function value = readRangeThermode(token,pos,range,stimName)
 value = str2double(token(pos));
 if value<range(1) || value>range(2)

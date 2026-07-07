@@ -1,9 +1,5 @@
 classdef StimControl < handle
 
-% properties (Access = public)
-%     logger = Logger();
-% end
-
 properties (Access = protected)
     path = [];
 end

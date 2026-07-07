@@ -552,6 +552,11 @@ function UpdateTriggerMode(obj)
     % Updates the camera's triggermode
     % TODO currently immediate mode requires a software start.
     src = getselectedsource(obj.SessionHandle);
+    if ~any(contains(properties(src), 'TriggerMode'))
+        % generic webcams
+        obj.ConfigStruct.TriggerMode = 'manual';
+        return;
+    end
     switch obj.ConfigStruct.TriggerMode
         case "hardware"
             obj.SessionHandle.FramesPerTrigger = str2double(obj.ConfigStruct.FramesPerTrigger);

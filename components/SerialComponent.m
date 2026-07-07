@@ -30,6 +30,10 @@ properties (Access = public)
     tStimStarted = []; % for multiple triggers
 end
 
+properties (Access=private, Dependent)
+    isQST;
+end
+
 methods(Access=public)
 % Constructor that sets generic values for the class
 function obj = SerialComponent(varargin)
@@ -62,7 +66,7 @@ function obj = InitialiseSession(obj, varargin)
         obj.ComponentID = params.ComponentID;
     end
 
-    %check port is available
+    % check port is available
     if ~ismember(obj.ConfigStruct.Port, SerialComponent.FindPorts)
         warning('Serial port "%s" is not available',port)
         return
@@ -76,7 +80,7 @@ function obj = InitialiseSession(obj, varargin)
 
     % start the connection with the target port.
     obj = obj.OpenSerialConnection();
-    if contains(obj.ConfigStruct.ProtocolID, 'QST') && ~isempty(obj.SessionHandle)
+    if obj.isQST && ~isempty(obj.SessionHandle)
         obj.query('F'); % disable temperature display
         obj.query('Ose'); % activate external triggering (required with newer QST devices). added 2024.10.30
         obj.query('Om550'); % enable 55deg stim. added 2025.05.08
@@ -149,96 +153,112 @@ function StartPreview(obj)
         obj.Previewing = true;
         return;
     end
-    [p, thermP] = obj.GetLoadedParams(false);
-    if iscell(p)
-        p = [p{:}];
-    else
-        thermP = {thermP}; 
-    end
-    % startDelay = obj.TrialData.delay(1); 
+
+    % set up basics
     sampleRate = 1000;
     stimTicks = (obj.TrialData.tPre + obj.TrialData.tPost) * sampleRate / 1000;
     tPost = obj.TrialData.tPost*sampleRate;
     tax = linspace(1/sampleRate, stimTicks/sampleRate, stimTicks) - obj.TrialData.tPre/1000;
     stim = ones(length(tax),5);
     [~,t0] = min(abs(tax));
-    labels = [];
-    allS = logical(str2num([char(p(4:end, :))])); 
-    for ii = find(allS')
-        labels = [labels string(['Thermode' char(64+ii)])]; %#ok
-    end
-
-    for j = 1:length(obj.TrialData.sequence)
-        i = obj.TrialData.sequence(j);
-        if j > 1
-            t0 = t0 + obj.TrialData.delay(j);
-        end
-        thermp = thermP{i};
-        
-        N = p(1,i)/10;                          % Neutral temp (C)
-        C = thermp(1,:)/10;                     % SetPoint Temp (C)
-        D = thermp(4,:)/1000;                   % Duration (sec)
-        V = thermp(2,:)/10;                     % Pacing Rate (C/sec)
-        R = thermp(3,:)/10;                     % Return Speed (C/sec)
-        if j == 1
-            stim(1:end,:) = 1*N;
+    if obj.isQST
+        [p, thermP] = obj.GetLoadedParams(false);
+        if iscell(p)
+            p = [p{:}];
         else
-            stim(t0:end, :) = 1 * N;
+            thermP = {thermP}; 
         end
-        tRemain = tPost - t0;
-
+        % startDelay = obj.TrialData.delay(1); 
+        labels = [];
+        allS = logical(str2num([char(p(4:end, :))])); 
         for ii = find(allS')
-            dP    = D(ii)*sampleRate-1;
-            pulse = ones(dP,1);
-            dV    = round(abs(C(ii)-N)/V(ii)*sampleRate);
-            dR    = round(abs(C(ii)-N)/R(ii)*sampleRate);
-            tmp   = linspace(0,1,dV)';
-            pulse(1:min([dV dP])) = tmp((1:min([dV dP])));
-            pulse = [pulse; linspace(pulse(end),0,dR)'] * (C(ii)-N) + N;
-            tmp   = min([round(t0 + tRemain)+1 length(pulse)]);
-            stim(t0+(1:tmp)-1,ii) = pulse(1:tmp);
+            labels = [labels string(['Thermode' char(64+ii)])]; %#ok
         end
-        t0 = t0 + (max(D)*sampleRate-1);
-    end
 
-    plot(obj.PreviewPlot, tax, stim);
+        for j = 1:length(obj.TrialData.sequence)
+            i = obj.TrialData.sequence(j);
+            if j > 1
+                t0 = t0 + obj.TrialData.delay(j);
+            end
+            thermp = thermP{i};
+            
+            N = p(1,i)/10;                          % Neutral temp (C)
+            C = thermp(1,:)/10;                     % SetPoint Temp (C)
+            D = thermp(4,:)/1000;                   % Duration (sec)
+            V = thermp(2,:)/10;                     % Pacing Rate (C/sec)
+            R = thermp(3,:)/10;                     % Return Speed (C/sec)
+            if j == 1
+                stim(1:end,:) = 1*N;
+            else
+                stim(t0:end, :) = 1 * N;
+            end
+            tRemain = tPost - t0;
+    
+            for ii = find(allS')
+                dP    = D(ii)*sampleRate-1;
+                pulse = ones(dP,1);
+                dV    = round(abs(C(ii)-N)/V(ii)*sampleRate);
+                dR    = round(abs(C(ii)-N)/R(ii)*sampleRate);
+                tmp   = linspace(0,1,dV)';
+                pulse(1:min([dV dP])) = tmp((1:min([dV dP])));
+                pulse = [pulse; linspace(pulse(end),0,dR)'] * (C(ii)-N) + N;
+                tmp   = min([round(t0 + tRemain)+1 length(pulse)]);
+                stim(t0+(1:tmp)-1,ii) = pulse(1:tmp);
+            end
+            t0 = t0 + (max(D)*sampleRate-1);
+        end
+        plot(obj.PreviewPlot, tax, stim);
+        obj.PreviewPlot.YLim = [0 65];
+        yticks(obj.PreviewPlot, 0:10:65);
+    else
+        %TODO I really need a serial device connected to test this
+        for j = 1:length(obj.TrialData.sequence)
+            i = obj.TrialData.sequence(j);
+            if j > 1
+                t0 = t0 + obj.TrialData.delay(j);
+            end
+        end
+    end
     obj.PreviewPlot.XLim = [min(tax) max(tax)];
-    obj.PreviewPlot.YLim = [0 65];
     obj.Previewing = true;
     xline(obj.PreviewPlot, 0, '--r');
     xticks(obj.PreviewPlot, round(min(tax)):0.5:round(max(tax)));
-    yticks(obj.PreviewPlot, 0:10:65);
 end
 
 function [p, thermP] = GetLoadedParams(obj, fromDevice)
-    p = {};
-    thermP = {};
-    if fromDevice
-        ps = strsplit(obj.query('P'),'\r');
-        if length(ps) < 2
-            return
+    if obj.isQST
+        p = {};
+        thermP = {};
+        if fromDevice
+            ps = strsplit(obj.query('P'),'\r');
+            if length(ps) < 2
+                return
+            end
+            % process first line of parameter block
+            p = sscanf(ps{2},'N%d T%d I%d Y%d S%s');
+            thermP = cell2mat(cellfun(@(x) {sscanf(x,'C%d V%d R%d D%d')},ps(3:end)));
+        else
+            for i = 1:length(obj.TrialData.params)
+                td = obj.TrialData.params(i);
+                p{end+1} = [td.NeutralTemp*10; ...
+                        td.nTrigger; ...
+                        td.integralTerm; ...
+                        double(td.SurfaceSelect)'+48];      
+                thermP{end+1} = [[td.SetpointTemp]*10; ...
+                        [td.PacingRate]*10; ...
+                        [td.ReturnSpeed]*10; ...
+                        [td.dStimulus]];
+                thermP{end} = repmat(thermP{end}, 1, length(p{end})-3);
+            % N = p(1)/10;                            % Neutral temp (C)
+            % C = thermP(1,:)/10;                     % SetPoint Temp (C)
+            % D = thermP(4,:)/1000;                   % Duration (sec)
+            % V = thermP(2,:)/10;                     % Pacing Rate (C/sec)
+            % R = thermP(3,:)/10;                     % Return Speed (C/sec)
+            end
         end
-        % process first line of parameter block
-        p = sscanf(ps{2},'N%d T%d I%d Y%d S%s');
-        thermP = cell2mat(cellfun(@(x) {sscanf(x,'C%d V%d R%d D%d')},ps(3:end)));
     else
-        for i = 1:length(obj.TrialData.params)
-            td = obj.TrialData.params(i);
-            p{end+1} = [td.NeutralTemp*10; ...
-                    td.nTrigger; ...
-                    td.integralTerm; ...
-                    double(td.SurfaceSelect)'+48];      
-            thermP{end+1} = [[td.SetpointTemp]*10; ...
-                    [td.PacingRate]*10; ...
-                    [td.ReturnSpeed]*10; ...
-                    [td.dStimulus]];
-            thermP{end} = repmat(thermP{end}, 1, length(p{end})-3);
-        % N = p(1)/10;                            % Neutral temp (C)
-        % C = thermP(1,:)/10;                     % SetPoint Temp (C)
-        % D = thermP(4,:)/1000;                   % Duration (sec)
-        % V = thermP(2,:)/10;                     % Pacing Rate (C/sec)
-        % R = thermP(3,:)/10;                     % Return Speed (C/sec)
-        end
+        p = [];
+        thermP = [];
     end
 end
 
@@ -273,7 +293,7 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
     obj.TrialData.tPost = genericTrialData.tPost;
     obj.idxStim = 1;
     obj.nStimsInTrial = length(componentTrialData.sequence);
-    if contains(obj.ConfigStruct.ProtocolID, 'QST') && preloadDevice
+    if obj.isQST && preloadDevice
         preloadSingleQSTStim(obj, []);
     end
     if obj.Previewing
@@ -312,6 +332,13 @@ function TrialMaintain(obj)
         obj.preloadSingleQSTStim([]);
     end
 end
+end
+
+methods
+%% dependent variables management
+function out = get.isQST(obj)
+    out = contains(obj.ConfigStruct.ProtocolID, 'QST');
+end
 
 end
 
@@ -325,35 +352,41 @@ function status = GetSessionStatus(obj)
     %   connected       device session initialised; not ready to start trial
     %   ready           device session initialised, trial loaded
     %   running         currently running a trial
+
     persistent prevTemp;
     persistent prevTested;
-    stat = sscanf(obj.query('Og'), '%d+%d+%d+%d+%d+%d\n%d');
-    if isempty(stat) || length(stat) < 5
-        status = "unconnected";
-        return;
-    end
-    temps = stat(2:5);
-    if isempty(prevTemp)
-        prevTemp = sum(temps);
-        prevTested = tic;
-    end
-    btn = stat(end);
-    % disp(stat')
-    if strcmpi(obj.SessionHandle.Status, 'open')
-        status = 'connected';
-        if btn~= 0 || ...
-                (abs(prevTemp - sum(temps)) > 10 && seconds(toc(prevTested)) < seconds(1))
-            % temperature is changing or button is pressed
-            if isempty(obj.tStimStarted)
-                obj.tStimStarted = tic;
-                % disp("Stimulation started")
+    if obj.isQST
+        stat = sscanf(obj.query('Og'), '%d+%d+%d+%d+%d+%d\n%d');
+        if isempty(stat) || length(stat) < 5
+            status = "unconnected";
+            return;
+        end
+        temps = stat(2:5);
+        if isempty(prevTemp)
+            prevTemp = sum(temps);
+            prevTested = tic;
+        end
+        btn = stat(end);
+        % disp(stat')
+        if strcmpi(obj.SessionHandle.Status, 'open')
+            status = 'connected';
+            if btn~= 0 || ...
+                    (abs(prevTemp - sum(temps)) > 10 && seconds(toc(prevTested)) < seconds(1))
+                % temperature is changing or button is pressed
+                if isempty(obj.tStimStarted)
+                    obj.tStimStarted = tic;
+                    % disp("Stimulation started")
+                end
+                status = 'running';
+            elseif ~isempty(obj.TrialData)
+                status = 'ready';
             end
-            status = 'running';
-        elseif ~isempty(obj.TrialData)
-            status = 'ready';
+        else
+            status = "unconnected";
         end
     else
-        status = "unconnected";
+        % TODO is it even possible to generically query a serial device?
+        status = 'unknown';
     end
 end
 
@@ -417,7 +450,11 @@ end
 
 function SoftwareTrigger(obj, ~, ~)
     % trigger the component through software. High latency.
-    obj.query('L');
+    if obj.isQST
+        obj.query('L');
+    else
+        obj.query(obj.ConfigStruct.SofwareTriggerCommand);
+    end
 end
 
 function varargout = query(obj, query, timeout)
