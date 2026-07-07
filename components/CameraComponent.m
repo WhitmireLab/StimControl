@@ -1,6 +1,5 @@
 classdef (HandleCompatible) CameraComponent < HardwareComponent
 % Generic wrapper class for camera objects
-% https://au.mathworks.com/help/imaq/videoinput.html
 properties (Constant, Access = public)
     ComponentProperties = CameraComponentProperties
 end
@@ -145,9 +144,6 @@ function obj = InitialiseSession(obj, varargin)
             src.LineSelector = obj.ConfigStruct.OutputLine;
             src.LineMode = "Output";
             src.LineSource = "ExposureActive";
-            % src.LineSelector = obj.ConfigStruct.TriggerLine;
-            % src.LineMode = "Input";
-            % src.TriggerSource = val;
         else
             %Generic cameras - not yet implemented
         end
@@ -166,7 +162,7 @@ function obj = InitialiseSession(obj, varargin)
         end
         set(vidObj, 'TriggerRepeat', obj.ConfigStruct.TriggerRepeat); % special case bc it defaults to one trigger.
         set(vidObj,'FramesPerTrigger',str2double(obj.ConfigStruct.FramesPerTrigger));
-        vidObj.FramesAcquiredFcnCount = 10; %TODO parametrise?
+        vidObj.FramesAcquiredFcnCount = 10; 
         vidObj.FramesAcquiredFcn = @obj.ReceiveFrame;
         obj.SessionHandle = vidObj;
         obj.UpdateTriggerMode();
@@ -216,13 +212,11 @@ function Stop(obj)
 end
 
 function Close(obj)
-    %todo doesn't clear the session. Not needed right now
     obj.StopPreview();
     if ~isempty(obj.SessionHandle)
         stop(obj.SessionHandle);
         flushdata(obj.SessionHandle);
         delete(obj.SessionHandle);
-        % clear(obj.SessionHandle);
     end
     obj.SessionHandle = [];
 end
@@ -241,13 +235,6 @@ function StartPreview(obj)
     end
     preview(obj.SessionHandle, obj.PreviewPlot.Children); %warning: linesource property adjusted to 0 by the camera?
     axis(obj.PreviewPlot, "tight");
-
-    % Commented the below out because colourmap can't be applied to multiple imaq previews at once
-    % Workarounds seem computationally expensive - consider revisiting.
-    % maxRange = floor(256*0.7); %limit intensity to 70% of dynamic range to avoid ceiling effects
-    % cMap = gray(maxRange); cMap(end+1:256,:) = repmat([1 0 0 ],256-maxRange,1);
-    % colormap(obj.PreviewPlot,cMap);
-
     if strcmpi(obj.ConfigStruct.TriggerMode, 'hardware')
         x = obj.PreviewPlot.XLim(2)/2;
         y = obj.PreviewPlot.YLim(2)/2;
@@ -275,7 +262,6 @@ end
 
 % Change multiple device parameters at once.
 function obj = SetParams(obj, paramsStruct)
-    % todo account for abstract
     obj.Status = "loading";
     vidObj = obj.SessionHandle;
     src = getselectedsource(vidObj);
@@ -428,11 +414,6 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
                 strcmpi(obj.ConfigStruct.TriggerMode, 'manual'))
         obj.recordingTime = genericTrialData.tPre + genericTrialData.tPost;
     end
-    %TODO check behaviour of this in rolling acquisition mode - do you
-    %start then wait for trigger?
-    % if obj.SessionHandle.
-    % check triggermode and change if needed
-    % detect number of triggers needed / framerate / etc.
 end
 
 function TakeSnapShot(obj, savePath)
@@ -449,8 +430,6 @@ function TakeSnapShot(obj, savePath)
         cNr(isempty(cNr)) = 0; %replace empty with 0 if no previous snapshot existed
         save([savePath 'Snapshot_' num2str(cNr+1) '.mat'],'snap') % snapshot
         imwrite(mat2gray(snap),[savePath 'Snapshot_' num2str(cNr+1) '.jpg']) %save snapshot as jpg
-    
-        %     imshow(snap,'XData',[0 1],'YData',[0 1]); colormap gray; axis image;
         imshow(snap); axis image; title(['Saved as Snapshot ' num2str(cNr+1)]);
         uicontrol('String','Close','Callback','close(gcf)','units','normalized','position',[0 0 0.15 0.07]); %close button
     end
@@ -490,11 +469,6 @@ end
  
 function componentID = GetComponentID(obj)
     if ~isempty(obj.SessionHandle)
-        % if obj.SessionHandle.Adaptor{'gentl', 'gige'}
-        %     src = obj.SessionHandle.Source;
-        %     src.DeviceVendorName;
-        %     src.DeviceModelName;
-        % end
     end
     componentID = convertStringsToChars([obj.ConfigStruct.Adaptor '-' obj.ConfigStruct.ID]); %TODO IS THIS UNIQUE ENOUGH
     if iscell(componentID)
@@ -504,16 +478,13 @@ function componentID = GetComponentID(obj)
 end
 
 function ReceiveFrame(obj, src, vidObj)
-    % try
-    %% debug
-    %% end debug
+    try
         if ~isfolder(obj.SavePath)
             mkdir(obj.SavePath)
         end
         filepath = strcat(obj.SavePath, filesep, obj.SavePrefix, '_', obj.ConfigStruct.ProtocolID);
         if ~isfolder(filepath)
             mkdir(filepath)
-            counter = 0; %debug
         end
         imgs = getdata(src,src.FramesAvailable); 
         if isempty(imgs)
@@ -534,23 +505,16 @@ function ReceiveFrame(obj, src, vidObj)
             imwrite(imgs(:,:,:,i),imname);
             obj.FrameCount = obj.FrameCount + 1;
         end
-        % disp([obj.ConfigStruct.ProtocolID char(string(obj.FrameCount))])
-    % catch exception
-    %     fprintf("Encountered an error imaging on CameraComponent %s", obj.ComponentID)
-    %     dbstack
-    %     disp(exception.message)
-    %     keyboard
-    % end
-    % if obj.selfStop
-    %     if toc(obj.startTic) > seconds(obj.recordingTime)
-    %         obj.Stop();
-    %     end
-    % end
+    catch exception
+        fprintf("Encountered an error imaging on CameraComponent %s", obj.ComponentID)
+        dbstack
+        disp(exception.message)
+        keyboard
+    end
 end
 
 function UpdateTriggerMode(obj)
     % Updates the camera's triggermode
-    % TODO currently immediate mode requires a software start.
     src = getselectedsource(obj.SessionHandle);
     switch obj.ConfigStruct.TriggerMode
         case "hardware"
@@ -567,13 +531,11 @@ function UpdateTriggerMode(obj)
             src.TriggerMode = "Off";
             obj.SessionHandle.FramesPerTrigger = str2double(obj.ConfigStruct.FramesPerTrigger);
             src.TriggerSelector = obj.ConfigStruct.TriggerSelector;
-            % src.TriggerActivation = "none";
             obj.selfStop = false;
         case "immediate"
             src.LineSelector = obj.ConfigStruct.OutputLine;
             src.LineMode = "Output";
             src.TriggerMode = "Off";
-            % src.TriggerActivation = "none";
             obj.selfStop = true;
     end
     triggerconfig(obj.SessionHandle, obj.ConfigStruct.TriggerMode);
@@ -613,7 +575,6 @@ end
 function SoftwareTrigger(obj, ~, ~)
     trigger(obj.SessionHandle);
 end
-
 
 end
 end

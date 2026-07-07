@@ -1,4 +1,6 @@
 function createPanelSetupControl(obj, hPanel, ~)
+% CREATEPANELSETUPCONTROL creates the panel for control of setup - session
+% select, component edit button, etc.
 grid = uigridlayout(hPanel);
 grid.RowHeight = {'1x', '0.01x', 22, 22};
 grid.ColumnWidth = {100, 23, 23, 100, 23, 23, 100, 23, '1x', 90};

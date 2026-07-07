@@ -1,4 +1,5 @@
 function callbackSaveConfig(obj, src, event)
+% CALLBACKSAVECONFIG saves session config file.
     [s, pcInfo] = system('vol');
     pcInfo = strsplit(pcInfo, '\n');
     pcID = pcInfo{2}(end-8:end);

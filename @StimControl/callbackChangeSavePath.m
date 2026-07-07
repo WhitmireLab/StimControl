@@ -1,4 +1,6 @@
 function callbackChangeSavePath(obj, src, event)
+    %CALLBACKCHANGESAVEPATH changes the core save directory for
+    %StimControl, creating the folder if it does not exist.
     if src == obj.h.SavePathTextArea
         filepath = obj.h.SavePathTextArea.Value;
     elseif src == obj.h.BrowseSavePathBtn

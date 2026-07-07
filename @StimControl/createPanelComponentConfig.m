@@ -1,7 +1,7 @@
 function createPanelComponentConfig(obj, hPanel, ~)
-% function createPanelThermode(obj,hPanel,~,idxThermode,nThermodes)
-%     obj.h.(thermodeID).panel.params = uipanel(obj.h.fig,...
-%         'CreateFcn',    {@obj.createPanelThermode,ii,length(obj.s)});
+% CREATEPANELCOMPONENTCONFIG creates the component config panel, to be
+% filled in with specific component config settings when a component is
+% selected.
 
 grid = uigridlayout(hPanel);
 grid.RowHeight = {23, '1x', 23};
@@ -52,8 +52,8 @@ function updateComponentConfigTable(src,event,obj)
     propertyName = event.DisplayRowName{rownum};
     c = 1;
     if iscategorical(event.Source.Data{rownum, 1}{1}) 
-        % TODO possible to add categories? 
-        % if you want, change protected=true in ComponentProperty.getCategorical
+        % Currently no protection from adding items to the categoricals,
+        % but this is on purpose. if you want, change protected=true in ComponentProperty.getCategorical
     elseif ~component.ComponentProperties.(propertyName).validatefcn(src.Data{rownum,c}{1}) %validate function
         % new value is invalid
         sInvalid = uistyle('BackgroundColor','red');

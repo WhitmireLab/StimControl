@@ -1,6 +1,8 @@
 function callbackFileExit(obj,~,~)
+% CAKLLBACKFILEEXIT safely exits the program, stopping timers and clearing
+% hardware sessions
 
-% stop and delete timer
+% stop and delete timers
 try
     stop(obj.timerStateMachine);
     delete(obj.timerStateMachine);
@@ -9,7 +11,8 @@ try
 catch err
     disp(err)
 end
-    
+
+% close and clear connected hardware
 try
     obj.d.CloseAll();
     obj.d.ClearAll();
@@ -19,9 +22,6 @@ end
 
 % delete the figure
 delete(obj.h.fig)
-
-% remove parallel pool sessions
-delete(gcp('nocreate'))
 
 % if QSTcontrol was called via the batch file, also quit Matlab
 if ~usejava('desktop')

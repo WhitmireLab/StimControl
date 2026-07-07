@@ -1,15 +1,13 @@
 classdef StimGenerator
 
 properties (Constant)
-    % Constants for use in calculations. May change depending on specific
-    % lab hardware.
+    % Constants for use in calculations. 
+    % May change depending on specific lab hardware.
     Aurorasf = 1/52;
 end
 
-% NOTE: for information on how the passed parameters are expected to be set
-% up, see common/readProtocol. I don't want a bunch of comment redundancy
-% while this is still in development (TODO: documentation once this has
-% stopped being in development)
+% NOTE: for information on how the top-level passed parameters are expected to be set
+% up, see common/readProtocol.
 
 methods (Static, Access=public)
 

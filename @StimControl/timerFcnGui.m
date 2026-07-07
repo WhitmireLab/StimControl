@@ -1,5 +1,6 @@
 function timerFcnGui(obj,~,~)
-% state tracking and updating in a timer
+% state tracking and updating in a timer. This timer deals with
+% visualisation only.
 persistent pauseOffset;
 persistent intervalElapsed;
 persistent experimentElapsed;

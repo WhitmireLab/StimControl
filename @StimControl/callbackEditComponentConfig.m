@@ -1,11 +1,12 @@
 function callbackEditComponentConfig(obj, ~, ~)
-% Edit a component using the ComponentConfig GUI. 
-    %% first, retrieve selected component from obj.
+% CALLBACKEDITCOMPONENTCONFIG updates the ComponentConfigPanel to connect
+% it to the selected component and its settings. 
+
+%% first, retrieve selected component from obj.
 rowIndex = obj.h.AvailableHardwareTable.Selection;
 if isempty(rowIndex)
     return;
 end
-% selectedRow = obj.h.AvailableHardwareTable.Data(rowIndex,:);
 component = obj.d.Available{rowIndex};
 
 %% Pass handle for later use
@@ -32,6 +33,7 @@ else
     obj.h.ComponentConfig.Label.Text = class(component);
 end
 
+% Create additional config button, if necessary.
 if component.HasAdditionalConfig
     obj.h.ComponentConfig.AdditionalConfigBtn.Enable = true;
     obj.h.ComponentConfig.AdditionalConfigBtn.Visible = true;
@@ -71,7 +73,4 @@ tData =  table(values, ...
     'RowNames', rowNames);
 
 obj.h.ComponentConfig.Table.Data = tData;
-
-%% Show preview if necessary
-
 end

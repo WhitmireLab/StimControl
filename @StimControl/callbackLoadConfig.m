@@ -1,13 +1,13 @@
 function callbackLoadConfig(obj, src, event)
-% Generic function for loading config files from various dropdowns in StimControl's Setup tab.
+% CALLBACKLOADCONFIG Generic function for loading config files from 
+% various dropdowns in the Setup tab.
+
 if strcmpi(src.Value, 'Auto')
     return
 end
 
 if src == obj.h.SessionSelectDropDown
     basePath = obj.path.sessionBase;
-% elseif src == obj.h.ComponentConfigDropDown
-%     basePath = obj.path.paramBase;
 end
 
 if strcmpi(src.Value, 'Browse...')

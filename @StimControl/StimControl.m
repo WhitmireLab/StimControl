@@ -1,9 +1,5 @@
 classdef StimControl < handle
 
-% properties (Access = public)
-%     logger = Logger();
-% end
-
 properties (Access = protected)
     path = [];
 end
@@ -19,30 +15,26 @@ properties (Access = private)
     timerGui    = []            % GUI update timer
     t           = []            % timer flags
     pids        = []            % protocol id map
-    chAI
-    chD
     cmdStack    = []
     name        = 'StimControl'
-    pFile       = []
     isRunning   = false;
     isPaused    = false;
-    hardwareParams
+    hardwareParams;
     trialIdx    = 1;            % index of trial in trial sequence.
     tLastStatusChange = 0;      % for timers
     tOffset     = 0;            % for pausing
-    taskPool    = [];
     f           = [];           % state machine flags
     createChans = true;         % whether to create DAQ channels when loading a protocol (set on channel creation, reset on in-program reload)
 
 end
 
 properties (Dependent, Access=private)
-    animalID
-    experimentID
-    trialNum                    % number of trial as defined in protocol file
-    dirAnimal
-    dirExperiment
-    status
+    animalID        % animal name/number
+    experimentID    % usually the name of the stimulus file
+    trialNum        % number of trial as defined in protocol file
+    dirAnimal       % directory for selected animal
+    dirExperiment   % directory for experiment
+    status          % used for state machine and functionality control
 end
 
 methods
@@ -126,9 +118,6 @@ methods
         disp("loading previous session...");
         obj.loadDefaultSession;
         obj.MapConnectedHardware;
-        % obj.p2GUI;
-        % obj.checkSync
-        % StartPreviews(obj);
         disp("Ready")
     end
 end
@@ -145,7 +134,6 @@ methods (Access = private)
     % app control callbacks
     callbackChangeTab(obj, src, event)
     callbackDebug(obj, src, event)
-    callbackReload(obj, src, event)
     callbackUpdateComponentTable(obj, src, event)
     
     % experiment control callbacks

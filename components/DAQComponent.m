@@ -173,12 +173,6 @@ function StartTrial(obj)
     if ~isempty(obj.TriggerTimer) && isvalid(obj.TriggerTimer)
         % run stimulation on matlab timer
         start(obj.TriggerTimer);
-        % try
-        %     wait(obj.TriggerTimer)% wait for data acquisition
-        % catch me
-        %     warning(me.identifier,'%s',...      % rethrow timeout error as warning
-        %         me.message);
-        % end
     else
         % run stimulation on DAQ clock
         start(obj.SessionHandle);               % start data acquisition
@@ -298,9 +292,6 @@ function StartPreview(obj)
     % clear plots
     if length(obj.PreviewPlot.Parent.Children) > 1
         delete(obj.PreviewPlot.Parent.Children(2:end));
-        % obj.axHandles = gobjects([nPlots 1]); %this copies them :(((((
-        % obj.pltHandles = gobjects([nPlots 1]);
-        % obj.anHandles = gobjects([nPlots 1]);
     end    
     
     % create axes and plots
@@ -311,10 +302,7 @@ function StartPreview(obj)
 
         plt = plot(ax, obj.PreviewTimeAxis, obj.PreviewData(:,obj.previewIdxes(i)));
         plt.YDataSource = sprintf('obj.PreviewData(:,obj.previewIdxes(%d))', i);
-        % an = animatedline(ax, obj.PreviewTimeAxis, obj.PreviewData(:,obj.previewIdxes(i)));
-        % an.Color = 'red';
-        % datalink might be handy
-        ax.XLim = xLims; %why does this sometimes work and sometimes not?
+        ax.XLim = xLims; 
         axisTitle = displayLabels{i};
         if any(regexpi(axisTitle, "thermode"))
             ax.YLim = [-1 61];
@@ -327,9 +315,6 @@ function StartPreview(obj)
         ax.Title = text(ax, 'String', displayLabels{i}, ...
             'HorizontalAlignment', 'left');
         ax.TitleHorizontalAlignment = 'left';
-        % obj.axHandles(i) = ax;
-        % obj.pltHandles(i) = plt;
-        % obj.anHandles(i) = an;
     end
 end
 
@@ -360,9 +345,6 @@ function LoadTrial(obj, out)
     flush(obj.SessionHandle);
     if obj.SessionHandle.Rate == 0 && any(contains({obj.SessionHandle.Channels.Type}, 'Output')) 
         % clocked sampling not supported - timer required for outputs.
-        % todo - logic above isn't quite right. The actual logic (for a USB-6001) is 
-        % (rate == 0 && any digital channels) or (rate == 0 and any analog channels and no clock input)
-        % https://docs-be.ni.com/bundle/usb-6000-6001-6002-6003-features/raw/resource/enus/374259a.pdf
         obj.CreateSoftwareTriggerTimer(obj.ConfigStruct.Rate);
 
     elseif any(contains({obj.SessionHandle.Channels.Type}, 'Output'))
@@ -398,13 +380,8 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
     % Preallocate all zeros
     previewOut = zeros(numel(timeAxis), length(obj.SessionHandle.Channels));
     out = zeros(numel(timeAxis), sum(contains({obj.SessionHandle.Channels.Type}, 'Output')));
-    % if isempty(obj.ChannelMap)
-    %     obj = obj.CreateChannels(obj.ConfigStruct.ChannelConfig, 'all');
-    % end
     for i = 1:length(fds)
         fieldName = fds{i};
-        % targetNames = fields(obj.ChannelMap);
-        % find all channel indexes associated with the stimulus type.
         [chIdxes, labels] = obj.getDeviceChannelIdxes(fieldName);
         outIdxes = [];
         chIdxesToRemove = [];
@@ -424,8 +401,6 @@ function LoadTrialFromParams(obj, componentTrialData, genericTrialData, preloadD
         end
         % Generate Stimulus. Handle special cases.
         params = componentTrialData.(fieldName);
-        %todo preloading PWM as special case
-        % if strcmpi(lower(params.params.Type), 'pwm') && obj.ChannelMap
         if obj.SessionHandle.Rate == 0
             rate = obj.ConfigStruct.Rate;
         else
@@ -454,7 +429,6 @@ end
 
 function CreateConfigFigure(obj, src, event)
     % CREATECONFIGFIGURE creates a figure for further device configuration
-    
     % delete previous figures
     if ~isempty(obj.FigHandles)
         try
@@ -565,9 +539,6 @@ function CreateConfigFigure(obj, src, event)
     obj.FigHandles.menuSaveAs = uimenu(obj.FigHandles.menuMain, 'Label', 'Save As', ...
         'Callback', @(src, event)SaveConfigAs(src, event), ...
         'Accelerator', 'n');
-    % obj.FigHandles.menuCheck = uimenu(obj.FigHandles.menuMain, 'Label', 'Check Validity', ...
-    %     'Callback', @(src, event)CheckValid(src, event), ...
-    %     'Accelerator', 'k');
     obj.FigHandles.menuAddRow = uimenu(obj.FigHandles.menuMain, 'Label', 'Add Row', ...
         'Callback', @(src, event)AddRow(src, event), ...
         'Accelerator', 'r');
@@ -604,24 +575,6 @@ function CreateConfigFigure(obj, src, event)
     unsavedChanges = false;
     filePath = [];
     
-    function MarkValidity(indices, validity, message)
-
-    end
-
-    function CheckValid(src, event)
-        % check no channels are used twice
-        % [uniqueTableRows,indexToUniqueRows,indexBackFromUnique] = unique(obj.FigHandles.configTable.Data.portNum);
-        % if isempty(obj.SessionHandle) || isvalid(obj.SessionHandle)
-        %     % not implemented.
-        %     return;
-        % end
-        % d = obj.FigHandles.configTable.Data;
-        % % check no channels are used twice
-        % % check all values line up with type in fmtTbl
-        % % check all channels have a name
-        % keyboard;
-    end
-    
     function AddRow(src, event)
         obj.FigHandles.configTable.Data = ...
             resize(obj.FigHandles.configTable.Data, ...
@@ -645,10 +598,6 @@ function CreateConfigFigure(obj, src, event)
             if strcmpi(event.Key, 's')
                 SaveConfigAs(src, event);
             end
-            % elseif strcmpi(event.Key, 'w')
-            %     delete(obj.FigHandles.fig);
-            %     delete(obj.FigHandles);
-            %     obj.FigHandles = [];
         end
     end
 
@@ -682,7 +631,6 @@ function CreateConfigFigure(obj, src, event)
             end
         elseif strcmpi(property, "portnum")
             % change type to match port
-            % nice to have todo: reset type if this is a change.
             dString = string(event.NewData);
             if regexpi(dString, "^a(.)\d+$")
                 % analog channel
@@ -756,10 +704,6 @@ function CreateConfigFigure(obj, src, event)
         unsavedChanges = false;
     end
     function ConfirmClose(src, event)
-        keyboard;
-        if unsavedChanges
-            
-        end
     end
 end
 
@@ -791,7 +735,6 @@ function info = deviceInfo(obj)
     info = daqs(strcmpi(daqs.DeviceID, deviceID),:).DeviceInfo;
 
     channelNames = info.Subsystems.ChannelNames;
-    % channelProperties = info.
 end
 
 function obj = CreateChannels(obj, filename, protocolIDs)
@@ -809,19 +752,12 @@ function obj = CreateChannels(obj, filename, protocolIDs)
     end
     progressdlg = uiprogressdlg(progressfig,'Title','Creating Channels...',...
         'Message','');
-    % clear previous channels, if any
-    % obj = obj.ClearChannels();
-    % obj.SessionHandle.
     tab = readtable(filename);
     s = size(tab);
-    % if ~isMATLABReleaseOlderThan('R2024b')
-    %     channelList = daqchannellist;
-    % end
     for ii = 1:s(1)
         try
             warning('');
-            line = tab(ii, :); %TODO CHECK FOR BLANKS
-            % line.('deviceID') or line.(1);
+            line = tab(ii, :); 
             if ~isempty(protocolIDs) && (~ischar(protocolIDs) || ~strcmpi(protocolIDs, 'all'))...
                 && ~any(contains(protocolIDs, line.('Device'){:}))
                 % skip channels that aren't required for this protocol.
@@ -831,7 +767,6 @@ function obj = CreateChannels(obj, filename, protocolIDs)
             deviceID = tmp{1};
             portNum = line.('portNum'){1}; 
             channelID = [line.Device{:} '_' line.Label{:}];
-            % channelID = [line.ProtType{:} line.ProtID{:}];
             ioType = line.('ioType'){1};
             signalType = line.('signalType'){1};
             terminalConfig = line.('TerminalConfig');
@@ -842,9 +777,6 @@ function obj = CreateChannels(obj, filename, protocolIDs)
             if contains(class(range), 'cell')
                 range = range{1};
             end
-            % if ~isMATLABReleaseOlderThan('R2024b')
-            %     channelList = add(channelList, ioType, deviceID, portNum, signalType, TerminalConfig=terminalConfig, Range=range);
-            % else
             switch ioType
                 case 'input'
                     [ch, idx] = addinput(obj.SessionHandle,deviceID,portNum,signalType);
@@ -885,14 +817,9 @@ function obj = CreateChannels(obj, filename, protocolIDs)
             message = ['Encountered an error reading channels config file on line ' ...
                     char(string(ii)) ': ' exception.message ' Line skipped.'];
             disp("")
-            % todo pass warning messages back to StimControl so we can
-            % display them good.
             warning(message);
         end
     end
-    % if ~isMATLABReleaseOlderThan('R2024b')
-    %     obj.SessionHandle.Channels = channelList;
-    % end
     obj.PreviewChannels = logical(obj.PreviewChannels);
     delete(progressdlg);
 end
@@ -912,16 +839,8 @@ function TrialMaintain(obj)
 end
 
 function obj = ClearChannels(obj)
-        disp(message);
         dbstack
         keyboard
-        % if length(obj.SessionHandle.Channels) ~= 0
-        %     removechannel(obj.SessionHandle, 1:length(obj.SessionHandle.Channels));
-        % end
-        % obj.ChannelMap = [];
-        % obj.PreviewChannels = [];
-        % obj.OutChanIdxes = [];
-        % obj.InChanIdxes = [];
     end
 end
 
@@ -947,17 +866,15 @@ function SoftwareTrigger(obj, ~, ~)
     % nb using an incrementing IDX may lead to longer execution times.
     % could estimate the appropriate index based off execution time, but
     % that feels like overengineering.
-    % disp(triggerIdx)
     if triggerIdx <= length(obj.PreviewData)
         write(obj.SessionHandle, obj.PreviewData(triggerIdx,obj.OutChanIdxes));
         readData = read(obj.SessionHandle);
         obj.PreviewData(triggerIdx, obj.InChanIdxes) = readData{:,:};
         tax(triggerIdx) = seconds(seconds(toc(t0)));
         triggerIdx = triggerIdx + 1;
-        % update display? might be WAY too slow
         if ~mod(triggerIdx, 100)
             displayLabels = obj.StackedPreview.DisplayLabels;
-            obj.StackedPreview.YData = obj.PreviewData(:,obj.PreviewChannels); %todo fix this it's VERY SLOW but I'm going to have to fix it by changing the plot function
+            obj.StackedPreview.YData = obj.PreviewData(:,obj.PreviewChannels); 
             obj.StackedPreview.DisplayLabels = displayLabels;
         end
     else
@@ -966,7 +883,7 @@ function SoftwareTrigger(obj, ~, ~)
             mkdir(obj.SavePath)
         end
         tax = tax - tax(round(obj.tPrePost(1)*obj.ConfigStruct.Rate/1000));
-        % scale data from thermodes, if relevant. TODO could be less hardcoded but this will do for now.
+        % scale data from thermodes, if relevant.
         if isfield(obj.ChannelMap, 'QST')
             if isfield(obj.ChannelMap.QST, 'thermodeA') && isfield(obj.ChannelMap.QST, 'thermodeB')
                 qstIdxes = [obj.ChannelMap.QST.thermodeA.idx obj.ChannelMap.QST.thermodeB.idx];
@@ -993,8 +910,7 @@ function status = GetSessionStatus(obj)
     %   connected       device session initialised; not ready to start trial
     %   ready           device session initialised, trial loaded
     %   running         currently running a trial
-    
-    % persistent lastScanAcquired;
+
     status = '';
     if isempty(obj.SessionHandle.Channels)
         status = 'uninitialised'; %no channels loaded
@@ -1012,9 +928,8 @@ function status = GetSessionStatus(obj)
 end
 
 function name = FindDaqName(obj, deviceID, vendorID, model)
-    % TODO shouldn't use this within StimControl but it's useful for other applications
+    % shouldn't use this within StimControl but it's useful for other applications
     % Find available daq names
-    % https://au.mathworks.com/help/daq/daq.interfaces.dataacquisition.html
     try
         daqs = daqlist().DeviceInfo;
     catch
@@ -1033,7 +948,7 @@ function name = FindDaqName(obj, deviceID, vendorID, model)
                 && strcmpi(daqs(x).Vendor.ID, vendorID) && isempty(model)) ||  ... %if only name and vendorID are given
             (strcmpi(daqs(x).ID, deviceID) ...
                 && strcmpi(daqs(x).Vendor.ID, vendorID) ...
-                && strcmpi(daqs(x).Model, model)) % if more info is given. todo check this logic is sound
+                && strcmpi(daqs(x).Model, model)) % if more info is given. 
             checker = true;
             correctIndex = x;
         end
@@ -1067,7 +982,7 @@ function plotData(obj, ~,event)
     eventData = read(event.Source);
 
     if obj.idxData > obj.nScans
-        % cut off the end of the data? TODO CHECK THIS IS DESIRED BEHAVIOUR
+        % cut off the end of the data? 
         if ~isempty(eventData)
             disp("we have too much data??");
         end
@@ -1083,19 +998,11 @@ function plotData(obj, ~,event)
         data = eventData.Data;
         % scale data from thermodes and aurora, if relevant. TODO could be less hardcoded but this will do for now.
         if isfield(obj.ChannelMap, 'QST')
-            % % dat(:,idxData(1:2)) = dat(:,idxData(1:2)) * 17.0898 - 5.0176;
             qstIdxes = [obj.ChannelMap.QST.thermodeA.idx obj.ChannelMap.QST.thermodeB.idx];
             for i = qstIdxes
                 data(:,i) = data(:,i) * 12  - 2; % PB 20241219
             end
         end
-        % if isfield(obj.ChannelMap, 'Aurora')
-        %     auroraIdxes = [obj.ChannelMap.Aurora.force.idx obj.ChannelMap.Aurora.length.idx];
-        %     for i = auroraIdxes
-        %         data(:,i) = data(:,i)*10 + 32;
-        %     end
-        % end
-        % TODO DC TEMPERATURE CONTROLLER ALSO NEEDS CALIBRATION - FHC DC TEMPERATURE CONTROLLER
         obj.PreviewData(targetIdx, obj.InChanIdxes) = data;  
 
         % update plots
@@ -1108,7 +1015,6 @@ function plotData(obj, ~,event)
             writematrix([eventData.Timestamps-(obj.tPrePost(1)/1000),obj.PreviewData(targetIdx,:)], ...
             strcat(obj.SavePath, filesep, obj.SavePrefix, '.csv'), ...
             'WriteMode', 'append');
-            % fwrite(obj.SaveFID,[data.Timestamps-obj.tPrePost(1),obj.PreviewData(targetIdx)'],'double');
         catch e
             keyboard;
             rethrow(e);

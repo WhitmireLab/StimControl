@@ -1,5 +1,5 @@
 function callbackSelectAnimal(obj, src, event)
-% Set the program's active animal by selected ID, or create a new one
+% CALLBACKSELECTANIMAL Set the program's active animal by selected ID, or create a new one
 if src == obj.h.newAnimalBtn
     % create a new animal
     dPrompt = {'Enter animal ID'};

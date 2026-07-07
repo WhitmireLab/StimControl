@@ -70,6 +70,8 @@ methods
     end
 
     function valid = isValid(obj)
+        % ISVALID returns whether this node is valid. Unfortunately,
+        % non-exhaustive. Nobody has tried to break this yet.
         % whether this node is valid.
         valid = true;
          if obj.isRootNode % root node
@@ -88,7 +90,7 @@ methods
     end
 
     function valid = allValid(obj)
-        % whether this node and all its children are valid.
+        % ALLVALID returns whether this node and all its children are valid.
         valid = obj.isValid;
         if ~obj.isLeafNode
             children = obj.children;
@@ -103,6 +105,8 @@ methods
     end
 
     function out = structencode(obj)
+        % STRUCTENCODE returns a string representation of the node
+        % appropriate for use in json encoding.
         out = [];
         for f = properties(obj)'
             if iscell(f)
@@ -120,6 +124,7 @@ methods
     end
     
     function out = debugprint(obj, varargin)
+        % DEBUGPRINT returns a string representation of the node.
         tmp = sprintf("NODE_%d", obj.idx);
         if ~isempty(obj.tokenName)
             tmp = tmp + sprintf(" (%s)", obj.tokenName);
@@ -144,6 +149,8 @@ methods
     end
 
     function out = FirstCommonParentIdx(obj, idx)
+        % FIRSTCOMMONPARENTIDX returns the index of the first parent this
+        % node and the node at tree{idx} have in common.
         out = [];
         objParents = obj.traverseParentIdxes;
         altNode = obj.treeHandle{idx};
@@ -157,6 +164,8 @@ methods
     end
 
     function out = traverseParentIdxes(obj)
+        % TRAVERSEPARENTIDXES return list of indexes of all parents and
+        % parents' parents.
         out = [];
         if ~isempty(obj.parentIdx)
             parent = obj.treeHandle{obj.parentIdx};
@@ -165,7 +174,7 @@ methods
     end
 
     function trialParams = buildParams(obj)
-        % Builds a params sequence
+        % Builds a params sequence 
         [params, targets, singleStimParams, helperStruct] = BuildEmptyStructs();
         obj.containsOdd = obj.FindOddballChildren();
 
@@ -224,9 +233,9 @@ methods
         end
 
         function trialParams = BuildLeafParams(singleStimParams)
+            % BUILDLEAFPARAMS returns parameters for a leaf node
             tds = obj.stimParams.targetDevices;
             for ti = 1:length(tds)
-                % TODO-OPTIMISATION: POSSIBILITY FOR A FAIR BIT OF REPLICATION HERE
                 targetName = tds(ti);
                 singleStimParams.(targetName).params = {obj.stimParams};
                 singleStimParams.(targetName).delay = [obj.startDelay repmat(obj.repeatDelay, [1 obj.nStimRuns-1])];
@@ -238,9 +247,11 @@ methods
         end
 
         function singleStimParams = ConstructSimultaneousSequence(traversedParams)
+            % CONSTRUCTSIMULTANEOUSSEQUENCE constructs a sequence from
+            % simultaneously executed children
             for ti = 1:length(traversedParams)
                 traversedParam = traversedParams{ti};
-                fds = fields(traversedParam); %todo check simultaneous execution on same line
+                fds = fields(traversedParam); 
                 for fi = 1:length(fds)
                     fieldName = fds{fi};
                     singleStimParams.(fieldName) = traversedParam.(fieldName);
@@ -250,6 +261,7 @@ methods
 
         function [traversedParams, singleStimParams, helperStruct] = FillInHelperStruct( ...
                     traversedParams, singleStimParams, helperStruct)
+            % FILLINHELPERSTRUCT 
             % First pass. Fill in helper struct and generate:
             %   index offsets for sub-stimuli per param target (i.e. 1 from
             %       sub-stim that is second in a sequence for a target becomes
@@ -279,6 +291,7 @@ methods
 
         function [singleStimParams, helperStruct] = ConstructParamsFromSequence( ...
                     singleStimParams, helperStruct, traversedParams, sequence)
+            % CONSTRUCTPARAMSFROMSEQUENCE 
             % construct from sequence (set new sequence and delay)
             children = obj.children;
             totalDelay = 0;
@@ -321,6 +334,8 @@ methods
         end
 
         function singleStimParams = BuildSingleStimParams()
+            % BUILDSINGLESTIMPARAMS builds the params for a single stim
+            % (i.e. ignoring any nStims arguments)
             [~, ~, singleStimParams, helperStruct] = BuildEmptyStructs();
             traversedParams = TraverseChildParams();
             if strcmpi(obj.childRel, 'sim') 
@@ -347,6 +362,8 @@ methods
         end
 
         function order = generateOddballOrder()
+            % GENERATEODDBALLORDER generates just the execution sequence
+            % for a node with oddball children.
             order = ones(1, obj.nStimRuns);
             obj.childIdxes = unique(obj.childIdxes);
             nOdds = length(obj.childIdxes) - 1;
@@ -424,31 +441,7 @@ methods
         else
             out = linspace(obj.startDelay, obj.fullDuration, obj.nStimRuns); 
         end
-        % keyboard; % TODO TEST
-        % repmat(obj.repeatDelay, [1 obj.nStimRuns-1]) + linspace(obj.startDelay, obj.)
     end
-    % 
-    % function out = GetChildStartTimes(obj)
-    %     children = obj.children;
-    %     if obj.isLeafNode
-    %         out = [];
-    %     elseif strcmpi(obj.childRel, 'sim')
-    %         out = obj.GetNodeStartTimes - obj.startDelay;
-    %     elseif any(regexpi(obj.childRel, 'odd'))
-    %         out = [];
-    %         for i = 1:length(obj.childExecutionSequence)
-    %             for j = 1:length(subsequence)
-    % 
-    %             end
-    %         end
-    %     else
-    %         for i = 1:length(obj.childExecutionSequence)
-    %             for j = 1:length(subsequence)
-    % 
-    %             end
-    %         end
-    %     end
-    % end
 
     %% Attribute-like functions
     function children = children(obj)
@@ -473,6 +466,7 @@ methods
     end
 
     function isRootNode = isRootNode(obj)
+        % ISROOTNODE returns true if the node is the root, else false.
         isRootNode = obj.idx == obj.treeHandle.rootNodeIdx;
     end
 
@@ -484,7 +478,6 @@ methods
 
     function allTargets = targets(obj)
         % tree traversal to find all child targets
-        %TODO caching here would be SO HELPFUL but not a priority rn
         if ~obj.isLeafNode
             allTargets = {};
             children = obj.children;
@@ -588,8 +581,6 @@ end
 
 methods(Access=private)
     %% PRIVATE FUNCTIONS
-    
-
     function out = childfcn(obj, fcnHandle)
         out = [];
         children = obj.children;
@@ -598,10 +589,4 @@ methods(Access=private)
         end
     end
 end
-
-% methods(Static,Access=private)
-%     function out = protectedField(fieldName)
-%         out = strcmpi(fieldName, 'sequenceStack') || strcmpi(fieldName, 'startTimes');
-%     end
-% end
 end

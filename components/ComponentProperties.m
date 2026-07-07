@@ -19,5 +19,3 @@ classdef (Abstract, HandleCompatible) ComponentProperties < handle
         end
     end
 end
-
-% TODO ADD UNITS TO THIS AND THE CONFIG TABLE

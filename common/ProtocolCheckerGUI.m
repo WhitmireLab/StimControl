@@ -1,22 +1,17 @@
 classdef ProtocolCheckerGUI < handle
-
-    % Properties that correspond to app components
-    properties (Access = public)
-
-    end
-
-    
+    % PROTOCOLCHECKERGUI - checks a protocol and reports on any errors
+    % within. 
     properties (Access = private)
-        h = [];
-        p = [];
-        g = [];
-        err = [];
-        figs = {};
+        h = [];     % figure handles
+        p = [];     % trial-level protocol params
+        g = [];     % general-level protocol params
+        err = [];   % error message
+        figs = {};  % additional figures generated during protocol execution
     end
     
     methods (Access = private)
-        
         function fpath = LoadDlg(obj, src, event)
+            % LOADDLG opens a dialog box for choosing a file to process.
             folder = mfilename('fullpath');
             idx = strfind(folder, ['common' filesep 'checkprotocol']) - 1;
             folder = [folder(1:idx) 'config' filesep 'experiment_protocols' filesep '*.stim'];
@@ -29,6 +24,7 @@ classdef ProtocolCheckerGUI < handle
         end
 
         function [p, g, err] = ProcessFile(obj, fpath)
+            % PROCESSFILE processes a protocol file and checks for errors.
             p = [];
             g = [];
             err = [];
@@ -43,13 +39,13 @@ classdef ProtocolCheckerGUI < handle
             end
         end
     end
-    
 
     % Callbacks that handle component events
     methods (Access = private)
-
         % Callback function: PlotButton, TrialTable
         function PlotTrial(obj, src, event)
+            % PLOTTRIAL plots a single trial, if selected, or all trials if
+            % no trial is selected. 
             if isempty(obj.p)
                 return
             end
@@ -67,6 +63,8 @@ classdef ProtocolCheckerGUI < handle
 
         % Selection changed function: TrialTable
         function InspectTrial(obj, src, event)
+            % INSPECTTRIAL update the information panel based on the
+            % information for the selected trial.
             index = obj.h.TrialTable.Selection;
             if isempty(index)
                 obj.h.PlotButton.Text = 'Plot All';
@@ -93,12 +91,10 @@ classdef ProtocolCheckerGUI < handle
                     end
                     p = trial.params.(f);
                     durs = cellfun(@(x) x.duration, p.params);
-                    % ids = cellfun(@(x) x.tags, p.params, 'UniformOutput', false);
                     text4 = text4 + sprintf("%s\n\tsequence: %s\n\tdelay: %s\n\tduration: %s\n", ...
                                         f, join(string(p.sequence), ' '), join(string(p.delay), ' '), join(string(durs), ' ')); % , join(string(ids), ' ')
                 end
             end
-            
             obj.h.InformationLabel.Text = join([text1 text2 text3 text4], sprintf('\n\n'));
         end
 
@@ -251,13 +247,10 @@ classdef ProtocolCheckerGUI < handle
 
     % App creation and deletion
     methods (Access = public)
-
         % Construct app
         function obj = ProtocolCheckerGUI
-
             % Create UIFigure and components
             createComponents(obj)
-
             if nargout == 0
                 clear app
             end
@@ -265,7 +258,6 @@ classdef ProtocolCheckerGUI < handle
 
         % Code that executes before app deletion
         function delete(obj)
-
             % Delete UIFigure when app is deleted
             delete(obj.h.fig)
         end

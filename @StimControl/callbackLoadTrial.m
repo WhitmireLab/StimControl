@@ -1,5 +1,7 @@
 function callbackLoadTrial(obj, src, ~)
-% Sets trial number if changed, and preloads trial data into device memory. does not preload to devices.
+% CALLBACKLOADTRIAL Sets trial number if changed
+% and preloads trial data into virtual hardware components. 
+% does not preload to devices themselves.
 obj.indicateLoading("Loading trial");
 if src == obj.h.prevTrialBtn
     if obj.trialNum == 1

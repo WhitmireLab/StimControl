@@ -100,10 +100,11 @@ function [trialParams, metadata] = generateParamsSequence(obj)
     end
     trialParams = obj.params;
     obj.metadata = obj.BuildMetadata;
-    % obj.data = {};
 end
 
 function metadata = BuildMetadata(obj)
+    % Builds node metadata - all information required to completely
+    % reconstruct the tree if necessary. Contextual node execution, etc.
     metadata = [];
     metadata.stimuli = [];
     namedIdxes = [];
@@ -150,7 +151,6 @@ function out = get.data(obj)
 end
 
 function fig = Plot(obj)
-    % tiledlayout(1, 2);
     if ~isempty(obj.displayFig)
         try
             delete(obj.displayFig);
@@ -367,11 +367,6 @@ function ValidateTree(obj)
             sum(obj.params.(fieldName).delay);
         if totalDeviceDur > obj.tPre + obj.tPost
             % % display precise data
-            % sprintf("%s: \n dur: %s \n delay: %s", ...
-            %     fieldName, ...
-            %     strjoin(string(paramDur(obj.params.(fieldName).sequence)), ','), ...
-            %     strjoin(string(obj.params.(fieldName).delay), ','))
-            % throw error
             error("Stimulus error on trial definition line %d (%s). \n" + ...
                         "Stimulus for %s has a total duration of %d ms, which does not fit within " + ...
                         "tPre + tPost = %d ms. \ntPost should be set to at least %d to fit the stimulus as written. \n" + ...
@@ -520,7 +515,6 @@ function tree = GenerateTreeFromLine(obj)
         end
         % put parent back on the stack
         stack.push(currentParentIdx);
-        % plotTree(tree, stack, comment, idxTrial);
     end
 end
 

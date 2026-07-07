@@ -1,6 +1,6 @@
 function timerFcnStateMachine(obj,~,~)
 % hardware status updates in a timer
-% persistent trialNums;
+
 persistent nTrials;
 if isempty(nTrials); nTrials = Inf; end
 persistent prevStatus;
@@ -91,11 +91,13 @@ try
 catch err
     keyboard %see what's going on
     LogError(err);
-    % if err is daq error, delete(daq.getDevices) then daqreset then reload.
 end
 
 %% HELPER FUNCTIONS
 function InitialisePassiveExperiment()
+    % INITIALISEPASSIVEEXPERIMENT initialises an experiment not associated
+    % with a stimulus file - set upper limits to inf
+    % calls StartPassiveTrial
     obj.t.intervalTarget = Inf;
     obj.t.experimentTarget = Inf;
 
@@ -108,6 +110,11 @@ function InitialisePassiveExperiment()
 end
 
 function InitialiseExperiment()
+    % INITIALISEEXPERIMENT initialises an experiment associated with a
+    % stimulus file. Copies stimulus file and metadata to output directory,
+    % updates savepath for components, then passes the information forward
+    % to UpdateComponentSavePaths, LoadTrialToDisplay, and
+    % LoadTrialToComponents
     obj.updateDateTime;
     if ~isfolder(obj.dirExperiment)
         mkdir(obj.dirExperiment)
@@ -134,7 +141,7 @@ function InitialiseExperiment()
                 obj.g.sequence(1) = obj.trialNum;
                 obj.g.sequence(swapIdx) = swapNum;
             else
-                % frankly you should never hit this.
+                % you should never hit this.
                 obj.trialNum = obj.g.sequence(1);
             end
         end
@@ -142,11 +149,6 @@ function InitialiseExperiment()
         nTrials = 1;
     end
     obj.trialIdx = 1;
-    if isfield(obj.g, 'prePause') && obj.g.prePause
-        obj.f.startTrial = false;
-        obj.status = 'inter-trial';
-        return
-    end
     
     % send all this information elsewhere
     UpdateComponentSavePaths();
@@ -155,6 +157,8 @@ function InitialiseExperiment()
 end
 
 function UpdateComponentSavePaths()
+% UPDATECOMPONENTSAVEPATHS updates the save paths for active components,
+% per wider program settings.
     if obj.f.passive
         savePrefix = sprintf("%s_stim_passive_%s", num2str(obj.trialIdx, '%05.f'), obj.path.time);
         savePath = [obj.dirExperiment '_passive'];
@@ -178,10 +182,14 @@ function UpdateComponentSavePaths()
 end
 
 function LoadTrialToDisplay()
+% LOADTRIALTODISPLAY loads the currently selected trial to the GUI preview
+% window.
     obj.callbackLoadTrial([]);
 end
 
 function LoadTrialToComponents()
+% LOADTRIALTOCOMPONENTS loads trial to the currently selected hardware.
+% Assumes the trial is loaded ton the GUI.
     for i = 1:obj.d.nActive
         component = obj.d.activeComponents{i};
         if isempty(obj.p(obj.trialNum).params.(component.ConfigStruct.ProtocolID))
@@ -193,6 +201,7 @@ function LoadTrialToComponents()
 end
 
 function StartTrial()
+% STARTTRIAL starts the trial 
     updateInteractivity('off');
     profile off;
     profile on;
@@ -219,6 +228,7 @@ function StartTrial()
 end
 
 function StartPassiveTrial()
+% STARTPASSIVETRIAL starts acquisition in passive mode.
     updateInteractivity('off');
     obj.t.intervalTarget = Inf;
     obj.t.experimentTarget = Inf;
@@ -245,10 +255,13 @@ function StartPassiveTrial()
 end
 
 function StopComponents()
+% STOPCOMPONENTS stops all active components
     cellfun(@(c) c.Stop(), obj.d.activeComponents);
 end
 
 function FinishTrial()
+% FINISHTRIAL handles trial indexing and state changes at the end of a
+% trial.
     obj.f.trialFinished = false;
     if obj.f.passive
         obj.trialIdx = obj.trialIdx + 1;
@@ -268,6 +281,8 @@ function FinishTrial()
 end
 
 function MonitorTrial()
+% MONITORTRIAL calls TrialMaintain on all active components if any
+% component is still active, else calls EndTrial
     if ~obj.f.passive && IntervalTimeoutReached
         StopComponents()
         obj.f.trialFinished = true;
@@ -281,7 +296,7 @@ function MonitorTrial()
 end
 
 function ManualStop()
-    % stop the trial (interrupt)
+% MANUALSTOP stop the trial (interrupt)
     obj.f.stopTrial = false;
     obj.f.startTrial = false;
     obj.f.passive = false;
@@ -300,17 +315,21 @@ function ManualStop()
 end
 
 function Pause()
+% PAUSE pause trial interval timer (some logic for this can be found in timerFcnGui)
     obj.status = 'paused';
     obj.f.pause = false;    
     obj.f.resume = false;
 end
 
 function Resume()
+% RESUME resumes trial interval timer
     obj.f.resume = false;
     obj.status = 'inter-trial';
 end
 
 function updateInteractivity(state)
+% UPDATEINTERACTIVITY turns off interactivity for certain elements, for use
+% during loading to prevent error states & invalid state/flag combinations.
     allUI = findobj(obj.h.Session.Tab);
     for ii = 1:length(allUI)
         uiObj = allUI(ii);
@@ -326,6 +345,7 @@ function updateInteractivity(state)
 end
 
 function LogError(err)
+% LOGERROR logs an encountered error and sets up an error dialog
     fid = fopen(fullfile(obj.path.dirData, filesep,'error.log'),'a+');
     tmp = regexprep(err.getReport('extended','hyperlinks','off'),'\n','\r\n');
     fprintf(fid,'\n\n**********\n%s \n %s', string(datetime), tmp);
@@ -334,13 +354,15 @@ function LogError(err)
     obj.f.passive = false;
     obj.status = 'ready';
     obj.f.startTrial = false;
-    % errordlg('Protocol execution incomplete. See error.log for more information.')
     obj.errorMsg(tmp);
     obj.status = 'stopping';
+    errordlg('Protocol execution incomplete. See error.log for more information.')
 end
 
 %% attribute-like helper functions
 function out = IntervalTimeoutReached()
+% INTERVALTIMEOUTREACHED returns whether the timeout has been reached for
+% the inter-trial interval.
     if strcmpi(obj.status, 'inter-trial')
         out = obj.t.intervalElapsed >= obj.t.intervalTarget;
     else
@@ -349,11 +371,14 @@ function out = IntervalTimeoutReached()
 end
 
 function out = ComponentsRunning()
+    % COMPONENTSRUNNING returns true if any active component is running,
+    % else false.
     out = any(cellfun(@(c) strcmpi(c.GetStatus(), 'running'), obj.d.activeComponents));
 end
 end
 
 function componentData = GetComponentData(obj, metaPath)
+% GETCOMPONENTDATA gets component data for metadata saving.
     componentData = {};
     for i = 1:length(obj.d.Available)
         component = obj.d.Available{i};

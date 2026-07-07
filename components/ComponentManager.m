@@ -1,7 +1,4 @@
 classdef ComponentManager < handle
-%UNTITLED Summary of this class goes here
-%   Detailed explanation goes here
-
 properties
     Available
     Active
@@ -107,14 +104,6 @@ methods
             end
         end
     end
-
-    % function Refresh(obj)
-    % % TODO
-    % end
-
-    % function ForceStop(obj)
-    %     %todo
-    % end
 
     function StartPreviews(obj)
         for i = 1:length(obj.Available)

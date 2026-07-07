@@ -1,12 +1,16 @@
 function callbackUpdateComponentTable(obj, src, event)
+% CALLBACKUPDATECOMPONENTTABLE refreshes the list of hardware in
+% ComponentTable or implements changes made to the settings in the table.
     if isstring(event) && strcmpi(event, "CreateTable")
         obj.h.AvailableHardwareTable.Data = PopulateHardwareTable();
     elseif src == obj.h.menuRefreshHardware % refresh hardware
-        if obj.h.tabs.SelectedTab ~= obj.h.Setup.Tab % if selected tab isn't setup, don't allow this.
+        % if selected tab isn't setup, don't allow this.
+        if obj.h.tabs.SelectedTab ~= obj.h.Setup.Tab 
             obj.errorMsg("Please switch to the setup tab before reloading hardware.");
             return
         end
-        stop(obj.timerStateMachine); % pause the timers to prevent errors in iterating over devices
+        % pause the timers to prevent errors in iterating over devices
+        stop(obj.timerStateMachine); 
         stop(obj.timerGui);
         selection = uiconfirm(obj.h.fig, ...
             "WARNING: This will reset any unsaved changes made to existing hardware configurations. Continue?","Confirm Reload", ...
@@ -32,7 +36,8 @@ function callbackUpdateComponentTable(obj, src, event)
             obj.MapConnectedHardware;
             obj.clearMessage;
             obj.createChans = true;
-            start(obj.timerStatemachine); % restart the timers
+            % restart the timers
+            start(obj.timerStatemachine); 
             start(obj.timerGui)
         else % cancel
             return;
@@ -52,7 +57,7 @@ function callbackUpdateComponentTable(obj, src, event)
             else
                 obj.d.Active(idxRow) = false;
                 component.Stop();
-                component.Close(); %TODO RE-INITIALISE ON STARTUP
+                component.Close(); 
                 src.Data.Preview(idxRow) = false;
                 component.PreviewPlot.Parent.Parent.Visible = "off";
                 component.StopPreview();
@@ -70,7 +75,6 @@ function callbackUpdateComponentTable(obj, src, event)
                 component.PreviewPlot.Parent.Parent.Visible = "off";
                 component.StopPreview();
             end
-            %TODO automatically re-shuffle other preview plots to fill the gap?
         elseif strcmpi(property, "PRow") || strcmpi(property, "PColumn")
             property = property{:};
             property = property(2:end);
@@ -82,7 +86,7 @@ function callbackUpdateComponentTable(obj, src, event)
     columnNames = {'Type', 'ID', 'ProtocolID', 'Status', 'Enable', 'Preview', 'PRow', 'PColumn'};
     tData = table();
     available = obj.d.Available;
-    if isempty(obj.d.Available) % prevent errors with no hardware attached
+    if isempty(obj.d.Available) % prevent errors if no hardware is attached
         return
     end
     for i = 1:length(obj.d.Available)

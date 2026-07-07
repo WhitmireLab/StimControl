@@ -1,8 +1,7 @@
 function callbackLoadProtocol(obj, src, event)
-% Load a protocol file. Maps protocol inputs/outputs to hardware components.
-% and updates GUI to allow trial start.
-% eventually this will be more intelligent and able to handle ambiguity, but for now
-% the mapping files need to be perfectly aligned to the protocol.
+% CALLBACKLOADPROTOCOL Load a protocol file, either to the stimulus checker
+% or the main app. If loading to the main app, maps protocol inputs/outputs 
+% to hardware components and updates GUI to allow trial start.
 obj.indicateLoading('Loading protocol');
 
 if src == obj.h.menuCheckStimulus
@@ -95,7 +94,6 @@ componentData = [];
 for i = 1:length(ct)
     componentData.(ct{i}) = [];
 end
-% fullComponentData = repmat(componentData, [1 length(obj.p)]);
 
 % reorganise params to be per device.
 for i = 1:length(p)
@@ -168,6 +166,9 @@ obj.status = 'ready';
 end
 
 function seq = generateSequence(obj)
+% GENERATESEQUENCE generate the execution sequence for trials in the
+% protocol file. Returns ([int]) the execution order, with each int mapping
+% to the ordered list of trials.
 tmp = arrayfun(@(x,y) {ones(1,x)*y},[obj.p.nRuns],1:length(obj.p));
 tmp = [tmp{:}];
 if obj.g.rand > 0
@@ -187,6 +188,7 @@ end
 
 %% Helpers
 function targets = getAllTargets(p)
+% GETALLTARGETS returns all target devices in a protocol file
     targets = {};
     for i = 1:length(p)
         fds = fields(p(i).params);
@@ -198,26 +200,10 @@ function targets = getAllTargets(p)
     end
 end
 
-function checkStimulus(obj)
-    [filename, dir] = uigetfile([obj.path.protocolBase filesep '*.*'], 'Select protocol. WARNING: This will plot all trials at once. Isolate the trial you want to check within the file itself.');
-    if filename == 0
-        return
-    end
-    fpath = [dir filesep filename];
-    if contains(fpath, '.stim')
-        [p, g] = readProtocol(fpath, true);
-    else
-        error("Unsupported file format. Supported formats: .qst, .stim");
-    end
-end
-
 function metadata = GenerateMetadata(p)
     m = {p(1).metadata};
     for i = 2:length(p)
         m = [m {p(i).metadata}];
     end
     metadata = m;
-    % if isempty(metaStr.metadata{1})
-    %     metaStr.metadata = metaStr.metadata(2:end);
-    % end
 end

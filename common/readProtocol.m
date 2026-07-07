@@ -1,6 +1,4 @@
 function [p,g] = readProtocol(filename,varargin)
-
-% TODO validate hardware is not targeted by two functions simultaneously
 m = [];
 
 %% parse function inputs
@@ -222,7 +220,7 @@ p = [trials{:}];
             'Freq', 'frequency', ...
             'Phase', 'phase', ...
             'VerticalShift', 'verticalShift', ...
-            'AmpMod', 'amplitudeMod'), ... %nb this one isn't documented or implemented. Bit too hard
+            'AmpMod', 'amplitudeMod'), ... %nb this one isn't documented or implemented, but it feels wrong to remove.
         'analognoise', struct( ...
             'Dur', 'duration', ...
             'MaxAmp', 'maxAmplitude', ...
@@ -325,13 +323,13 @@ p = [trials{:}];
         
         for idxStim = 1:length(stimDefinitions)
             line = stimDefinitions{idxStim};
-            % todo support for targeting specific channels connected to the same device (e.g. Widefield1_Trigger)
-            % note - this is way harder than it sounds. We're gonna name our channels individually for now.
+
             [line, comment] = strtok(line, '%');
             [line, tags] = strtok(line, '#');
             tags = ParseTags(tags);
             tmp = regexpi(line, '([A-z])*\((\w)+\)\[((\w)(-\w)?,? ?)+\]: ?(.*)', 'tokens', 'once'); 
-            % note to future devs: sorry about this ^. There are some regex testers out there that can help with reading this.
+            % note to future devs: sorry about this ^. 
+            % There are some regex testers out there that can help with reading this.
             % I've been using https://regexr.com/
             [stimID, stimType, targets, params] = tmp{:};
             stimType = lower(stimType);
@@ -350,10 +348,6 @@ p = [trials{:}];
                     stimStruct = ParseSerial(params, BaseStimStructs.(stimType), stimID);
                     stimStruct.tags = tags;
                 case 'stimulusgroup'
-                    %TODO VALIDATION: 
-                    % check that all params within the stimulus group are defined.
-                    % replace all tokens that map to another stimulus group with the text of that stimulus group
-                    % check the stimulus group name doesn't cause logic problems (no other stimulusgroup contains this one's name in its entirety and vice versa)
                     stimGroups.(stimID) = [];
                     stimGroups.(stimID).params = params;
                     stimGroups.(stimID).tags = tags;
@@ -404,6 +398,7 @@ p = [trials{:}];
 
     function [trial, params, stimGroups, bracketTags] = InitialiseTrial(trialLine, stimGroups, defaultTrial, ...
             idxTrial)
+        % INITIALISETRIAL create the base trial structure
         [params, comment] = strtok(trialLine, '%');
         [params, tags] = strtok(params, '#');
         tags = ParseTags(tags);
@@ -663,7 +658,6 @@ p = [trials{:}];
             % put parent back on the stack
             stack.push(currentParentIdx);
         end
-        % todo throw error if same thing is targeted multiple times simultaneously
         stimRoot = tree{stimNodeIdx};
         stimRoot.startDelay = stimRoot.startDelay + trial.tPre;
         tree{stimNodeIdx} = stimRoot;
@@ -671,7 +665,6 @@ p = [trials{:}];
         trial.RootNodeIdx = 1;
         trial = trial.Clean;
         trial.generateParamsSequence;
-        % trial.ValidateTree;
     end
 
 function stimStruct = ParseQST(params, stimStruct, stimName)
@@ -769,10 +762,3 @@ function tagCells = ParseTags(tagString)
         tagCells = tagCells(2:end);
     end
 end
-
-% function checkRange(value,range,token,idxStim)
-% if value<range(1) || value>range(2)
-%     error(['Faulty parameter "%s" for stimulus #%d (expecting value ' ...
-%         'to be within %d-%d)'],token,idxStim,range(1),range(2))
-% end
-% end

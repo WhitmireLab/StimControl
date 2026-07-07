@@ -1,7 +1,6 @@
 function createFigure(obj)
-% https://au.mathworks.com/help/matlab/creating_guis/choose-components-for-your-app-designer-app.html
-% https://au.mathworks.com/help/matlab/creating_guis/create-and-run-a-simple-programmatic-app.html
-% https://au.mathworks.com/help/matlab/develop-apps-programmatically.html?s_tid=CRUX_lftnav
+% CREATEFIGURE creates the StimControl GUI and runs associated setup
+% functions. 
 obj.h.fig = uifigure(...
     'Position',         [100,0,1092,657], ...
     'Units',            'Pixels', ...

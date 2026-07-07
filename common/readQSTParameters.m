@@ -1,5 +1,6 @@
 function [p,g] = readQSTParameters(filename,varargin)
-
+% Legacy function, should only be used if users are re-using stimulus files
+% from QSTcontrol
 %% parse inputs
 ip = inputParser;
 addRequired(ip,'filename',...

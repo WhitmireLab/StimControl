@@ -1,19 +1,17 @@
 function callbackChangeTab(obj, src, event)
+% CALLBACKCHANGETAB changes the active tab, initialising or de-initialising
+% connected devices as required, and moving the device's preview panel to
+% the new tab.
 if strcmpi(event.NewValue.Title, 'Experiment')
     % move components over
     for i = 1:length(obj.d.Available)
         component = obj.d.Available{i};
-        % if obj.d.Active(i)
-        %     % make sure device is initialised
-        %     if isempty(component.SessionHandle)
-        %         component.InitialiseSession();
-        %     end
         if ~obj.d.Active(i)
             % de-initialise unnecessary devices
             try
                 component.Stop();
             catch exc
-                disp("[CALLBACKCHANGETAB] fix this when you have a second")
+                obj.errorMsg(sprintf("Something went wrong trying to de-initialise component %s", component.ConfigStruct.ProtocolID));
             end
         end
     end
@@ -40,6 +38,6 @@ elseif strcmpi(event.NewValue.Title, 'Setup')
         end
     end
 end
-% warning: cursed. Moves the preview panels to the new tab.
+% Moves the preview panels to the new tab. Bit cursed.
 obj.h.Preview.panel.params.Parent = event.NewValue.Children;
 end

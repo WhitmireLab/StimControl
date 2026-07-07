@@ -1,5 +1,5 @@
 function callbackStartStop(obj, src, event)
-% Starts or stops an experiment. 
+% CALLBACKSTARTSTOP Starts or stops an experiment. 
 % enables or disables relevant GUI elements for interactivity
 if strcmpi(obj.status, 'running') || strcmpi(obj.status, 'paused') ...
     || strcmpi(obj.status, 'inter-trial') || strcmpi(obj.status, 'awaiting trigger')
