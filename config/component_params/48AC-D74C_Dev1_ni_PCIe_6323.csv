@@ -1,6 +1,6 @@
 portNum,channelName,ioType,signalType,TerminalConfig,Range,Device,Label,Preview
-ai1,ThermodeA,input,Voltage,SingleEnded,[-5 5],QST,thermodeA,0
-ai2,ThermodeB,input,Voltage,SingleEnded,[-5 5],QST,thermodeB,0
+ai1,ThermodeA,input,Voltage,SingleEnded,[-5 5],QST,thermodeA,1
+ai2,ThermodeB,input,Voltage,SingleEnded,[-5 5],QST,thermodeB,1
 ai3,Aurora Force OUT,input,Voltage,SingleEnded,,Aurora,force,1
 ai4,Aurora Length OUT,input,Voltage,SingleEnded,,Aurora,length,1
 ai5,DC Temperature Controller,input,Voltage,SingleEnded,,Heatpad,temp,0
@@ -19,7 +19,7 @@ port0/line28,HamamatsuTrigger,output,Digital,,,Widefield2,trigger,0
 port0/line29,LED,output,Digital,,,FlashLED,ttl,0
 port0/line30,IRLED_BaslerImaging,output,Digital,,,IRLED,ttl,0
 port0/line2,Vibration,output,Digital,,,VibrationMotor,out,0
-port0/line7,Thermode Trigger,output,Digital,,,QST,trigger,0
+port0/line7,Thermode Trigger,output,Digital,,,QST,trigger,1
 ao0,Aurora Force Command Voltage,output,Voltage,SingleEnded,[-10 10],Aurora,out,1
 ai8,Wheel 1A,input,Voltage,SingleEnded,,Wheel,A1,0
 ai9,Wheel 1B,input,Voltage,SingleEnded,,Wheel,A2,0
