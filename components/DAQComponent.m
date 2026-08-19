@@ -488,6 +488,9 @@ function CreateConfigFigure(obj, src, event)
                 rangesAvailable = categorical(cellstr([rangesAvailable{:}]))';
             end
             % add to subsystems table
+            % NB DIGITAL SHOULD BE 'Arbitrary','Audio', 'Current', 'DC', 'Digital', 'PulseGeneration', 'RampDown', 'RampUp', 'Sine', 'Square', 'Triangle', 'Voltage'.
+            % AND YET. IT IS NOT.
+            % ALSO NOTE COUNTERS. ALSO NOTE CHANGING PWM DC DURING OPERATION (TRIALMAINTAIN)
             subsystemDetails = {...
                 subsystemType, ...
                 ssCat(i), ...
@@ -861,7 +864,7 @@ function obj = CreateChannels(obj, filename, protocolIDs)
             if ~isempty(terminalConfig) && ~contains(class(ch), 'Digital')
                 ch.TerminalConfig = terminalConfig;
             end
-            if ~isempty(range) && ~contains(class(ch), 'Digital')
+            if ~isempty(range) && ~contains(class(ch), 'Digital') && ~strcmpi(range, '<undefined>')
                 range = str2num(range);
                 ch.Range = range;
             end
