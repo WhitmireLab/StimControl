@@ -277,7 +277,12 @@ end
 function obj = SetParams(obj, paramsStruct)
     % todo account for abstract
     obj.Status = "loading";
-    vidObj = obj.SessionHandle;
+    if ~isempty(obj.SessionHandle)
+        vidObj = obj.SessionHandle;
+    else
+        vidObj = videoinput(obj.ConfigStruct.Adaptor, obj.ConfigStruct.ID);
+        obj.SessionHandle = vidObj;                           
+    end
     src = getselectedsource(vidObj);
     paramFields = fields(paramsStruct);
     updateTrigger = false;

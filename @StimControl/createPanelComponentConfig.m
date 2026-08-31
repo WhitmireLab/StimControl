@@ -64,6 +64,14 @@ function updateComponentConfigTable(src,event,obj)
     end
     removeStyle(src);
     newVal = src.Data.values{rownum};
+    if strcmpi(propertyName, "ProtocolID")
+        src_pass = obj.h.AvailableHardwareTable;
+        event_pass = struct();
+        event_pass.Indices = [obj.h.ComponentConfig.SelectedComponentIndex, 3];
+        event_pass.NewData = newVal;
+        event_pass.PreviousData = component.ConfigStruct.ProtocolID;
+        obj.callbackUpdateComponentTable(src_pass, event_pass);
+    end
     if iscategorical(newVal)
         cats = categories(newVal);
         idx = find(categorical(cats) == newVal);
