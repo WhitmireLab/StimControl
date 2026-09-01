@@ -55,6 +55,15 @@ methods
         end
     end
 
+    function UpdateComponentProtocolID(obj, PreviousID, NewID, idxRow)
+        obj.ProtocolIDMap = remove(obj.ProtocolIDMap, PreviousID);
+        obj.ProtocolIDMap(NewID) = idxRow;
+        if isfield(obj.componentTargets, PreviousID)
+            obj.componentTargets.(NewID) = obj.componentTargets.(PreviousID);
+            obj.componentTargets = rmfield(obj.componentTargets, PreviousID);
+        end
+    end
+
     function obj = LoadConfig(obj, jsonData)
         if isempty(jsonData)
             % no config information

@@ -43,8 +43,7 @@ function callbackUpdateComponentTable(obj, src, event)
         component = obj.d.Available{idxRow};
         if strcmpi(property, "ProtocolID")
             component.SetParam("ProtocolID", event.NewData);
-            obj.d.ProtocolIDMap = remove(obj.d.ProtocolIDMap, event.PreviousData);
-            obj.d.ProtocolIDMap(event.NewData) = idxRow;
+            obj.d.UpdateComponentProtocolID(event.PreviousData, event.NewData, idxRow);
         elseif strcmpi(property, "Enable")
             if event.NewData
                 obj.d.Active(idxRow) = true;

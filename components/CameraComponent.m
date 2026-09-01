@@ -41,7 +41,11 @@ methods(Static, Access=public)
             warning('on', 'imaq:imaqhwinfo');
             for j = 1:length(devices)
                 temp = devices(j);
-                protocolID = [CameraComponentProperties.ProtocolID.default char(string(j))];
+                if length(devices) > 1
+                    protocolID = matlab.lang.makeValidName(string(java.util.UUID.randomUUID));
+                else
+                    protocolID = CameraComponentProperties.ProtocolID.default;
+                end
                 initStruct = struct( ...
                     'Adaptor', adaptorDevices.AdaptorName, ...
                     'ID', temp.DeviceName, ...
